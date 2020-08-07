@@ -1,4 +1,4 @@
-(pushnew (truename "/home/drew/lisp-z3/") ql:*local-project-directories* )
+(pushnew (truename "../") ql:*local-project-directories*)
 (ql:register-local-projects)
 (ql:quickload :lisp-z3)
 

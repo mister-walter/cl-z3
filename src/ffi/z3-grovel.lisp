@@ -8,42 +8,47 @@
 
 (include "z3.h")
 
+(feature z3-safe-errors "SAFE_ERRORS")
 
-;;(ctype Z3_bool "Z3_bool")
-;;(ctype string "Z3_string")
-(ctype Z3_char_ptr "Z3_char_ptr")
-(ctype Z3_string_ptr "Z3_string_ptr")
-;;(ctype Z3_lbool "Z3_lbool")
-
-(ctype Z3_symbol "Z3_symbol")
-(ctype Z3_func_decl "Z3_func_decl")
-(ctype Z3_ast "Z3_ast")
-(ctype Z3_ast_vector "Z3_ast_vector")
-(ctype Z3_sort "Z3_sort")
-(ctype Z3_model "Z3_model")
-(ctype Z3_pattern "Z3_pattern")
-
-(ctype Z3_stats "Z3_stats")
-(ctype Z3_goal "Z3_goal")
-(ctype Z3_solver "Z3_solver")
-(ctype Z3_tactic "Z3_tactic")
-
+;; Most of the types in the C API are opaque pointers.
 (ctype Z3_config "Z3_config")
 (ctype Z3_context "Z3_context")
-(ctype Z3_params "Z3_params")
-(ctype Z3_param_descrs "Z3_param_descrs")
+(ctype Z3_symbol "Z3_symbol")
+(ctype Z3_ast "Z3_ast")
+(ctype Z3_sort "Z3_sort")
+(ctype Z3_func_decl "Z3_func_decl")
+(ctype Z3_app "Z3_app")
+(ctype Z3_pattern "Z3_pattern")
 (ctype Z3_constructor "Z3_constructor")
 (ctype Z3_constructor_list "Z3_constructor_list")
+(ctype Z3_params "Z3_params")
+(ctype Z3_param_descrs "Z3_param_descrs")
+(ctype Z3_model "Z3_model")
+(ctype Z3_func_interp "Z3_func_interp")
+(ctype Z3_func_entry "Z3_func_entry")
+(ctype Z3_fixedpoint "Z3_fixedpoint")
+(ctype Z3_optimize "Z3_optimize")
+(ctype Z3_ast_vector "Z3_ast_vector")
+(ctype Z3_ast_map "Z3_ast_map")
+(ctype Z3_goal "Z3_goal")
+(ctype Z3_tactic "Z3_tactic")
+(ctype Z3_probe "Z3_probe")
+(ctype Z3_apply_result "Z3_apply_result")
+(ctype Z3_solver "Z3_solver")
+(ctype Z3_stats "Z3_stats")
 
+;; Lifted Boolean type
 (cenum (lbool)
        ((:L_FALSE "Z3_L_FALSE"))
        ((:L_UNDEF "Z3_L_UNDEF"))
        ((:L_TRUE "Z3_L_TRUE")))
 
+;; The different kinds of symbol
 (cenum (symbol_kind)
        ((:INT_SYMBOL "Z3_INT_SYMBOL"))
        ((:STRING_SYMBOL "Z3_STRING_SYMBOL")))
 
+;; The different kinds of parameters that can be associated with function symbols.
 (cenum (parameter_kind)
        ((:PARAMETER_INT "Z3_PARAMETER_INT"))
        ((:PARAMETER_DOUBLE "Z3_PARAMETER_DOUBLE"))
@@ -53,6 +58,7 @@
        ((:PARAMETER_AST "Z3_PARAMETER_AST"))
        ((:PARAMETER_FUNC_DECL "Z3_PARAMETER_FUNC_DECL")))
 
+;; The different kinds of Z3 types
 (cenum (sort_kind)
        ((:BOOL_SORT "Z3_BOOL_SORT"))
        ((:INT_SORT "Z3_INT_SORT"))
@@ -68,6 +74,17 @@
        ((:RE_SORT "Z3_RE_SORT"))
        ((:UNKNOWN_SORT "Z3_UNKNOWN_SORT")))
 
+;; The different kinds of Z3 AST (abstract syntax trees). That is, terms, formulas and types.
+(cenum (ast_kind)
+       ((:NUMERAL_AST "Z3_NUMERAL_AST"))
+       ((:APP_AST "Z3_APP_AST"))
+       ((:VAR_AST "Z3_VAR_AST"))
+       ((:QUANTIFIER_AST "Z3_QUANTIFIER_AST"))
+       ((:SORT_AST "Z3_SORT_AST"))
+       ((:FUNC_DECL_AST "Z3_FUNC_DECL_AST"))
+       ((:UNKNOWN_AST "Z3_UNKNOWN_AST")))
+
+;; The different kinds of interpreted function kinds.
 (cenum (decl_kind)
       ;; Basic
        ((:OP_TRUE "Z3_OP_TRUE"))

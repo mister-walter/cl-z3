@@ -1,55 +1,291 @@
 (defpackage #:z3-c-types
   (:use #:cffi)
-  (:shadow #:sort)
+  (:shadow #:sort #:optimize)
   (:export
-   ;;#:Z3_bool
-   #:Z3_char_ptr
-   #:Z3_string_ptr
    #:Z3_config
    #:Z3_context
-   #:Z3_params
-   #:Z3_param_descrs
+   #:Z3_symbol
+   #:Z3_ast
+   #:Z3_sort
+   #:Z3_func_decl
+   #:Z3_app
+   #:Z3_pattern
    #:Z3_constructor
    #:Z3_constructor_list
-   #:Z3_symbol
-   #:Z3_func_decl
-   #:Z3_ast
-   #:Z3_ast_vector
-   #:Z3_sort
-   #:Z3_pattern
+   #:Z3_params
+   #:Z3_param_descrs
    #:Z3_model
-   #:Z3_stats
+   #:Z3_func_interp
+   #:Z3_func_entry
+   #:Z3_fixedpoint
+   #:Z3_optimize
+   #:Z3_ast_vector
+   #:Z3_ast_map
    #:Z3_goal
-   #:Z3_solver
    #:Z3_tactic
+   #:Z3_probe
+   #:Z3_apply_results
+   #:Z3_solver
+   #:Z3_stats
    ;; Enums
    #:lbool
    #:symbol_kind
    #:parameter_kind
    #:sort_kind
+   #:ast_kind
    #:decl_kind
    #:param_kind
    #:ast_print_mode
    #:error_code
    #:goal_prec
    ;; Foreign types
-   #:sym
    #:config
    #:context
-   #:params
-   #:param-descrs
-   #:func-decl
+   #:sym
+   #:ast
    #:sort
+   #:func-decl
+   #:app
+   #:pattern
    #:constructor
    #:constructor-list
-   #:ast
-   #:ast-vector
-   #:solver
-   #:goal
+   #:params
+   #:param-descrs
    #:model
+   #:func-interp
+   #:func-entry
+   #:fixedpoint
+   #:optimize
+   #:ast-vector
+   #:ast-map
+   #:goal
    #:tactic
-   #:stats))
+   #:probe
+   #:apply-results
+   #:solver
+   #:stats
+   ))
 
 (defpackage #:z3-c
-  (:shadowing-import-from #:z3-c-types #:sort)
-  (:use #:cl #:cffi #:z3-c-types))
+  (:shadowing-import-from #:z3-c-types #:sort #:optimize)
+  (:use #:cl #:cffi #:z3-c-types)
+  (:export
+   #:Z3-GLOBAL-PARAM-SET
+   #:Z3-GLOBAL-PARAM-RESET-ALL
+   #:Z3-GLOBAL-PARAM-GET
+   #:Z3-MK-CONFIG
+   #:Z3-DEL-CONFIG
+   #:Z3-SET-PARAM-VALUE
+   #:Z3-MK-CONTEXT
+   #:Z3-DEL-CONTEXT
+   #:Z3-UPDATE-PARAM-VALUE
+   #:Z3-INTERRUPT
+   #:Z3-MK-PARAMS
+   #:Z3-PARAMS-INC-REF
+   #:Z3-PARAMS-DEC-REF
+   #:Z3-PARAMS-SET-BOOL
+   #:Z3-PARAMS-SET-UINT
+   #:Z3-PARAMS-SET-DOUBLE
+   #:Z3-PARAMS-SET-SYMBOL
+   #:Z3-PARAMS-TO-STRING
+   #:Z3-PARAMS-VALIDATE
+   #:Z3-PARAM-DESCRS-GET-KIND
+   #:Z3-PARAM-DESCRS-SIZE
+   #:Z3-PARAM-DESCRS-GET-NAME
+   #:Z3-PARAM-DESCRS-GET-DOCUMENTATION
+   #:Z3-PARAM-DESCRS-TO-STRING
+   #:Z3-MK-INT-SYMBOL
+   #:Z3-MK-STRING-SYMBOL
+   #:Z3-MK-UNINTERPRETED-SORT
+   #:Z3-MK-BOOL-SORT
+   #:Z3-MK-INT-SORT
+   #:Z3-MK-REAL-SORT
+   #:Z3-MK-BV-SORT
+   #:Z3-MK-FINITE-DOMAIN-SORT
+   #:Z3-MK-ARRAY-SORT
+   #:Z3-MK-ARRAY-SORT-N
+   #:Z3-MK-TUPLE-SORT
+   #:Z3-MK-ENUMERATION-SORT
+   #:Z3-MK-LIST-SORT
+   #:Z3-MK-CONSTRUCTOR
+   #:Z3-DEL-CONSTRUCTOR
+   #:Z3-MK-DATATYPE
+   #:Z3-MK-CONSTRUCTOR-LIST
+   #:Z3-DEL-CONSTRUCTOR-LIST
+   #:Z3-MK-DATATYPES
+   #:Z3-QUERY-CONSTRUCTOR
+   #:Z3-MK-FUNC-DECL
+   #:Z3-MK-APP
+   #:Z3-MK-CONST
+   #:Z3-MK-FRESH-FUNC-DECL
+   #:Z3-MK-FRESH-CONST
+   #:Z3-ADD-REC-DEF
+   #:Z3-MK-TRUE
+   #:Z3-MK-FALSE
+   #:Z3-MK-EQ
+   #:Z3-MK-DISTINCT
+   #:Z3-MK-NOT
+   #:Z3-MK-ITE
+   #:Z3-MK-IFF
+   #:Z3-MK-IMPLIES
+   #:Z3-MK-XOR
+   #:Z3-MK-AND
+   #:Z3-MK-OR
+   #:Z3-MK-ADD
+   #:Z3-MK-MUL
+   #:Z3-MK-SUB
+   #:Z3-MK-UNARY-MINUS
+   #:Z3-MK-DIV
+   #:Z3-MK-MOD
+   #:Z3-MK-REM
+   #:Z3-MK-POWER
+   #:Z3-MK-LT
+   #:Z3-MK-LE
+   #:Z3-MK-GT
+   #:Z3-MK-GE
+   #:Z3-MK-DIVIDES
+   #:Z3-MK-INT2REAL
+   #:Z3-MK-REAL2INT
+   #:Z3-MK-IS-INT
+   #:Z3-MK-NUMERAL
+   #:Z3-MK-REAL
+   #:Z3-MK-INT
+   #:Z3-MK-UNSIGNED-INT
+   #:Z3-MK-INT64
+   #:Z3-MK-UNSIGNED-INT64
+   #:Z3-MK-BV-NUMERAL
+   #:Z3-GET-SYMBOL-KIND
+   #:Z3-GET-SYMBOL-INT
+   #:Z3-GET-SYMBOL-STRING
+   #:Z3-GET-SORT-NAME
+   #:Z3-GET-SORT-ID
+   #:Z3-SORT-TO-AST
+   #:Z3-IS-EQ-SORT
+   #:Z3-GET-SORT-KIND
+   #:Z3-GET-DECL-NAME
+   #:Z3-GET-DECL-KIND
+   #:Z3-GET-SORT
+   #:Z3-IS-WELL-SORTED
+   #:Z3-GET-BOOL-VALUE
+   #:Z3-GET-AST-KIND
+   #:Z3-IS-APP
+   #:Z3-IS-NUMERAL-AST
+   #:Z3-IS-ALGEBRAIC-NUMBER
+   #:Z3-TO-APP
+   #:Z3-TO-FUNC-DECL
+   #:Z3-GET-NUMERAL-STRING
+   #:Z3-GET-NUMERAL-DECIMAL-STRING
+   #:Z3-GET-NUMERAL-DOUBLE
+   #:Z3-GET-NUMERATOR
+   #:Z3-GET-DENOMINATOR
+   #:Z3-GET-NUMERAL-SMALL
+   #:Z3-GET-NUMERAL-INT
+   #:Z3-GET-NUMERAL-UINT
+   #:Z3-GET-NUMERAL-UINT64
+   #:Z3-GET-NUMERAL-INT64
+   #:Z3-GET-NUMERAL-RATIONAL-INT64
+   #:Z3-GET-APP-DECL
+   #:Z3-MK-MODEL
+   #:Z3-MODEL-INC-REF
+   #:Z3-MODEL-DEC-REF
+   #:Z3-MODEL-EVAL
+   #:Z3-MODEL-GET-CONST-INTERP
+   #:Z3-MODEL-HAS-INTERP
+   #:Z3-MODEL-GET-FUNC-INTERP
+   #:Z3-MODEL-GET-NUM-CONSTS
+   #:Z3-MODEL-GET-CONST-DECL
+   #:Z3-MODEL-GET-NUM-FUNCS
+   #:Z3-MODEL-GET-FUNC-DECL
+   #:Z3-MODEL-GET-NUM-SORTS
+   #:Z3-MODEL-GET-SORT
+   #:Z3-MODEL-GET-SORT-UNIVERSE
+   #:Z3-MODEL-TRANSLATE
+   #:Z3-IS-AS-ARRAY
+   #:Z3-GET-AS-ARRAY-FUNC-DECL
+   #:Z3-ADD-FUNC-INTERP
+   #:Z3-ADD-CONST-INTERP
+   #:Z3-FUNC-INTERP-INC-REF
+   #:Z3-FUNC-INTERP-DEC-REF
+   #:Z3-FUNC-INTERP-GET-NUM-ENTRIES
+   #:Z3-FUNC-INTERP-GET-ENTRY
+   #:Z3-FUNC-INTERP-GET-ELSE
+   #:Z3-FUNC-INTERP-SET-ELSE
+   #:Z3-FUNC-INTERP-GET-ARITY
+   #:Z3-FUNC-INTERP-ADD-ENTRY
+   #:Z3-FUNC-ENTRY-INC-REF
+   #:Z3-FUNC-ENTRY-DEC-REF
+   #:Z3-FUNC-ENTRY-GET-VALUE
+   #:Z3-FUNC-ENTRY-GET-NUM-ARGS
+   #:Z3-FUNC-ENTRY-GET-ARG
+   #:Z3-OPEN-LOG
+   #:Z3-APPEND-LOG
+   #:Z3-CLOSE-LOG
+   #:Z3-TOGGLE-WARNING-MESSAGES
+   #:Z3-SET-AST-PRINT-MODE
+   #:Z3-AST-TO-STRING
+   #:Z3-PATTERN-TO-STRING
+   #:Z3-SORT-TO-STRING
+   #:Z3-FUNC-DECL-TO-STRING
+   #:Z3-MODEL-TO-STRING
+   #:Z3-BENCHMARK-TO-SMTLIB-STRING
+   #:Z3-PARSE-SMTLIB2-STRING
+   #:Z3-PARSE-SMTLIB2-FILE
+   #:Z3-EVAL-SMTLIB2-STRING
+   #:Z3-GET-ERROR-CODE
+   #:Z3-SET-ERROR-HANDLER
+   #:Z3-SET-ERROR
+   #:Z3-GET-ERROR-MSG
+   #:Z3-MK-GOAL
+   #:Z3-GOAL-INC-REF
+   #:Z3-GOAL-DEC-REF
+   #:Z3-GOAL-PRECISION
+   #:Z3-GOAL-ASSERT
+   #:Z3-GOAL-INCONSISTENT
+   #:Z3-GOAL-DEPTH
+   #:Z3-GOAL-RESET
+   #:Z3-GOAL-SIZE
+   #:Z3-GOAL-FORMULA
+   #:Z3-GOAL-NUM-EXPRS
+   #:Z3-GOAL-IS-DECIDED-SAT
+   #:Z3-GOAL-IS-DECIDED-UNSAT
+   #:Z3-GOAL-TRANSLATE
+   #:Z3-GOAL-CONVERT-MODEL
+   #:Z3-GOAL-TO-STRING
+   #:Z3-GOAL-TO-DIMACS-STRING
+   #:Z3-MK-SOLVER
+   #:Z3-MK-SIMPLE-SOLVER
+   #:Z3-MK-SOLVER-FOR-LOGIC
+   #:Z3-MK-SOLVER-FROM-TACTIC
+   #:Z3-SOLVER-TRANSLATE
+   #:Z3-SOLVER-IMPORT-MODEL-CONVERTER
+   #:Z3-SOLVER-GET-HELP
+   #:Z3-SOLVER-GET-PARAM-DESCRS
+   #:Z3-SOLVER-SET-PARAMS
+   #:Z3-SOLVER-INC-REF
+   #:Z3-SOLVER-DEC-REF
+   #:Z3-SOLVER-INTERRUPT
+   #:Z3-SOLVER-PUSH
+   #:Z3-SOLVER-POP
+   #:Z3-SOLVER-RESET
+   #:Z3-SOLVER-GET-NUM-SCOPES
+   #:Z3-SOLVER-ASSERT
+   #:Z3-SOLVER-ASSERT-AND-TRACK
+   #:Z3-SOLVER-FROM-FILE
+   #:Z3-SOLVER-FROM-STRING
+   #:Z3-SOLVER-GET-ASSERTIONS
+   #:Z3-SOLVER-GET-UNITS
+   #:Z3-SOLVER-GET-TRAIL
+   #:Z3-SOLVER-GET-NON-UNITS
+   #:Z3-SOLVER-GET-LEVELS
+   #:Z3-SOLVER-CHECK
+   #:Z3-SOLVER-CHECK-ASSUMPTIONS
+   #:Z3-GET-IMPLIED-EQUALITIES
+   #:Z3-SOLVER-GET-CONSEQUENCES
+   #:Z3-SOLVER-CUBE
+   #:Z3-SOLVER-GET-MODEL
+   #:Z3-SOLVER-GET-PROOF
+   #:Z3-SOLVER-GET-UNSAT-CORE
+   #:Z3-SOLVER-GET-REASON-UNKNOWN
+   #:Z3-SOLVER-GET-STATISTICS
+   #:Z3-SOLVER-TO-STRING
+   #:Z3-SOLVER-TO-DIMACS-STRING))

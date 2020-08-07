@@ -652,6 +652,455 @@ Z3 will return the same pointer twice.
 
 ;; ...
 
+;; Special relations
+
+;; ...
+
+;; Quantifiers
+
+;; ...
+
+;; Accessors
+
+(defcfun "Z3_get_symbol_kind" symbol_kind
+  "Return \c Z3_INT_SYMBOL if the symbol was constructed
+   using #Z3_mk_int_symbol, and \c Z3_STRING_SYMBOL if the symbol
+   was constructed using #Z3_mk_string_symbol."
+  (c context)
+  (s sym))
+
+(defcfun "Z3_get_symbol_int" :int
+  "Return the symbol int value.
+   \pre Z3_get_symbol_kind(s) == Z3_INT_SYMBOL"
+  (c context)
+  (s sym))
+
+(defcfun "Z3_get_symbol_string" :string
+  "Return the symbol name.
+   \pre Z3_get_symbol_kind(s) == Z3_STRING_SYMBOL
+   \warning The returned buffer is statically allocated by Z3. It will
+   be automatically deallocated when #Z3_del_context is invoked.
+   So, the buffer is invalidated in the next call to \c Z3_get_symbol_string."
+  (c context)
+  (s sym))
+
+(defcfun "Z3_get_sort_name" sym
+  "Return the sort name as a symbol."
+  (c context)
+  (d sort))
+
+(defcfun "Z3_get_sort_id" :uint
+  "Return a unique identifier for `s`."
+  (c context)
+  (d sort))
+
+(defcfun "Z3_sort_to_ast" ast
+  "Convert a \c Z3_sort into \c Z3_ast. This is just type casting."
+  (c context)
+  (s sort))
+
+(defcfun "Z3_is_eq_sort" :bool
+  "Compare sorts."
+  (c context)
+  (s1 sort)
+  (s2 sort))
+
+(defcfun "Z3_get_sort_kind" sort_kind
+  "Return the sort kind (e.g., array, tuple, int, bool, etc)."
+  (c context)
+  (s sort))
+
+;; ...
+
+(defcfun "Z3_get_decl_name" sym
+  "Return the constant declaration name as a symbol."
+  (c context)
+  (d func-decl))
+
+(defcfun "Z3_get_decl_kind" decl_kind
+  "Return the constant declaration name as a symbol."
+  (c context)
+  (d func-decl))
+
+;; ...
+
+(defcfun "Z3_get_sort" sort
+  "Return the sort of an AST node.
+   The AST node must be a constant, application, numeral, bound variable, or quantifier."
+  (c context)
+  (a ast))
+
+(defcfun "Z3_is_well_sorted" :bool
+  "Return \c true if the given expression \c t is well sorted."
+  (c context)
+  (a ast))
+
+(defcfun "Z3_get_bool_value" lbool
+  "Return \c Z3_L_TRUE if \c a is true, \c Z3_L_FALSE if it is false, and \c Z3_L_UNDEF otherwise."
+  (c context)
+  (a ast))
+
+(defcfun "Z3_get_ast_kind" ast_kind
+  "Return the kind of the given AST."
+  (c context)
+  (a ast))
+
+(defcfun "Z3_is_app" :bool
+  "Determine whether the given AST is an application."
+  (c context)
+  (a ast))
+
+(defcfun "Z3_is_numeral_ast" :bool
+  "Determine whether the given AST is a numeral."
+  (c context)
+  (a ast))
+
+(defcfun "Z3_is_algebraic_number" :bool
+  "Determine whether the given AST is an algebraic number."
+  (c context)
+  (a ast))
+
+(defcfun "Z3_to_app" app
+  "Convert an \c ast into an \c APP_AST. This is just type casting.
+    \pre \code Z3_get_ast_kind(c, a) == \c Z3_APP_AST \endcode"
+  (c context)
+  (a ast))
+
+(defcfun "Z3_to_func_decl" func-decl
+  "Convert an AST into a FUNC_DECL_AST. This is just type casting.
+   \pre \code Z3_get_ast_kind(c, a) == Z3_FUNC_DECL_AST \endcode"
+  (c context)
+  (a ast))
+
+(defcfun "Z3_get_numeral_string" :string
+  "Return numeral value, as a string of a numeric constant term
+   \pre Z3_get_ast_kind(c, a) == Z3_NUMERAL_AST"
+  (c context)
+  (a ast))
+
+(defcfun "Z3_get_numeral_decimal_string" :string
+  "Return numeral as a string in decimal notation.
+   The result has at most \c precision decimal places.
+   \pre Z3_get_ast_kind(c, a) == Z3_NUMERAL_AST || Z3_is_algebraic_number(c, a)"
+  (c context)
+  (a ast)
+  (precision :uint))
+
+(defcfun "Z3_get_numeral_double" :double
+  "Return numeral as a double.
+   \pre Z3_get_ast_kind(c, a) == Z3_NUMERAL_AST || Z3_is_algebraic_number(c, a)"
+  (c context)
+  (a ast))
+
+(defcfun "Z3_get_numerator" ast
+  "Return the numerator (as a numeral AST) of a numeral AST of sort Real.
+   \pre Z3_get_ast_kind(c, a) == Z3_NUMERAL_AST"
+  (c context)
+  (a ast))
+
+(defcfun "Z3_get_denominator" ast
+  "Return the denominator (as a numeral AST) of a numeral AST of sort Real.
+   \pre Z3_get_ast_kind(c, a) == Z3_NUMERAL_AST"
+  (c context)
+  (a ast))
+
+(defcfun "Z3_get_numeral_small" :bool
+  "Translate a numeral value into as a pair of 64 bit numbers if the representation fits.
+   Return \c true if the numeral value fits in 64 bit numerals, \c false otherwise.
+   \pre Z3_get_ast_kind(a) == Z3_NUMERAL_AST"
+  (c context)
+  (a ast)
+  (num :pointer) ;; output argument int64*
+  (dem :pointer)) ;; output argument int64*
+
+(defcfun "Z3_get_numeral_int" :bool
+  "Similar to #Z3_get_numeral_string, but only succeeds if
+   the value can fit in a machine int. Return \c true if the call succeeded.
+   \pre Z3_get_ast_kind(c, v) == Z3_NUMERAL_AST"
+  (c context)
+  (v ast)
+  (i :pointer)) ;; output argument int*
+
+(defcfun "Z3_get_numeral_uint" :bool
+  "Similar to #Z3_get_numeral_string, but only succeeds if
+   the value can fit in a machine unsigned int. Return \c true if the call succeeded.
+   \pre Z3_get_ast_kind(c, v) == Z3_NUMERAL_AST"
+  (c context)
+  (v ast)
+  (i :pointer)) ;; output argument unsigned*
+
+(defcfun "Z3_get_numeral_uint64" :bool
+  "Similar to #Z3_get_numeral_string, but only succeeds if
+   the value can fit in a machine uint64. Return \c true if the call succeeded.
+   \pre Z3_get_ast_kind(c, v) == Z3_NUMERAL_AST"
+  (c context)
+  (v ast)
+  (i :pointer)) ;; output argument uint64*
+
+(defcfun "Z3_get_numeral_int64" :bool
+  "Similar to #Z3_get_numeral_string, but only succeeds if
+   the value can fit in a machine int64. Return \c true if the call succeeded.
+   \pre Z3_get_ast_kind(c, v) == Z3_NUMERAL_AST"
+  (c context)
+  (v ast)
+  (i :pointer)) ;; output argument int64*
+
+(defcfun "Z3_get_numeral_rational_int64" :bool
+  "Similar to #Z3_get_numeral_string, but only succeeds if
+   the value can fit as a rationalnumber as machine int64_t int. Return \c true if the call succeeded.
+   \pre Z3_get_ast_kind(c, v) == Z3_NUMERAL_AST"
+  (c context)
+  (v ast)
+  (num :pointer) ;; output argument int64*
+  (den :pointer)) ;; output argument int64*
+
+;; ...
+
+(defcfun "Z3_get_app_decl" func-decl
+  "Return the declaration of a constant or function application."
+  (c context)
+  (a app))
+
+;; ...
+
+;; Modifiers
+
+;; ...
+
+;; Models
+
+(defcfun "Z3_mk_model" model
+  "Create a fresh model object. It has reference count 0."
+  (c context))
+
+(defcfun "Z3_model_inc_ref" :void
+  "Increment the reference counter of the given model."
+  (c context)
+  (m model))
+
+(defcfun "Z3_model_dec_ref" :void
+  "Decrement the reference counter of the given model."
+  (c context)
+  (m model))
+
+(defcfun "Z3_model_eval" :bool
+  "Evaluate the AST node `t` in the given model.
+   Return `true` if succeeded, and store the result in `v`."
+  (c context)
+  (m model)
+  (a ast)
+  (model_completion :bool)
+  (v :pointer)) ;; output parameter ast*
+
+(defcfun "Z3_model_get_const_interp" ast
+  "Return the interpretation (i.e., assignment) of constant \c a in the model \c m.
+   Return \c NULL, if the model does not assign an interpretation for \c a.
+   That should be interpreted as: the value of \c a does not matter.
+   \pre Z3_get_arity(c, a) == 0"
+  (c context)
+  (m model)
+  (a func-decl))
+
+(defcfun "Z3_model_has_interp" :bool
+  "Test if there exists an interpretation (i.e., assignment) for \c a in the model \c m."
+  (c context)
+  (m model)
+  (a func-decl))
+
+(defcfun "Z3_model_get_func_interp" func-interp
+  "Return the interpretation of the function \c f in the model \c m.
+   Return \c NULL, if the model does not assign an interpretation for \c f.
+   That should be interpreted as: the \c f does not matter.
+   \pre Z3_get_arity(c, f) > 0"
+  (c context)
+  (m model)
+  (f func-decl))
+
+(defcfun "Z3_model_get_num_consts" :uint
+  "Return the number of constants assigned by the given model."
+  (c context)
+  (m model))
+
+(defcfun "Z3_model_get_const_decl" func-decl
+  "Return the i-th constant in the given model.
+   \pre i < Z3_model_get_num_consts(c, m)"
+  (c context)
+  (m model)
+  (i :uint))
+
+(defcfun "Z3_model_get_num_funcs" :uint
+  "Return the number of function interpretations in the given model.
+   A function interpretation is represented as a finite map and an 'else' value.
+   Each entry in the finite map represents the value of a function given a set of arguments."
+  (c context)
+  (m model))
+
+(defcfun "Z3_model_get_func_decl" func-decl
+  "Return the declaration of the i-th function in the given model.
+   \pre i < Z3_model_get_num_funcs(c, m)"
+  (c context)
+  (m model)
+  (i :uint))
+
+(defcfun "Z3_model_get_num_sorts" :uint
+  "Return the number of uninterpreted sorts that `m` assigns an interpretation to.
+   Z3 also provides an interpretation for uninterpreted sorts used in a formula.
+   The interpretation for a sort \c s is a finite set of distinct values. We say this finite set is
+   the \"universe\" of `s`."
+  (c context)
+  (m model))
+
+(defcfun "Z3_model_get_sort" sort
+  "Return a uninterpreted sort that `m` assigns an interpretation.
+   \pre i < Z3_model_get_num_sorts(c, m)"
+  (c context)
+  (m model)
+  (i :uint))
+
+(defcfun "Z3_model_get_sort_universe" ast-vector
+  "Return the finite set of distinct values that represent the interpretation for sort `s`."
+  (c context)
+  (m model)
+  (s sort))
+
+(defcfun "Z3_model_translate" model
+  "Translate model from context `c` to context `dst`."
+  (c context)
+  (m model)
+  (dst context))
+
+(defcfun "Z3_is_as_array" :bool
+  "The \ccode{(_ as-array f)} AST node is a construct for assigning interpretations for arrays in Z3.
+   It is the array such that forall indices \c i we have that \ccode{(select (_ as-array f) i)} is equal to \ccode{(f i)}.
+   This procedure returns \c true if the \c a is an \c as-array AST node."
+  (c context)
+  (a ast))
+
+(defcfun "Z3_get_as_array_func_decl" func-decl
+  "Return the function declaration \c f associated with a \ccode{(_ as_array f)} node."
+  (c context)
+  (a ast))
+
+(defcfun "Z3_add_func_interp" func-interp
+  "Create a fresh func_interp object, add it to a model for a specified function.
+   It has reference count 0."
+  (c context)
+  (m model)
+  (f func-decl)
+  (default-value ast))
+
+(defcfun "Z3_add_const_interp" :void
+  "Add a constant interpretation."
+  (c context)
+  (m model)
+  (f func-decl)
+  (a ast))
+
+(defcfun "Z3_func_interp_inc_ref" :void
+  "Increment the reference counter of the given Z3_func_interp object."
+  (c context)
+  (f func-interp))
+
+(defcfun "Z3_func_interp_dec_ref" :void
+  "Decrement the reference counter of the given Z3_func_interp object."
+  (c context)
+  (f func-interp))
+
+(defcfun "Z3_func_interp_get_num_entries" :uint
+  "Return the number of entries in the given function interpretation.
+   A function interpretation is represented as a finite map and an 'else' value.
+   Each entry in the finite map represents the value of a function given a set of arguments.
+   This procedure return the number of element in the finite map of \c f."
+  (c context)
+  (f func-interp))
+
+(defcfun "Z3_func_interp_get_entry" func-entry
+  "Return a \"point\" of the given function interpretation. It represents the
+   value of `f` in a particular point.
+   \pre i < Z3_func_interp_get_num_entries(c, f)"
+  (c context)
+  (f func-interp))
+
+(defcfun "Z3_func_interp_get_else" ast
+  "Return the 'else' value of the given function interpretation.
+   A function interpretation is represented as a finite map and an 'else' value.
+   This procedure returns the 'else' value."
+  (c context)
+  (f func-interp))
+
+(defcfun "Z3_func_interp_set_else" :void
+  "Set the 'else' value of the given function interpretation.
+   A function interpretation is represented as a finite map and an 'else' value.
+   This procedure can be used to update the 'else' value."
+  (c context)
+  (f func-interp))
+
+(defcfun "Z3_func_interp_get_arity" :uint
+  "Return the arity (number of arguments) of the given function interpretation."
+  (c context)
+  (f func-interp))
+
+(defcfun "Z3_func_interp_add_entry" :void
+  "Add a function entry to a function interpretation.
+   It is assumed that entries added to a function cover disjoint arguments.
+   If an two entries are added with the same arguments, only the second insertion survives and the
+   first inserted entry is removed."
+  (c context)
+  (fi func-interp)
+  (args ast-vector)
+  (value ast))
+
+(defcfun "Z3_func_entry_inc_ref" :void
+  "Increment the reference counter of the given Z3_func_entry object."
+  (c context)
+  (e func-entry))
+
+(defcfun "Z3_func_entry_dec_ref" :void
+  "Decrement the reference counter of the given Z3_func_entry object."
+  (c context)
+  (e func-entry))
+
+(defcfun "Z3_func_entry_get_value" ast
+  "Return the value of this point.
+   A \c Z3_func_entry object represents an element in the finite map used to encode
+   a function interpretation."
+  (c context)
+  (e func-entry))
+
+(defcfun "Z3_func_entry_get_num_args" :uint
+  "Return the number of arguments in a Z3_func_entry object."
+  (c context)
+  (e func-entry))
+
+(defcfun "Z3_func_entry_get_arg" ast
+  "Return an argument of a \c Z3_func_entry object.
+   \pre i < Z3_func_entry_get_num_args(c, e)"
+  (c context)
+  (e func-entry)
+  (i :uint))
+
+;; Interaction logging
+
+(defcfun "Z3_open_log" :bool
+  "Log interaction to a file."
+  (filename :string))
+
+(defcfun "Z3_append_log" :void
+  "Append user-defined string to interaction log.
+   The interaction log is opened using Z3_open_log.
+   It contains the formulas that are checked using Z3.
+   You can use this command to append comments, for instance."
+  (string :string))
+
+(defcfun "Z3_close_log" :void
+  "Close interaction log.")
+
+(defcfun "Z3_toggle_warning_messages" :void
+  "Enable/disable printing warning messages to the console.
+   Warnings are printed after passing \c true, warning messages are
+   suppressed after calling this method with \c false."
+  (enabled :bool))
+
 ;; String conversion
 
 #|
@@ -746,6 +1195,40 @@ So, the buffer is invalidated in the next call to \c Z3_benchmark_to_smtlib_stri
    evaluation builds on top of the previous call."
   (c context)
   (str :string))
+
+;; Error Handling
+
+#-z3-safe-errors
+(defcfun "Z3_get_error_code" error_code
+  "Return the error code for the last API call.
+   A call to a Z3 function may return a non Z3_OK error code,
+   when it is not used correctly."
+  (c context))
+
+#-z3-safe-errors
+(defcfun "Z3_set_error_handler" :void
+  "Register a Z3 error handler.
+   A call to a Z3 function may return a non \c Z3_OK error code, when
+   it is not used correctly.  An error handler can be registered
+   and will be called in this case.  To disable the use of the
+   error handler, simply register with \c h=NULL.
+   \warning Log files, created using #Z3_open_log, may be potentially incomplete/incorrect if error handlers are used."
+  (c context)
+  (h :pointer)) ;; function pointer of type Z3_error_handler
+
+(defcfun "Z3_set_error" :void
+  "Set an error."
+  (c context)
+  (e error_code))
+
+(defcfun "Z3_get_error_msg" :string
+  "Return a string describing the given error code."
+  (c context)
+  (err error_code))
+
+;; Miscellaneous
+
+;; ...
 
 #|
 (defconstant c (z3-mk-config))

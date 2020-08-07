@@ -27,15 +27,6 @@
           do (setf (cffi:mem-aref array ',array-ty i) ,ith-val))
     ,body))
 
-#|
-
- (with-foreign-object
-           (array 'Z3_ast (length args))
-           (loop for arg in args
-                 for i upto (1- (length args))
-                 do (setf (mem-aref array 'Z3_ast i) (convert-to-ast context arg types)))
-           (z3-mk-and context (length args) array))
-|#
 (defun convert-funccall-to-ast (context stmt &optional types)
   (match stmt
          ((list (or '= 'equal '==) x y)
@@ -66,6 +57,10 @@
           (with-foreign-array z3-c-types::Z3_ast (length args)
                               (convert-to-ast-fn context arg types)
                               (z3-mk-sub context (length args) array)))
+         ((list* 'distinct args)
+          (with-foreign-array z3-c-types::Z3_ast (length args)
+                              (convert-to-ast-fn context arg types)
+                              (z3-mk-distinct context (length args) array)))
          ((list 'implies x y)
           (z3-mk-implies context
                          (convert-to-ast-fn context x types)
@@ -83,8 +78,16 @@
           (z3-mk-lt context
                     (convert-to-ast-fn context x types)
                     (convert-to-ast-fn context y types)))
+         ((list '<= x y)
+          (z3-mk-le context
+                    (convert-to-ast-fn context x types)
+                    (convert-to-ast-fn context y types)))
          ((list '> x y)
           (z3-mk-gt context
+                    (convert-to-ast-fn context x types)
+                    (convert-to-ast-fn context y types)))
+         ((list '>= x y)
+          (z3-mk-ge context
                     (convert-to-ast-fn context x types)
                     (convert-to-ast-fn context y types)))
          (otherwise (error "Value ~S is of an unsupported type." stmt))))

@@ -44,6 +44,10 @@
 (defparameter *default-context* (make-instance 'context))
 (defparameter *default-solver* (make-simple-solver *default-context*))
 
+
+;; TODO: integrate defdata's types where possible
+;; e.g. automatically convert defdatas into "equivalent" Z3 sorts
+;; but a fair amount of work is needed here to convert back and forth between z3 values and defdata values.
 (defmacro make-var-decls (decls context)
   (cons 'list
         (loop for (var ty) on decls by #'cddr
@@ -51,7 +55,7 @@
 
 ;;(make-var-decls (x :int y :bool) ctx)
 
-(defun z3-init ()
+(defun solver-init ()
   (setf *default-context* (make-instance 'context))
   (setf *default-solver* (make-simple-solver *default-context*)))
 
@@ -62,22 +66,33 @@
                                   ',stmt
                                   (make-var-decls ,var-decls (or ,context *default-context*)))))
 
-#|
+(defun get-model (&optional context solver)
+  "Get the model object for the last solver-check[-assumptions] call.
+   Will invoke the error handler if no model is available."
+  (let* ((ctx (or context *default-context*))
+         (slv (or solver *default-solver*)))
+    (make-instance 'model
+                   :handle (z3-solver-get-model ctx slv)
+                   :context ctx)))
+
 (defun check-sat (&optional context solver)
   (let* ((ctx (or context *default-context*))
          (slv (or solver *default-solver*)))
     (match (z3-solver-check ctx slv)
-           (:L_TRUE ) ;; assertions are satisfiable (a model may be generated)
-           (:L_FALSE ) ;; assertions are not satisfiable (a proof may be generated)
-           (:L_UNDEF )))) ;; get_model may succeed but the model may not satisfy the assertions
-|#     
+           (:L_TRUE (model-constants-to-assignment (get-model context solver) context)) ;; assertions are satisfiable (a model may be generated)
+           (:L_FALSE :UNSAT) ;; assertions are not satisfiable (a proof may be generated)
+           ;; TODO: in the undef case we may want to get the model and see if the assignment satisfies the assertions
+           ;; if so we can return it.
+           (:L_UNDEF :UNKNOWN)))) ;; get_model may succeed but the model may not satisfy the assertions
+
+
 ;; i.e. will use default context and solver
 ;; maybe will init for you, optional context and solver
 ;; use defunc/definec code to figure out types
 ;; and then export types to z3 sorts
 #|
 
-(z3-init)
+(solver-init)
 (z3-assert
   (x :bool y :bool)
   (and x y t))

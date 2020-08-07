@@ -11,3 +11,22 @@
      (:file "z3-ast-containers")
      (:file "z3-api")
      ))
+
+(defsystem "lisp-z3/z3"
+  :depends-on ("lisp-z3/ffi" "trivia")
+  :serial t
+  :pathname "src/z3"
+  :components
+  ((:file "package")
+   (:file "types")
+   (:file "sorts")
+   (:file "ast")
+   (:file "model")
+   (:file "solver")
+   ))
+
+(defsystem "lisp-z3"
+  :depends-on ("lisp-z3/z3" "trivia")
+  :serial t
+  :components
+  ())

@@ -663,8 +663,8 @@ Z3 will return the same pointer twice.
 ;; Accessors
 
 (defcfun "Z3_get_symbol_kind" symbol_kind
-  "Return \c Z3_INT_SYMBOL if the symbol was constructed
-   using #Z3_mk_int_symbol, and \c Z3_STRING_SYMBOL if the symbol
+  "Return Z3_INT_SYMBOL if the symbol was constructed
+   using #Z3_mk_int_symbol, and Z3_STRING_SYMBOL if the symbol
    was constructed using #Z3_mk_string_symbol."
   (c context)
   (s sym))
@@ -680,7 +680,7 @@ Z3 will return the same pointer twice.
    \pre Z3_get_symbol_kind(s) == Z3_STRING_SYMBOL
    \warning The returned buffer is statically allocated by Z3. It will
    be automatically deallocated when #Z3_del_context is invoked.
-   So, the buffer is invalidated in the next call to \c Z3_get_symbol_string."
+   So, the buffer is invalidated in the next call to Z3_get_symbol_string."
   (c context)
   (s sym))
 
@@ -695,7 +695,7 @@ Z3 will return the same pointer twice.
   (d sort))
 
 (defcfun "Z3_sort_to_ast" ast
-  "Convert a \c Z3_sort into \c Z3_ast. This is just type casting."
+  "Convert a Z3_sort into Z3_ast. This is just type casting."
   (c context)
   (s sort))
 
@@ -731,12 +731,12 @@ Z3 will return the same pointer twice.
   (a ast))
 
 (defcfun "Z3_is_well_sorted" :bool
-  "Return \c true if the given expression \c t is well sorted."
+  "Return true if the given expression `a` is well sorted."
   (c context)
   (a ast))
 
 (defcfun "Z3_get_bool_value" lbool
-  "Return \c Z3_L_TRUE if \c a is true, \c Z3_L_FALSE if it is false, and \c Z3_L_UNDEF otherwise."
+  "Return Z3_L_TRUE if `a` is true, Z3_L_FALSE if it is false, and Z3_L_UNDEF otherwise."
   (c context)
   (a ast))
 
@@ -761,7 +761,7 @@ Z3 will return the same pointer twice.
   (a ast))
 
 (defcfun "Z3_to_app" app
-  "Convert an \c ast into an \c APP_AST. This is just type casting.
+  "Convert an `ast` into an APP_AST. This is just type casting.
     \pre \code Z3_get_ast_kind(c, a) == \c Z3_APP_AST \endcode"
   (c context)
   (a ast))
@@ -780,7 +780,7 @@ Z3 will return the same pointer twice.
 
 (defcfun "Z3_get_numeral_decimal_string" :string
   "Return numeral as a string in decimal notation.
-   The result has at most \c precision decimal places.
+   The result has at most `precision` decimal places.
    \pre Z3_get_ast_kind(c, a) == Z3_NUMERAL_AST || Z3_is_algebraic_number(c, a)"
   (c context)
   (a ast)
@@ -806,7 +806,7 @@ Z3 will return the same pointer twice.
 
 (defcfun "Z3_get_numeral_small" :bool
   "Translate a numeral value into as a pair of 64 bit numbers if the representation fits.
-   Return \c true if the numeral value fits in 64 bit numerals, \c false otherwise.
+   Return true if the numeral value fits in 64 bit numerals, false otherwise.
    \pre Z3_get_ast_kind(a) == Z3_NUMERAL_AST"
   (c context)
   (a ast)
@@ -815,7 +815,7 @@ Z3 will return the same pointer twice.
 
 (defcfun "Z3_get_numeral_int" :bool
   "Similar to #Z3_get_numeral_string, but only succeeds if
-   the value can fit in a machine int. Return \c true if the call succeeded.
+   the value can fit in a machine int. Return true if the call succeeded.
    \pre Z3_get_ast_kind(c, v) == Z3_NUMERAL_AST"
   (c context)
   (v ast)
@@ -823,7 +823,7 @@ Z3 will return the same pointer twice.
 
 (defcfun "Z3_get_numeral_uint" :bool
   "Similar to #Z3_get_numeral_string, but only succeeds if
-   the value can fit in a machine unsigned int. Return \c true if the call succeeded.
+   the value can fit in a machine unsigned int. Return true if the call succeeded.
    \pre Z3_get_ast_kind(c, v) == Z3_NUMERAL_AST"
   (c context)
   (v ast)
@@ -831,7 +831,7 @@ Z3 will return the same pointer twice.
 
 (defcfun "Z3_get_numeral_uint64" :bool
   "Similar to #Z3_get_numeral_string, but only succeeds if
-   the value can fit in a machine uint64. Return \c true if the call succeeded.
+   the value can fit in a machine uint64. Return true if the call succeeded.
    \pre Z3_get_ast_kind(c, v) == Z3_NUMERAL_AST"
   (c context)
   (v ast)
@@ -839,7 +839,7 @@ Z3 will return the same pointer twice.
 
 (defcfun "Z3_get_numeral_int64" :bool
   "Similar to #Z3_get_numeral_string, but only succeeds if
-   the value can fit in a machine int64. Return \c true if the call succeeded.
+   the value can fit in a machine int64. Return true if the call succeeded.
    \pre Z3_get_ast_kind(c, v) == Z3_NUMERAL_AST"
   (c context)
   (v ast)
@@ -847,7 +847,7 @@ Z3 will return the same pointer twice.
 
 (defcfun "Z3_get_numeral_rational_int64" :bool
   "Similar to #Z3_get_numeral_string, but only succeeds if
-   the value can fit as a rationalnumber as machine int64_t int. Return \c true if the call succeeded.
+   the value can fit as a rationalnumber as machine int64_t int. Return true if the call succeeded.
    \pre Z3_get_ast_kind(c, v) == Z3_NUMERAL_AST"
   (c context)
   (v ast)
@@ -893,24 +893,24 @@ Z3 will return the same pointer twice.
   (v :pointer)) ;; output parameter ast*
 
 (defcfun "Z3_model_get_const_interp" ast
-  "Return the interpretation (i.e., assignment) of constant \c a in the model \c m.
-   Return \c NULL, if the model does not assign an interpretation for \c a.
-   That should be interpreted as: the value of \c a does not matter.
+  "Return the interpretation (i.e., assignment) of constant `a` in the model `m`.
+   Return NULL, if the model does not assign an interpretation for `a`.
+   That should be interpreted as: the value of `a` does not matter.
    \pre Z3_get_arity(c, a) == 0"
   (c context)
   (m model)
   (a func-decl))
 
 (defcfun "Z3_model_has_interp" :bool
-  "Test if there exists an interpretation (i.e., assignment) for \c a in the model \c m."
+  "Test if there exists an interpretation (i.e., assignment) for `a` in the model `m`."
   (c context)
   (m model)
   (a func-decl))
 
 (defcfun "Z3_model_get_func_interp" func-interp
-  "Return the interpretation of the function \c f in the model \c m.
-   Return \c NULL, if the model does not assign an interpretation for \c f.
-   That should be interpreted as: the \c f does not matter.
+  "Return the interpretation of the function `f` in the model `m`.
+   Return NULL, if the model does not assign an interpretation for `f`.
+   That should be interpreted as: the `f` does not matter.
    \pre Z3_get_arity(c, f) > 0"
   (c context)
   (m model)
@@ -971,13 +971,13 @@ Z3 will return the same pointer twice.
 
 (defcfun "Z3_is_as_array" :bool
   "The \ccode{(_ as-array f)} AST node is a construct for assigning interpretations for arrays in Z3.
-   It is the array such that forall indices \c i we have that \ccode{(select (_ as-array f) i)} is equal to \ccode{(f i)}.
-   This procedure returns \c true if the \c a is an \c as-array AST node."
+   It is the array such that forall indices `i` we have that \ccode{(select (_ as-array f) i)} is equal to \ccode{(f i)}.
+   This procedure returns true if the `a` is an `as-array` AST node."
   (c context)
   (a ast))
 
 (defcfun "Z3_get_as_array_func_decl" func-decl
-  "Return the function declaration \c f associated with a \ccode{(_ as_array f)} node."
+  "Return the function declaration `f` associated with a \ccode{(_ as_array f)} node."
   (c context)
   (a ast))
 
@@ -1010,7 +1010,7 @@ Z3 will return the same pointer twice.
   "Return the number of entries in the given function interpretation.
    A function interpretation is represented as a finite map and an 'else' value.
    Each entry in the finite map represents the value of a function given a set of arguments.
-   This procedure return the number of element in the finite map of \c f."
+   This procedure return the number of element in the finite map of `f`."
   (c context)
   (f func-interp))
 
@@ -1062,7 +1062,7 @@ Z3 will return the same pointer twice.
 
 (defcfun "Z3_func_entry_get_value" ast
   "Return the value of this point.
-   A \c Z3_func_entry object represents an element in the finite map used to encode
+   A Z3_func_entry object represents an element in the finite map used to encode
    a function interpretation."
   (c context)
   (e func-entry))
@@ -1073,7 +1073,7 @@ Z3 will return the same pointer twice.
   (e func-entry))
 
 (defcfun "Z3_func_entry_get_arg" ast
-  "Return an argument of a \c Z3_func_entry object.
+  "Return an argument of a Z3_func_entry object.
    \pre i < Z3_func_entry_get_num_args(c, e)"
   (c context)
   (e func-entry)
@@ -1097,8 +1097,8 @@ Z3 will return the same pointer twice.
 
 (defcfun "Z3_toggle_warning_messages" :void
   "Enable/disable printing warning messages to the console.
-   Warnings are printed after passing \c true, warning messages are
-   suppressed after calling this method with \c false."
+   Warnings are printed after passing true, warning messages are
+   suppressed after calling this method with false."
   (enabled :bool))
 
 ;; String conversion
@@ -1208,10 +1208,10 @@ So, the buffer is invalidated in the next call to \c Z3_benchmark_to_smtlib_stri
 #-z3-safe-errors
 (defcfun "Z3_set_error_handler" :void
   "Register a Z3 error handler.
-   A call to a Z3 function may return a non \c Z3_OK error code, when
+   A call to a Z3 function may return a non Z3_OK error code, when
    it is not used correctly.  An error handler can be registered
    and will be called in this case.  To disable the use of the
-   error handler, simply register with \c h=NULL.
+   error handler, simply register with `h=NULL`.
    \warning Log files, created using #Z3_open_log, may be potentially incomplete/incorrect if error handlers are used."
   (c context)
   (h :pointer)) ;; function pointer of type Z3_error_handler
@@ -1286,13 +1286,13 @@ If the formula \c a is \c true, then nothing is added.
 If the formula \c a is \c false, then the entire goal is replaced by the formula \c false.
 |#
 (defcfun "Z3_goal_assert" :void
-  "Add a new formula \c a to the given goal."
+  "Add a new formula `a` to the given goal."
   (c context)
   (g goal)
   (a ast))
 
 (defcfun "Z3_goal_inconsistent" :bool
-  "Return \c true if the given goal contains the formula \c false."
+  "Return true if the given goal contains the formula false."
   (c context)
   (g goal))
 
@@ -1333,7 +1333,7 @@ If the formula \c a is \c false, then the entire goal is replaced by the formula
   (g goal))
 
 (defcfun "Z3_goal_translate" goal
-  "Copy a goal \c g from the context \c source to the context \c target."
+  "Copy a goal `g` from the context `source` to the context `target`."
   (source context)
   (g goal)
   (target context))
@@ -1533,8 +1533,8 @@ that are not selected for interrupts are left alone.
   (a ast))
 
 (defcfun "Z3_solver_assert_and_track" :void
-  "Assert a constraint \c a into the solver, and track it (in the unsat) core using
-   the Boolean constant \c p."
+  "Assert a constraint `a` into the solver, and track it (in the unsat) core using
+   the Boolean constant `p`."
   #|
   This API is an alternative to #Z3_solver_check_assumptions for extracting unsat cores.
   Both APIs can be used in the same solver. The unsat core will contain a combination
@@ -1648,7 +1648,7 @@ that are not selected for interrupts are left alone.
   (consequences ast-vector)) ;; provide a new ast_vector. It will be modified during execution.
 
 (defcfun "Z3_solver_cube" ast-vector
-  "Extract a next cube for a solver. The last cube is the constant \c true or \c false.
+  "Extract a next cube for a solver. The last cube is the constant true or false.
    The number of (non-constant) cubes is by default 1. For the sat solver cubing is controlled
    using parameters sat.lookahead.cube.cutoff and sat.lookahead.cube.fraction."
   #|
@@ -1670,7 +1670,7 @@ that are not selected for interrupts are left alone.
 (defcfun "Z3_solver_get_model" model
   "Retrieve the model for the last #Z3_solver_check or #Z3_solver_check_assumptions
    The error handler is invoked if a model is not available because
-   the commands above were not invoked for the given solver, or if the result was \c Z3_L_FALSE."
+   the commands above were not invoked for the given solver, or if the result was Z3_L_FALSE."
   (c context)
   (s solver))
 
@@ -1678,13 +1678,13 @@ that are not selected for interrupts are left alone.
   "Retrieve the proof for the last #Z3_solver_check or #Z3_solver_check_assumptions
    The error handler is invoked if proof generation is not enabled,
    or if the commands above were not invoked for the given solver,
-   or if the result was different from \c Z3_L_FALSE."
+   or if the result was different from Z3_L_FALSE."
   (c context)
   (s solver))
 
 (defcfun "Z3_solver_get_unsat_core" ast-vector
   "Retrieve the unsat core for the last #Z3_solver_check_assumptions
-   The unsat core is a subset of the assumptions \c a."
+   The unsat core is a subset of the assumptions `a`."
   #|
   By default, the unsat core will not be minimized. Generation of a minimized
   unsat core can be enabled via the `"sat.core.minimize"` and `"smt.core.minimize"`
@@ -1720,3 +1720,7 @@ that are not selected for interrupts are left alone.
 
 ;; Statistics
 
+(defcfun "Z3_stats_to_string" :string
+  "Convert a statistics into a string."
+  (c context)
+  (s stats))

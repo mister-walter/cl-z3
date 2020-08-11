@@ -27,6 +27,9 @@
           do (setf (cffi:mem-aref array ',array-ty i) ,ith-val))
     ,body))
 
+;; TODO: arbitrary arity fns should have >=0 args
+;; TODO: use a table-like thing similar to what we did in Pete's special topics course
+;; so we don't have to list out every variable arity function...
 (defun convert-funccall-to-ast (context stmt &optional types)
   (match stmt
          ((list (or '= 'equal '==) x y)

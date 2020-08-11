@@ -23,6 +23,7 @@
    (:file "ast")
    (:file "model")
    (:file "solver")
+   (:file "api")
    ))
 
 (defsystem "lisp-z3"

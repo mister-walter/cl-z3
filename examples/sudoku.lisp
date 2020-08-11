@@ -7,6 +7,7 @@
 
 (in-package :z3-sudoku)
 
+;; This is a built-in Z3 function
 (import 'z3::(distinct))
 
 (defun idx-to-cell-symbol (idx)
@@ -85,7 +86,7 @@
     _ _ _   1 _ _   7 _ _
     2 _ 4   _ _ 3   1 _ _))
 
-(solve-grid a-hard-sudoku-grid)
+(time (solve-grid a-hard-sudoku-grid))
 
 (defconstant a-very-hard-sudoku-grid
   '(_ _ _   _ _ _   _ 1 2
@@ -100,7 +101,91 @@
     9 _ _   _ 4 _   5 _ _
     4 7 _   _ _ 6   _ _ _))
 
-(solve-grid a-very-hard-sudoku-grid)
+(time (solve-grid a-very-hard-sudoku-grid))
+
+;; Some experimentation.
+;; Pete suggested we try these grids. Note that they are symmetric
+;; problems, but they vary significantly in runtime.
+(defconstant only-first-row-defined-grid
+  '(1 2 3   4 5 6   7 8 9
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _
+
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _
+
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _))
+
+;; ~18s
+(time (solve-grid only-first-row-defined-grid))
+
+(defconstant only-first-col-defined-grid
+  '(1 _ _   _ _ _   _ _ _
+    2 _ _   _ _ _   _ _ _
+    3 _ _   _ _ _   _ _ _
+
+    4 _ _   _ _ _   _ _ _
+    5 _ _   _ _ _   _ _ _
+    6 _ _   _ _ _   _ _ _
+
+    7 _ _   _ _ _   _ _ _
+    8 _ _   _ _ _   _ _ _
+    9 _ _   _ _ _   _ _ _))
+
+;; ~28s
+(time (solve-grid only-first-col-defined-grid))
+
+(defconstant only-diag-defined-grid
+  '(1 _ _   _ _ _   _ _ _
+    _ 2 _   _ _ _   _ _ _
+    _ _ 3   _ _ _   _ _ _
+
+    _ _ _   4 _ _   _ _ _
+    _ _ _   _ 5 _   _ _ _
+    _ _ _   _ _ 6   _ _ _
+
+    _ _ _   _ _ _   7 _ _
+    _ _ _   _ _ _   _ 8 _
+    _ _ _   _ _ _   _ _ 9))
+
+;; ~15s
+(time (solve-grid only-diag-defined-grid))
+
+(defconstant only-first-row-defined-reverse-grid
+  '(9 8 7   6 5 4   3 2 1
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _
+
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _
+
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _))
+
+;; ~40s
+(time (solve-grid only-first-row-defined-reverse-grid))
+
+(defconstant blank-sudoku-grid
+  '(_ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _
+
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _
+
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _
+    _ _ _   _ _ _   _ _ _))
+
+;; slooow. This is difficult for Z3 because it may need to do a ton of backtracking
+;; Maybe would be faster if we represented cells as an enumerated type/finite domain rather than integers.
+;;(time (solve-grid only-first-col-defined-grid))
 
 ;; Don't worry about the pretty-print definitions below, just some 
 ;; TODO: I'm sure there's a way to do this using just (format) and macros.

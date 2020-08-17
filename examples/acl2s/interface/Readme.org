@@ -1,0 +1,63 @@
+* ACL2s
+  
+The ACL2 Sedan theorem prover (ACL2s) is an extension of ACL2
+that provides 
+
+- a powerful termination analysis engine,
+- a data definition framework for defining arbitrary types,
+- a contract-based function definition framework,
+- a seamlessly integrated bug-finding framework
+- a property-based design and development framework, and 
+- a modern integrated development environment, using Eclipse.
+
+* Building ACL2s
+
+To build ACL2s, use the following instructions.
+
+ - Install a LISP compiler. I  use SBCL via git and configure SBCL as follows.
+#+BEGIN_SRC
+sh make.sh --without-immobile-space --without-immobile-code --without-compact-instance-header --fancy --dynamic-space-size=4Gb`
+#+END_SRC
+ - Download acl2 on git and build it using your LISP compiler, as per
+   the ACL2 instructions. 
+ - For who want to see updates to ACL2s right away and for those who
+   are modifying the ACL2s books in the ACL2 repository, please use
+   the testing-acl2s branch. Master will be more stable, but expect it
+   to be about a day behing the testing-acl2s branch.
+ - Read the doc topic on [[https://www.cs.utexas.edu/~ragerdl/acl2-manual/index.html?topic=ACL2____0._02Preliminaries][cert.pl]] from the ACL2 webpage and configure
+   your installation as instructed.
+ - Run the script "gen-acl2s.sh" in the scripts directory of this
+   repository. It will create the acl2s executable and the acl2.core
+   in the directory from which the script is invoked.
+ - For scripts (such as the above) to work, you must set the following
+   variables, say in your .bashrc, as: 
+    #+BEGIN_SRC 
+    export ACL2_SYSTEM_BOOKS={PATH_TO_ACL2_REPO}/books 
+    export ACL2S_DIR={PATH_TO_THIS_REPO}
+    export SBCL_DIR={PATH_TO_SBCL_REPO}
+    export ACL2_LISP=sbcl
+    #+END_SRC
+
+To build a local copy of the manual, which is very useful for working
+offline, run the script "gen-manual.sh" in the scripts directory of
+this repository. This takes a while, which is why we do not build it
+as part of the ACL2s build process.
+
+* ACL2s with emacs
+
+You can now run the generated acl2s executable in an emacs shell
+buffer.  You can find keybindings in emacs/emacs-acl2.el in the acl2
+git repo.
+
+* Rebuilding ACL2s
+
+When ACL2s and/or ACL2 libraries are subsequently updated, just run
+the "gen-acl2s.sh" script again to generate an updated acl2s executable.
+
+When ACL2 is subsequently updated, you can rebuild ACL2 using the
+"clean-gen-acl2.sh" script. To rebuild ACL2 and ACL2s, 
+use "clean-gen-acl2-acl2s.sh" script.
+
+It is also a good idea to update your underlying LISP compiler every
+once in a while. See the "rebuild-sbcl.sh" script.
+

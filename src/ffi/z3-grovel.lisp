@@ -3,9 +3,25 @@
 (pushnew (truename "/home/drew/lisp-z3/") ql:*local-project-directories* )
 (ql:register-local-projects)
 (ql:quickload :lisp-z3)
+
+You may need to 
+
+1) update your CPATH environment variable to include the directory
+where z3.h is included and
+
+2) update your LD_LIBRARY_PATH environment variable to include the
+directory where your libz3.dylib or libz3.so file is i
+
+For example in my .bashrc file I have:
+
+export CPATH=$HOME/bin/include
+export LD_LIBRARY_PATH=$HOME/bin/lib
+
 |#
 (in-package :z3-c-types)
 
+; Better to use environment variables; see above.
+; (cc-flags "-I /Users/pete/bin/include/")
 (include "z3.h")
 
 (feature z3-safe-errors "SAFE_ERRORS")

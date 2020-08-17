@@ -18,10 +18,11 @@
          ((type list) (convert-funccall-to-ast context stmt types))
          (otherwise (error "Value ~S is of an unsupported type." stmt))))
 
-(defun convert-to-ast (context stmt &optional types)
-  (make-instance 'ast
-                 :handle (convert-to-ast-fn context stmt types)
-                 :context context))
+(defun convert-to-ast (stmt &optional types context)
+  (let* ((ctx (or context *default-context*)))
+    (make-instance 'ast
+                   :handle (convert-to-ast-fn ctx stmt types)
+                   :context ctx)))
 
 (defmacro with-foreign-array (array-ty array-len ith-val body)
   `(cffi:with-foreign-object

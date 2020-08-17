@@ -41,18 +41,18 @@
   (let* ((slv (or solver *default-solver*))
          (ctx (get-context slv)))
     (solver-assert slv
-                   (convert-to-ast ctx
-                                   stmt
-                                   (make-var-decls-fn var-decls ctx)))))
+                   (convert-to-ast stmt
+                                   (make-var-decls-fn var-decls ctx)
+                                   ctx))))
 
 (defmacro z3-assert (var-decls stmt &optional solver)
   (when (oddp (length var-decls)) (error "Each declared variable must have a type."))
   `(let* ((slv (or ,solver *default-solver*))
           (ctx (get-context slv)))
      (solver-assert slv
-                  (convert-to-ast ctx
-                                  ',stmt
-                                  (make-var-decls ,var-decls ctx)))))
+                    (convert-to-ast ',stmt
+                                    (make-var-decls ,var-decls ctx)
+                                    ctx))))
 
 (defun get-model (&optional solver)
   "Get the model object for the last solver-check[-assumptions] call.

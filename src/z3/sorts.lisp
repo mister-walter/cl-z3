@@ -162,3 +162,113 @@
           (error "Tried to get enum value of non-enum sort ~S" sort-name)
         (car (rassoc decl (enum-sort-metadata-consts metadata)))))))
 
+;;;; Named tuple types
+
+;; WARNING/TODO: When a new context is created after register-tuple-sort has been called, the tuple sorts will NOT exist in the new context.
+;; One must make the relevant register-tuple-sort calls again.
+;; I've tried to check for incorrect usage in a few places, but I'm sure I missed something.
+
+(defstruct tuple-sort-metadata
+  (sort)
+  (field-names)
+  (field-sorts)
+  (constructor)
+  (field-accessors))
+
+(defvar *tuple-sort-metadata* (make-hash-table))
+
+(defun register-tuple-sort-fn (name fields ctx)
+  "Register an enum sort with the given name and elements in the given context."
+  ;; fields should be an alist of symbol->sortlike
+  (let ((n-fields (length fields)))
+    (cffi:with-foreign-objects
+     ((field-names 'z3-c-types::Z3_symbol n-fields) ;; input
+      (field-sorts 'z3-c-types::Z3_sort n-fields)
+      (constructor-decl 'z3-c-types::Z3_func_decl) ;; output
+      (projection-decls 'z3-c-types::Z3_func_decl n-fields)) ;; output
+     (loop for (field-name . field-sort) in fields
+           for i below n-fields
+           do (setf (cffi:mem-aref field-names 'z3-c-types::Z3_symbol i)
+                    (z3-mk-string-symbol ctx (write-to-string field-name))) ;; TODO maybe name the fields more like `,name/,field-name`
+           do (setf (cffi:mem-aref field-sorts 'z3-c-types::Z3_sort i)
+                    (get-sort field-sort ctx)))
+     (let ((sort (z3-mk-tuple-sort ctx
+                                   (z3-mk-string-symbol ctx (write-to-string name))
+                                   n-fields
+                                   field-names
+                                   field-sorts
+                                   constructor-decl
+                                   projection-decls)))
+       (setf (gethash name *tuple-sort-metadata*)
+             (make-tuple-sort-metadata :sort sort
+                                       :field-names (mapcar #'car fields)
+                                       :field-sorts (foreign-array-to-list field-sorts 'z3-c-types::Z3_sort n-fields) ;; TODO why not just make this list earlier and use it to build the foreign array?
+                                       :constructor (cffi:mem-ref constructor-decl 'z3-c-types::Z3_func_decl)
+                                       :field-accessors (mapcar #'cons (mapcar #'car fields) (foreign-array-to-list projection-decls 'z3-c-types::Z3_func_decl n-fields)))))))
+  (register-sort name (lambda (context)
+                        (if (not (equal context ctx))
+                            (error "Attempting to use tuple type ~S outside of the context in which it is defined.~%You need to call the relevant (register-tuple-sort ...) form again in the current context." name)
+                          (tuple-sort-metadata-sort (gethash name *tuple-sort-metadata*))))))
+
+(defmacro register-tuple-sort (name fields &optional context)
+  `(let ((ctx (or ,context *default-context*)))
+     (register-tuple-sort-fn ',name ',fields ctx)))
+
+(defun tuple-sort? (sort context)
+  "Determine if the given sort corresponds to a registered tuple sort."
+  (let ((sort-name (read-from-string (sort-name sort context))))
+    (multiple-value-bind (_ exists?)
+        (gethash sort-name *tuple-sort-metadata*)
+      (declare (ignore _))
+      exists?)))
+
+
+(defun get-tuple-fields (sort app context)
+  "Given a application corresponding to the construction of a tuple value, return the AST values of the fields of the"
+  (let* ((sort-name (read-from-string (sort-name sort context))))
+    (multiple-value-bind (metadata exists?)
+        (gethash sort-name *tuple-sort-metadata*)
+      (cond ((not exists?)
+             (error "Tried to get tuple value of non-tuple sort ~S" sort-name))
+            ((not (equal (length (tuple-sort-metadata-field-names metadata))
+                         (z3-get-app-num-args context app))) (error "Incorrect number of arguments passed to tuple constructor."))
+            (t (loop for name in (tuple-sort-metadata-field-names metadata)
+                     for i below (length (tuple-sort-metadata-field-names metadata))
+                     collect (cons name (z3-get-app-arg context app i))))))))
+
+(defmacro with-foreign-array-from-list (name array-ty list &rest body)
+  `(let ((l ,list))
+     (cffi:with-foreign-object
+      (,name ',array-ty (length l))
+      (loop for elt in l
+            for i below (length l)
+            do (setf (cffi:mem-aref ,name ',array-ty i) elt))
+      ,@body)))
+
+(defun construct-tuple-fn (tuple-name values context &optional types)
+  "Make an AST node that constructs a value of the given tuple with the given field values.
+   Field values must be provided in the same order as they were defined in the register-tuple-sort call for this tuple sort."
+  ;; TODO: write a version of this function that takes in an alist of field-name -> field-value
+  ;; such a function would be able to catch errors more effectively
+  (multiple-value-bind (metadata exists?)
+      (gethash tuple-name *tuple-sort-metadata*)
+    (cond ((not exists?) (error "~S does not name a tuple sort." tuple-name))
+          ((not (equal (length values) (length (tuple-sort-metadata-field-names metadata))))
+           (error "Incorrect number of arguments provided to constructor for ~S: ~S provided, ~S required."
+                  tuple-name (length values) (length (tuple-sort-metadata-field-names metadata))))
+          (t (with-foreign-array-from-list values-array z3-c-types::Z3_ast values
+                                           (z3-mk-app context (tuple-sort-metadata-constructor metadata) (length values) values-array))))))
+
+(defun get-tuple-field-accessor-decl-fn (tuple-name field-name context)
+  (multiple-value-bind (metadata exists?)
+      (gethash tuple-name *tuple-sort-metadata*)
+    (cond ((not exists?) (error "~S does not name a tuple sort." tuple-name))
+          ((not (member field-name (tuple-sort-metadata-field-names metadata)))
+           (error "Tuple ~S does not contain a field with name ~S.~%Valid field names are ~S." tuple-name field-name (tuple-sort-metadata-field-names metadata)))
+          (t (cdr (assoc field-name (tuple-sort-metadata-field-accessors metadata)))))))
+
+(defun construct-tuple-field-accessor-fn (tuple-name field-name tuple-value context)
+  "Make an AST node that accesses the given field of the given tuple-value."
+  (with-foreign-array-from-list args-array z3-c-types::Z3_ast
+                                (list tuple-value)
+                                (z3-mk-app context (get-tuple-field-accessor-decl-fn tuple-name field-name context) 1 args-array)))

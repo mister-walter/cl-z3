@@ -856,10 +856,28 @@ Z3 will return the same pointer twice.
 
 ;; ...
 
+(defcfun "Z3_app_to_ast" ast
+  "Convert a `Z3_app` into `Z3_ast`. This is just type casting."
+  (c context)
+  (a app))
+
 (defcfun "Z3_get_app_decl" func-decl
   "Return the declaration of a constant or function application."
   (c context)
   (a app))
+
+(defcfun "Z3_get_app_num_args" :uint
+  "Return the number of argument of an application. If the func-decl
+   is an constant, then the number of arguments is 0."
+  (c context)
+  (a app))
+
+(defcfun "Z3_get_app_arg" ast
+  "Return the i-th argument of the given application.
+   \pre i < Z3_get_app_num_args(c, a)"
+  (c context)
+  (a app)
+  (i :uint))
 
 ;; ...
 

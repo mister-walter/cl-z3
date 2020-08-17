@@ -15,6 +15,11 @@
           (finite-domain-value-to-ast name val context))
          ((list 'enumval name val)
           (enum-value-to-ast name val context))
+         ((list* 'tuple-val tuple-name field-values)
+          (construct-tuple-fn tuple-name (mapcar (lambda (value) (convert-to-ast-fn context value types)) field-values) context types))
+         ((list 'tuple-get tuple-name field-name value)
+          (construct-tuple-field-accessor-fn tuple-name field-name
+                                             (convert-to-ast-fn context value types) context))
          ((type list) (convert-funccall-to-ast context stmt types))
          (otherwise (error "Value ~S is of an unsupported type." stmt))))
 
@@ -113,6 +118,10 @@
                      (:OP_FALSE nil)
                      (:OP_DT_CONSTRUCTOR
                       (cond ((enum-sort? sort ctx) (get-enum-value sort decl ctx))
+                            ((tuple-sort? sort ctx)
+                             (list 'quote (cons (cons :type (sort-name sort ctx))
+                                                (loop for field in (get-tuple-fields sort (z3-to-app ctx ast) ctx)
+                                                      collect (cons (car field) (ast-to-value (cdr field)))))))
                             (t (error "We don't support custom datatypes like ~S yet." (sort-name sort context)))))
                      (otherwise (error "Application ASTs for functions with decl-kind ~S are not supported." (z3-get-decl-kind ctx decl))))))
            (:numeral_ast

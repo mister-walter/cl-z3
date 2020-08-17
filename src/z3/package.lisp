@@ -5,5 +5,6 @@
   (:import-from :cffi :translate-to-foreign)
   (:export #:solver-init #:solver-push #:solver-pop
            #:z3-assert #:check-sat
-           #:register-finite-domain-sort #:register-enum-sort
+           #:convert-to-ast #:ast-to-value
+           #:register-finite-domain-sort #:register-enum-sort #:register-tuple-sort
            #:*default-context* #:*default-solver*))

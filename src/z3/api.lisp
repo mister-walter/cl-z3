@@ -11,6 +11,10 @@
         (loop for (var ty) on decls by #'cddr
               collect `(cons ',var (get-sort ,ty ,context)))))
 
+(defun make-var-decls-fn (decls context)
+  (loop for (var ty) on decls by #'cddr
+        collect (cons var (get-sort ty context))))
+
 ;;(make-var-decls (x :int y :bool) ctx)
 
 (defun solver-init ()
@@ -31,6 +35,15 @@
   (let* ((slv (or solver *default-solver*))
          (ctx (get-context slv)))
     (z3-solver-reset ctx slv)))
+
+(defun z3-assert-fn (var-decls stmt &optional solver)
+  (when (oddp (length var-decls)) (error "Each declared variable must have a type."))
+  (let* ((slv (or solver *default-solver*))
+         (ctx (get-context slv)))
+    (solver-assert slv
+                   (convert-to-ast ctx
+                                   stmt
+                                   (make-var-decls-fn var-decls ctx)))))
 
 (defmacro z3-assert (var-decls stmt &optional solver)
   (when (oddp (length var-decls)) (error "Each declared variable must have a type."))

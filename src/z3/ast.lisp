@@ -2,6 +2,15 @@
 
 (import 'z3-c-types::(Z3_ast))
 
+;; Create a C array over elements of the given type and with the given length
+(defmacro with-foreign-array (array-ty array-len ith-val body)
+  `(cffi:with-foreign-object
+    (array ',array-ty ,array-len)
+    (loop for arg in args
+          for i upto (1- ,array-len)
+          do (setf (cffi:mem-aref array ',array-ty i) ,ith-val))
+    ,body))
+
 (defun convert-to-ast-fn (context stmt &optional types)
   (match stmt
          (t (z3-mk-true context))
@@ -20,6 +29,15 @@
          ((list (sym-name tuple-get) tuple-name field-name value)
           (construct-tuple-field-accessor-fn tuple-name field-name
                                              (convert-to-ast-fn context value types) context))
+         ((list* (sym-name bv) args)
+          (let ((converted-args
+                 (cond ((every #'(lambda (arg) (typep arg 'boolean)) args)
+                        args)
+                       ((every #'(lambda (arg) (or (eql arg 0) (eql arg 1))) args)
+                        (mapcar #'(lambda (arg) (= arg 1)) args))
+                       (otherwise (error "You must provide either a list of booleans or a list of (0,1)s to bv.")))))
+            (with-foreign-array :bool (length args) arg
+                                (z3-mk-bv-numeral context (length args) array))))
          ((type list) (convert-funccall-to-ast context stmt types))
          (otherwise (error "Value ~S is of an unsupported type." stmt))))
 
@@ -28,14 +46,6 @@
     (make-instance 'ast
                    :handle (convert-to-ast-fn ctx stmt types)
                    :context ctx)))
-
-(defmacro with-foreign-array (array-ty array-len ith-val body)
-  `(cffi:with-foreign-object
-    (array ',array-ty ,array-len)
-    (loop for arg in args
-          for i upto (1- ,array-len)
-          do (setf (cffi:mem-aref array ',array-ty i) ,ith-val))
-    ,body))
 
 ;; TODO: arbitrary arity fns should have >=0 args
 ;; TODO: use a table-like thing similar to what we did in Pete's special topics course
@@ -103,7 +113,167 @@
           (z3-mk-ge context
                     (convert-to-ast-fn context x types)
                     (convert-to-ast-fn context y types)))
+         ((list (sym-name bvnot) x)
+           (z3-mk-bvnot context
+                        (convert-to-ast-fn context x types)))
+         ((list (sym-name bvredand) x)
+          (z3-mk-bvredand context
+                          (convert-to-ast-fn context x types)))
+         ((list (sym-name bvredor) x)
+          (z3-mk-bvredor context
+                         (convert-to-ast-fn context x types)))
+         ((list (sym-name bvand) x y)
+          (z3-mk-bvand context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvor) x y)
+          (z3-mk-bvor context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvxor) x y)
+          (z3-mk-bvxor context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvnand) x y)
+          (z3-mk-bvnand context
+                        (convert-to-ast-fn context x types)
+                        (convert-to-ast-fn context y types)))
+         ((list (sym-name bvnor) x y)
+          (z3-mk-bvnor context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvxnor) x y)
+          (z3-mk-bvxnor context
+                        (convert-to-ast-fn context x types)
+                        (convert-to-ast-fn context y types)))
+         ((list (sym-name bvneg) x)
+          (z3-mk-bvneg context
+                       (convert-to-ast-fn context x types)))
+         ((list (sym-name bvadd) x y)
+          (z3-mk-bvadd context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvsub) x y)
+          (z3-mk-bvsub context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvmul) x y)
+          (z3-mk-bvmul context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvudiv) x y)
+          (z3-mk-bvudiv context
+                        (convert-to-ast-fn context x types)
+                        (convert-to-ast-fn context y types)))
+         ((list (sym-name bvsdiv) x y)
+          (z3-mk-bvsdiv context
+                        (convert-to-ast-fn context x types)
+                        (convert-to-ast-fn context y types)))
+         ((list (sym-name bvurem) x y)
+          (z3-mk-bvurem context
+                        (convert-to-ast-fn context x types)
+                        (convert-to-ast-fn context y types)))
+         ((list (sym-name bvsmod) x y)
+          (z3-mk-bvsmod context
+                        (convert-to-ast-fn context x types)
+                        (convert-to-ast-fn context y types)))
+         ((list (sym-name bvult) x y)
+          (z3-mk-bvult context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvslt) x y)
+          (z3-mk-bvslt context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvule) x y)
+          (z3-mk-bvule context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvsle) x y)
+          (z3-mk-bvule context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvugt) x y)
+          (z3-mk-bvugt context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvsgt) x y)
+          (z3-mk-bvsgt context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvuge) x y)
+          (z3-mk-bvuge context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvsge) x y)
+          (z3-mk-bvuge context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+                  ((list (sym-name bvult) x y)
+          (z3-mk-bvult context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvslt) x y)
+          (z3-mk-bvslt context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvule) x y)
+          (z3-mk-bvule context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name concat) x y)
+          (z3-mk-concat context
+                        (convert-to-ast-fn context x types)
+                        (convert-to-ast-fn context y types)))
+         ((list (sym-name extract) x hi lo)
+          (z3-mk-extract context
+                         hi
+                         lo
+                         (convert-to-ast-fn context x types)))
+         ((list (sym-name signext) x len)
+          (z3-mk-sign-ext context
+                          len
+                          (convert-to-ast-fn context x types)))
+         ((list (sym-name zeroext) x len)
+          (z3-mk-zero-ext context
+                          len
+                          (convert-to-ast-fn context x types)))
+         ((list (sym-name repeat) x maxlen)
+          (z3-mk-repeat context
+                        maxlen
+                        (convert-to-ast-fn context x types)))
+         ((list (sym-name bvshl) x y)
+          (z3-mk-bvshl context
+                       (convert-to-ast-fn context x types)
+                       (convert-to-ast-fn context y types)))
+         ((list (sym-name bvlshr) x y)
+          (z3-mk-bvlshr context
+                        (convert-to-ast-fn context x types)
+                        (convert-to-ast-fn context y types)))
+         ((list (sym-name bvashr) x y)
+          (z3-mk-bvashr context
+                        (convert-to-ast-fn context x types)
+                        (convert-to-ast-fn context y types)))
+         ((list (sym-name int2bv) x nbits)
+          (z3-mk-int2bv context
+                        nbits
+                        (convert-to-ast-fn context x types)))
+         ((list (sym-name bv2int) x signed?)
+          (z3-mk-bv2int context
+                        (convert-to-ast-fn context x types)
+                        signed?))
          (otherwise (error "Value ~S is of an unsupported type." stmt))))
+
+;; written by edgar-rft, https://www.lispforum.com/viewtopic.php?f=2&t=1205#p6269
+(defun integer->bit-vector (integer)
+  "Create a bit-vector from a positive integer."
+  (labels ((integer->bit-list (int &optional accum)
+             (cond ((> int 0)
+                    (multiple-value-bind (i r) (truncate int 2)
+                      (integer->bit-list i (push r accum))))
+                   ((null accum) (push 0 accum))
+                   (t accum))))
+    (coerce (integer->bit-list integer) 'bit-vector)))
 
 (defun ast-to-value (ast &optional context)
   (let* ((ctx (or context *default-context*))
@@ -126,16 +296,10 @@
                      (otherwise (error "Application ASTs for functions with decl-kind ~S are not supported." (z3-get-decl-kind ctx decl))))))
            (:numeral_ast
             (match sort-kind
-                   #|
-                   ;; Pretty sure this is impossible.
-                   (:bool_sort
-                    (match (z3-get-bool-value ctx ast)
-                           (:L_TRUE t)
-                           (:L_FALSE nil)
-                           (otherwise (error "Tried to get the boolean value of ast ~S but it wasn't true or false!" ast))))
-                   |#
                    ((or :int_sort :finite_domain_sort) (values (parse-integer (z3-get-numeral-string ctx ast))))
                    (:real_sort (/ (ast-to-value (z3-get-numerator ctx ast) ctx) (ast-to-value (z3-get-denominator ctx ast) ctx)))
+                   (:bv_sort
+                    (integer->bit-vector (parse-integer (z3-get-numeral-string ctx ast))))
                    (otherwise (error "Values with sort kind ~S are not currently supported." sort-kind))))
            (otherwise (error "ASTs of kind ~S are not currently supported." ast-kind)))))
 

@@ -30,7 +30,7 @@
           (construct-tuple-field-accessor-fn tuple-name field-name
                                              (convert-to-ast-fn context value types) context))
          ((list* (sym-name bv) args)
-          (let ((converted-args
+          (let ((args
                  (cond ((every #'(lambda (arg) (typep arg 'boolean)) args)
                         args)
                        ((every #'(lambda (arg) (or (eql arg 0) (eql arg 1))) args)

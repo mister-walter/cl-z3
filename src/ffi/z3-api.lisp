@@ -593,7 +593,548 @@ Z3 will return the same pointer twice.
 
 ;; Bit-vectors
 
-;; ...
+(defcfun "Z3_mk_bvnot" ast
+  "Bitwise negation.
+   The node `t1` must have a bit-vector sort."
+  (c context)
+  (t1 ast))
+
+(defcfun "Z3_mk_bvredand" ast
+  "Take conjunction of bits in vector, return vector of length 1.
+   The node `t1` must have a bit-vector sort."
+  (c context)
+  (t1 ast))
+
+(defcfun "Z3_mk_bvredor" ast
+  "Take disjunction of bits in vector, return vector of length 1.
+   The node `t1` must have a bit-vector sort."
+  (c context)
+  (t1 ast))
+
+(defcfun "Z3_mk_bvand" ast
+  "Bitwise and.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvor" ast
+  "Bitwise or.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvxor" ast
+  "Bitwise exclusive-or.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvnand" ast
+  "Bitwise nand.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvnor" ast
+  "Bitwise nor.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvxnor" ast
+  "Bitwise xnor.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvneg" ast
+  "Standard two's complement unary minus.
+   The node `t1` must have a bit-vector sort."
+  (c context)
+  (t1 ast))
+
+(defcfun "Z3_mk_bvadd" ast
+  "Standard two's complement addition.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvsub" ast
+  "Standard two's complement subtraction.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvmul" ast
+  "Standard two's complement multiplication.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvudiv" ast
+  "Unsigned division.
+   It is defined as the `floor` of `t1/t2` if `t2` is
+   different from zero. If `t2` is zero, then the result
+   is undefined.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvsdiv" ast
+  "Two's complement signed division.
+   It is defined in the following way:
+   - The `floor` of `t1/t2` if `t2` is different from zero, and `t1*t2 >= 0`.
+   - The `ceiling` of `t1/t2` if `t2` is different from zero, and `t1*t2 < 0`.
+   If `t2` is zero, then the result is undefined.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvurem" ast
+  "Unsigned remainder.
+   It is defined as `t1 - (t1 /u t2) * t2`, where `/u` represents unsigned division.
+   If `t2` is zero, then the result is undefined.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvsmod" ast
+  "Two's complement signed remainder (sign follows divisor).
+   If `t2` is zero, then the result is undefined.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvult" ast
+  "Unsigned less than.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvslt" ast
+  "Two's complement signed less than.
+   It abbreviates:
+        (or (and (= (extract[|m-1|:|m-1|] t1) bit1)
+                (= (extract[|m-1|:|m-1|] t2) bit0))
+            (and (= (extract[|m-1|:|m-1|] t1) (extract[|m-1|:|m-1|] t2))
+                (bvult t1 t2)))
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvule" ast
+  "Unsigned less than or equal to.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvsle" ast
+  "Two's complement signed less than or equal to.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvuge" ast
+  "Unsigned greater than or equal to.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvsge" ast
+  "Two's complement signed greater than or equal to.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvugt" ast
+  "Unsigned greater than.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvsgt" ast
+  "Two's complement signed greater than.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_concat" ast
+  "Concatenate the given bit-vectors.
+   The nodes `t1` and `t2` must have (possibly different) bit-vector sorts
+   The result is a bit-vector of size `n1+n2`, where `n1` (`n2`) is the size
+   of `t1` (`t2`)."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_extract" ast
+  "Extract the bits `high` down to `low` from a bit-vector of
+   size `m` to yield a new bit-vector of size `n`, where `n = high - low + 1`.
+   The node `t1` must have a bit-vector sort."
+  (c context)
+  (high :uint)
+  (low :uint)
+  (t1 ast))
+
+(defcfun "Z3_mk_sign_ext" ast
+  "Sign-extend of the given bit-vector to the (signed) equivalent bit-vector of
+   size `m+i`, where `m` is the size of the given bit-vector.
+   The node `t1` must have a bit-vector sort."
+  (c context)
+  (i :uint)
+  (t1 ast))
+
+(defcfun "Z3_mk_zero_ext" ast
+  "Extend the given bit-vector with zeros to the (unsigned) equivalent bit-vector 
+   of size `m+i`, where `m` is the size of the given bit-vector.
+   The node `t1` must have a bit-vector sort."
+  (c context)
+  (i :uint)
+  (t1 ast))
+
+(defcfun "Z3_mk_repeat" ast
+  "Repeat the given bit-vector up length `i`.
+   The node `t1` must have a bit-vector sort."
+  (c context)
+  (i :uint)
+  (t1 ast))
+
+(defcfun "Z3_mk_bvshl" ast
+  "Shift left.
+   It is equivalent to multiplication by `2^x` where `x` is the value of the
+   third argument.
+   NB. The semantics of shift operations varies between environments. This
+       definition does not necessarily capture directly the semantics of the
+       programming language or assembly architecture you are modeling.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvlshr" ast
+  "Logical shift right.
+   It is equivalent to unsigned division by `2^x` where `x` is the
+   value of the third argument.
+   NB. The semantics of shift operations varies between environments. This
+       definition does not necessarily capture directly the semantics of the
+       programming language or assembly architecture you are modeling.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvashr" ast
+  "Arithmetic shift right.
+   It is like logical shift right except that the most significant
+   bits of the result always copy the most significant bit of the
+   second argument.
+   NB. The semantics of shift operations varies between environments. This
+       definition does not necessarily capture directly the semantics of the
+       programming language or assembly architecture you are modeling.
+   The nodes `t1` and `t2` must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_rotate_left" ast
+  "Rotate bits of `t1` to the left `i` times.
+   The node `t1` must have a bit-vector sort."
+  (c context)
+  (i :uint)
+  (t1 ast))
+
+(defcfun "Z3_mk_rotate_right" ast
+  "Rotate bits of `t1` to the right `i` times.
+   The node `t1` must have a bit-vector sort."
+  (c context)
+  (i :uint)
+  (t1 ast))
+
+(defcfun "Z3_mk_ext_rotate_left" ast
+  "Rotate bits of `t1` to the left `t2` times.
+   The nodes `t1` and `t2`  must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_ext_rotate_right" ast
+  "Rotate bits of `t1` to the right `t2` times.
+   The nodes `t1` and `t2`  must have the same bit-vector sort."
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_int2bv" ast
+  "Create an `n` bit bit-vector from the integer argument `t1`.
+   The resulting bit-vector has `n` bits, where the i'th bit (counting
+   from 0 to `n-1`) is 1 if `(t1 div 2^i) mod 2` is 1.       
+   The node `t1` must have integer sort."
+  (c context)
+  (n :uint)
+  (t1 ast))
+
+(defcfun "Z3_mk_bv2int" ast
+  "Create an integer from the bit-vector argument `t1`
+   If `is_signed` is false, then the bit-vector `t1` is treated as unsigned.
+   So the result is non-negative and in the range `[0..2^N-1]`, where N are the number of bits in `t1`.
+   If `is_signed` is true, `t1` is treated as a signed bit-vector.    
+   The node `t1` must have a bit-vector sort."
+  (c context)
+  (t1 ast)
+  (is_signed :bool))
+
+(defcfun "Z3_mk_bvadd_no_overflow" ast
+  "Create a predicate that checks that the bit-wise addition
+   of `t1` and `t2` does not overflow.
+   The nodes `t1` and `t2`  must have the same bit-vector sort.
+   The returned node is of sort Bool"
+  (c context)
+  (t1 ast)
+  (t2 ast)
+  (is_signed :bool))
+
+(defcfun "Z3_mk_bvadd_no_underflow" ast
+  "Create a predicate that checks that the bit-wise addition
+   of `t1` and `t2` does not underflow.
+   The nodes `t1` and `t2`  must have the same bit-vector sort.
+   The returned node is of sort Bool"
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvsub_no_overflow" ast
+  "Create a predicate that checks that the bit-wise subtraction
+   of `t1` and `t2` does not overflow.
+   The nodes `t1` and `t2`  must have the same bit-vector sort.
+   The returned node is of sort Bool"
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvsub_no_underflow" ast
+  "Create a predicate that checks that the bit-wise subtraction
+   of `t1` and `t2` does not underflow.
+   The nodes `t1` and `t2`  must have the same bit-vector sort.
+   The returned node is of sort Bool"
+  (c context)
+  (t1 ast)
+  (t2 ast)
+  (is_signed :bool))
+
+(defcfun "Z3_mk_bvsdiv_no_overflow" ast
+  "Create a predicate that checks that the bit-wise signed division
+   of `t1` and `t2` does not overflow.
+   The nodes `t1` and `t2`  must have the same bit-vector sort.
+   The returned node is of sort Bool"
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+(defcfun "Z3_mk_bvneg_no_overflow" ast
+  "Create a predicate that checks that the bit-wise negation does not 
+   overflow when `t1` is interpreted as a signed bit-vector.
+   The node `t1` must have a bit-vector sort.
+   The returned node is of sort Bool"
+  (c context)
+  (t1 ast))
+
+(defcfun "Z3_mk_bvmul_no_overflow" ast
+  "Create a predicate that checks that the bit-wise multiplication
+   of `t1` and `t2` does not overflow.
+   The nodes `t1` and `t2`  must have the same bit-vector sort.
+   The returned node is of sort Bool"
+  (c context)
+  (t1 ast)
+  (t2 ast)
+  (is_signed :bool))
+
+(defcfun "Z3_mk_bvmul_no_underflow" ast
+  "Create a predicate that checks that the bit-wise multiplication
+   of `t1` and `t2` does not under.
+   The nodes `t1` and `t2`  must have the same bit-vector sort.
+   The returned node is of sort Bool"
+  (c context)
+  (t1 ast)
+  (t2 ast))
+
+;; Arrays
+
+(defcfun "Z3_mk_select" ast
+  "Array read.
+   The argument `a` is the array and `i` is the index of the array that gets read.
+   The node `a` must have an array sort `[domain -> range]`,
+   and `i` must have the sort `domain`.
+   The sort of the result is `range`."
+  (c context)
+  (a ast)
+  (i ast))
+
+(defcfun "Z3_mk_select_n" ast
+  "n-ary Array read.
+   The argument `a` is the array and `idxs` are the indices of the array that gets read."
+  (c context)
+  (a ast)
+  (n :uint)
+  (idxs :pointer)) ;; const ast[] of length n
+
+(defcfun "Z3_mk_store" ast
+  "Array update.
+   The node `a` must have an array sort `[domain -> range]`, `i` must have sort `domain`,
+   `v` must have sort `range`. The sort of the result is `[domain -> range]`.
+   
+   The semantics of this function is given by the theory of arrays described in the SMT-LIB
+   standard. See http://smtlib.org for more details.
+   
+   The result of this function is an array that is equal to `a` (with respect to `select`)
+   on all indices except for `i`, where it maps to `v` (and the `select` of `a` with
+   respect to `i` may be a different value)."
+  (c context)
+  (a ast)
+  (i ast)
+  (v ast))
+
+(defcfun "Z3_mk_store_n" ast
+  "n-ary Array update."
+  (c context)
+  (a ast)
+  (n :uint)
+  (idxs :pointer) ;; const ast[] of length n
+  (v ast))
+
+(defcfun "Z3_mk_const_array" ast
+  "Create the constant array.
+   The resulting term is an array, such that a `select` on an arbitrary index
+   produces the value `v`."
+  (c context)
+  (domain sort)
+  (v ast))
+
+(defcfun "Z3_mk_map" ast
+  "Map f on the argument arrays.
+   The `n` nodes `args` must be of array sorts `[domain_i -> range_i]`.
+   The function declaration `f` must have type `range_1 .. range_n -> range`.
+   `v` must have sort range. The sort of the result is `[domain_i -> range]`."
+  (c context)
+  (f func-decl)
+  (n :uint)
+  (args :pointer)) ;; const ast[] of length n
+
+
+(defcfun "Z3_mk_array_default" ast
+  "Access the array default value.
+   Produces the default range value, for arrays that can be represented as
+   finite maps with a default range value."
+  (c context)
+  (array ast))
+
+(defcfun "Z3_mk_as_array" ast
+  "Create array with the same interpretation as a function.
+   The array satisfies the property (f x) = (select (_ as-array f) x) 
+   for every argument x."
+  (c context)
+  (f func-decl))
+
+(defcfun "Z3_mk_set_has_size" ast
+  "Create predicate that holds if Boolean array `set` has `k` elements set to true."
+  (c context)
+  (set ast)
+  (k ast))
+
+;; Sets
+
+(defcfun "Z3_mk_set_sort" sort
+  "Create Set type."
+  (c context)
+  (ty sort))
+
+(defcfun "Z3_mk_empty_set" ast
+  "Create the empty set."
+  (c context)
+  (domain sort))
+
+(defcfun "Z3_mk_full_set" ast
+  "Create the full set."
+  (c context)
+  (domain sort))
+
+(defcfun "Z3_mk_set_add" ast
+  "Add an element to a set.
+   The first argument must be a set, the second an element."
+  (c context)
+  (set ast)
+  (elem ast))
+
+(defcfun "Z3_mk_set_del" ast
+  "Remove an element from a set.
+   The first argument must be a set, the second an element."
+  (c context)
+  (set ast)
+  (elem ast))
+
+(defcfun "Z3_mk_set_union" ast
+  "Take the union of a list of sets."
+  (c context)
+  (num_args :uint)
+  (args :pointer)) ;; const ast[] of length num_args
+
+(defcfun "Z3_mk_set_intersect" ast
+  "Take the intersection of a list of sets."
+  (c context)
+  (num_args :uint)
+  (args :pointer)) ;; const ast[] of length num_args
+
+(defcfun "Z3_mk_set_difference" ast
+  "Take the set difference between two sets."
+  (c context)
+  (arg1 ast)
+  (arg2 ast))
+
+(defcfun "Z3_mk_set_complement" ast
+  "Take the complement of a set."
+  (c context)
+  (arg ast))
+
+(defcfun "Z3_mk_set_member" ast
+  "Check for set membership.
+   The first argument should be an element type of the set."
+  (c context)
+  (elem ast)
+  (set ast))
+
+(defcfun "Z3_mk_set_subset" ast
+  "Check for subsetness of sets."
+  (c context)
+  (arg1 ast)
+  (arg2 ast))
+
+(defcfun "Z3_mk_array_ext" ast
+  "Create array extensionality index given two arrays with the same sort.
+   The meaning is given by the axiom:
+   (=> (= (select A (array-ext A B)) (select B (array-ext A B))) (= A B))"
+  (c context)
+  (arg1 ast)
+  (arg2 ast))
 
 ;; Numerals
 
@@ -609,7 +1150,6 @@ Z3 will return the same pointer twice.
   (num :int)
   (den :int))
 
-;; 
 (defcfun "Z3_mk_int" ast
   "Create a numeral of an int, bit-vector, or finite-domain sort.
    This function can be used to create numerals that fit in a machine integer.
@@ -650,11 +1190,228 @@ Z3 will return the same pointer twice.
 
 ;; Sequences and regular expressions
 
-;; ...
+(defcfun "Z3_mk_seq_sort" sort
+  "Create a sequence sort out of the sort for the elements."
+  (c context)
+  (s sort))
+
+(defcfun "Z3_is_seq_sort" :bool
+  "Check if `s` is a sequence sort."
+  (c context)
+  (s sort))
+
+(defcfun "Z3_get_seq_sort_basis" sort
+  "Retrieve basis sort for sequence sort."
+  (c context)
+  (s sort))
+
+(defcfun "Z3_mk_re_sort" sort
+  "reate a regular expression sort out of a sequence sort."
+  (c context)
+  (seq sort))
+
+(defcfun "Z3_is_re_sort" :bool
+  "Check if `s` is a regular expression sort."
+  (c context)
+  (s sort))
+
+(defcfun "Z3_get_re_sort_basis" sort
+  "Retrieve basis sort for regex sort."
+  (c context)
+  (s sort))
+
+(defcfun "Z3_mk_string_sort" sort
+  "Create a sort for 8 bit strings.
+This function creates a sort for ASCII strings.
+Each character is 8 bits."
+  (c context))
+
+(defcfun "Z3_is_string_sort" :bool
+  "Check if `s` is a string sort."
+  (c context)
+  (s sort))
+
+(defcfun "Z3_mk_string" ast
+  "Create a string constant out of the string that is passed in."
+  (c context)
+  (s :string))
+
+(defcfun "Z3_mk_lstring" ast
+  "Create a string constant out of the string that is passed in
+It takes the length of the string as well to take into account
+0 characters. The string is unescaped."
+  (c context)
+  (len :uint)
+  (s :string))
+
+(defcfun "Z3_is_string" :bool
+  "Determine if `s` is a string constant."
+  (c context)
+  (s ast))
+
+(defcfun "Z3_get_string" :string
+  "Retrieve the string constant stored in `s`.
+\pre  Z3_is_string(c, s)"
+  (c context)
+  (s ast))
+
+(defcfun "Z3_get_lstring" :string
+  "Retrieve the unescaped string constant stored in `s`.
+\pre  Z3_is_string(c, s)"
+  (c context)
+  (s ast)
+  (length :pointer)) ;; output argument unsigned int*
+
+(defcfun "Z3_mk_seq_empty" ast
+  "Create an empty sequence of the sequence sort `seq`.
+\pre seq is a sequence sort."
+  (c context)
+  (seq sort))
+
+(defcfun "Z3_mk_seq_unit" ast
+  "Create a unit sequence of `a`."
+  (c context)
+  (a ast))
+
+(defcfun "Z3_mk_seq_concat" ast
+  "Concatenate sequences.
+\pre n > 0"
+  (c context)
+  (n :uint)
+  (args :pointer)) ;; const ast[] of length n
+
+(defcfun "Z3_mk_seq_prefix" ast
+  "Check if `prefix` is a prefix of `s`.
+\pre prefix and s are the same sequence sorts"
+  (c context)
+  (prefix ast)
+  (s ast))
+
+(defcfun "Z3_mk_seq_suffix" ast
+  "Check if `suffix` is a suffix of `s`.
+\pre suffix and s are the same sequence sorts"
+  (c context)
+  (suffix ast)
+  (s ast))
+
+(defcfun "Z3_mk_seq_contains" ast
+  "Check if `container` contains `containee`.
+\pre `container` and `containee` are the same sequence sorts."
+  (c context)
+  (container ast)
+  (containee ast))
+
+(defcfun "Z3_mk_str_lt" ast
+  "Check if `s1` is lexicographically strictly less than `s2`.
+\pre `s1` and `s2` are strings"
+  (c context)
+  (s1 ast)
+  (s2 ast))
+
+(defcfun "Z3_mk_str_le" ast
+  "Check if `s1` is equal to or lexicographically strictly less than `s2`.
+\pre `s1` and `s2` are strings"
+  (c context)
+  (s1 ast)
+  (s2 ast))
+
+(defcfun "Z3_mk_seq_extract" ast
+  "Extract subsequence starting at `offset` of `length`."
+  (c context)
+  (s ast)
+  (offset ast)
+  (length ast))
+
+(defcfun "Z3_mk_seq_replace" ast
+  "Replace the first occurrence of `src` with `dst` in `s`."
+  (c context)
+  (s ast)
+  (src ast)
+  (dst ast))
+
+(defcfun "Z3_mk_seq_at" ast
+  "Retrieve from `s` the unit sequence positioned at position `index`.
+The sequence is empty if the index is out of bounds."
+  (c context)
+  (s ast)
+  (index ast))
+
+(defcfun "Z3_mk_seq_nth" ast
+  "Retrieve from `s` the element positioned at position `index`.
+The function is under-specified if the index is out of bounds."
+  (c context)
+  (s ast)
+  (index ast))
+
+(defcfun "Z3_mk_seq_length" ast
+  "Return the length of the sequence `s`."
+  (c context)
+  (s ast))
+
+(defcfun "Z3_mk_seq_index" ast
+  "Return index of first occurrence of `substr` in `s` starting from offset `offset`.
+If `s` does not contain `substr`, then the value is -1, if `offset` is the length of `s`, then the value is -1 as well.
+The value is -1 if `offset` is negative or larger than the length of `s`."
+  (c context)
+  (s ast)
+  (substr ast)
+  (offset ast))
+
+(defcfun "Z3_mk_seq_last_index" ast
+  "Return the last occurrence of `substr` in `s`.
+If `s` does not contain `substr`, then the value is -1."
+  (c context)
+  (s ast)
+  (substr ast))
+
+(defcfun "Z3_mk_str_to_int" ast
+  "Convert string to integer."
+  (c context)
+  (s ast))
+
+(defcfun "Z3_mk_int_to_str" ast
+  "Integer to string conversion."
+  (c context)
+  (s ast))
+
+;; ... (regular expression stuff)
 
 ;; Special relations
 
-;; ...
+(defcfun "Z3_mk_linear_order" func-decl
+  "Create a linear ordering relation over signature `a`.
+The relation is identified by the index `id`."
+  (c context)
+  (a sort)
+  (id :uint))
+
+(defcfun "Z3_mk_partial_order" func-decl
+  "Create a partial ordering relation over signature `a`.
+The relation is identified by the index `id`."
+  (c context)
+  (a sort)
+  (id :uint))
+
+(defcfun "Z3_mk_piecewise_linear_order" func-decl
+  "Create a piecewise linear ordering relation over signature `a`.
+The relation is identified by the index `id`."
+  (c context)
+  (a sort)
+  (id :uint))
+
+(defcfun "Z3_mk_tree_order" func-decl
+  "Create a tree ordering relation over signature `a`.
+The relation is identified by the index `id`."
+  (c context)
+  (a sort)
+  (id :uint))
+
+(defcfun "Z3_mk_transitive_closure" func-decl
+  "Create transitive closure of binary relation.
+\pre f is a binary relation, such that the two arguments have the same sorts.
+The resulting relation f+ represents the transitive closure of f."
+  (c context)
+  (f func-decl))
 
 ;; Quantifiers
 
@@ -709,6 +1466,144 @@ Z3 will return the same pointer twice.
   "Return the sort kind (e.g., array, tuple, int, bool, etc)."
   (c context)
   (s sort))
+
+(defcfun "Z3_get_bv_sort_size" :uint
+  "Return the size of the given bit-vector sort.
+\pre Z3_get_sort_kind(c, t) == Z3_BV_SORT"
+  (c context)
+  (s sort))
+
+(defcfun "Z3_get_finite_domain_sort_size" :bool
+  "Store the size of the sort in `r`. Return false if the call failed.
+That is, Z3_get_sort_kind(s) == Z3_FINITE_DOMAIN_SORT"
+  (c context)
+  (s sort)
+  (r :pointer)) ;; output parameter uint64_t*
+
+(defcfun "Z3_get_array_sort_domain" sort
+  "Return the domain of the given array sort.
+In the case of a multi-dimensional array, this function returns the sort of the first dimension.
+\pre Z3_get_sort_kind(c, s) == Z3_ARRAY_SORT"
+  (c context)
+  (s sort))
+
+(defcfun "Z3_get_array_sort_range" sort
+  "Return the range of the given array sort.
+\pre Z3_get_sort_kind(c, s) == Z3_ARRAY_SORT"
+  (c context)
+  (s sort))
+
+(defcfun "Z3_get_tuple_sort_mk_decl" func-decl
+  "Return the constructor declaration of the given tuple sort.
+\pre Z3_get_sort_kind(c, s) == Z3_DATATYPE_SORT"
+  (c context)
+  (s sort))
+
+(defcfun "Z3_get_tuple_sort_num_fields" :uint
+  "Return the number of fields of the given tuple sort.
+\pre Z3_get_sort_kind(c, s) == Z3_DATATYPE_SORT"
+  (c context)
+  (s sort))
+
+(defcfun "Z3_get_tuple_sort_field_decl" func-decl
+  "Return the i-th field declaration (i.e., projection function declaration)
+of the given tuple sort.
+\pre Z3_get_sort_kind(s) == Z3_DATATYPE_SORT
+\pre i < Z3_get_tuple_sort_num_fields(c, s)"
+  (c context)
+  (s sort)
+  (i :uint))
+
+(defcfun "Z3_get_datatype_sort_num_constructors" :uint
+  "Return number of constructors for datatype.
+\pre Z3_get_sort_kind(c, s) == Z3_DATATYPE_SORT"
+  (c context)
+  (s sort))
+
+(defcfun "Z3_get_datatype_sort_constructor" func-decl
+  "Return idx'th constructor.
+\pre Z3_get_sort_kind(s) == Z3_DATATYPE_SORT
+\pre idx < Z3_get_datatype_sort_num_constructors(c, s)"
+  (c context)
+  (s sort)
+  (idx :uint))
+
+(defcfun "Z3_get_datatype_sort_recognizer" func-decl
+  "Return idx'th recognizer.
+\pre Z3_get_sort_kind(s) == Z3_DATATYPE_SORT
+\pre idx < Z3_get_datatype_sort_num_constructors(c, s)"
+  (c context)
+  (s sort)
+  (idx :uint))
+
+(defcfun "Z3_get_datatype_sort_constructor_accessor" func-decl
+  "Return idx_a'th accessor for the idx_c'th constructor.
+\pre Z3_get_sort_kind(s) == Z3_DATATYPE_SORT
+\pre idx_c < Z3_get_datatype_sort_num_constructors(c, s)
+\pre idx_a < Z3_get_domain_size(c, Z3_get_datatype_sort_constructor(c, idx_c))"
+  (c context)
+  (s sort)
+  (idx_c :uint)
+  (idx_a :uint))
+
+(defcfun "Z3_get_datatype_update_field" ast
+  "Update record field with a value.
+
+This corresponds to the 'with' construct in OCaml.
+It has the effect of updating a record field with a given value.
+The remaining fields are left unchanged. It is the record
+equivalent of an array store (see \sa Z3_mk_store).
+If the datatype has more than one constructor, then the update function
+behaves as identity if there is a mismatch between the accessor and
+constructor. For example ((_ update-field car) nil 1) is nil,
+while ((_ update-field car) (cons 2 nil) 1) is (cons 1 nil).
+
+\pre Z3_get_sort_kind(Z3_get_sort(c, s)) == Z3_get_domain(c, field_access, 1) == Z3_DATATYPE_SORT
+\pre Z3_get_sort(c, value) == Z3_get_range(c, field_access)"
+  (c context)
+  (field_access func-decl)
+  (s ast)
+  (value ast))
+
+;; ...
+
+(defcfun "Z3_mk_atmost" ast
+  "Pseudo-Boolean relations. Encode p1 + p2 + ... + pn <= k"
+  (c context)
+  (num_args :uint)
+  (args :pointer) ;; input parameter ast[] of length num_args
+  (k :uint))
+
+(defcfun "Z3_mk_atleast" ast
+  "Pseudo-Boolean relations. Encode p1 + p2 + ... + pn >= k"
+  (c context)
+  (num_args :uint)
+  (args :pointer) ;; input parameter ast[] of length num_args
+  (k :uint))
+
+(defcfun "Z3_mk_pble" ast
+  "Pseudo-Boolean relations. Encode k1*p1 + k2*p2 + ... + kn*pn <= k"
+  (c context)
+  (num_args :uint)
+  (args :pointer) ;; input parameter ast[] of length num_args
+  (coeffs :pointer) ;; input parameter int[] of length num_args
+  (k :uint))
+
+(defcfun "Z3_mk_pbge" ast
+  "Pseudo-Boolean relations. Encode k1*p1 + k2*p2 + ... + kn*pn >= k"
+  (c context)
+  (num_args :uint)
+  (args :pointer) ;; input parameter ast[] of length num_args
+  (coeffs :pointer) ;; input parameter int[] of length num_args
+  (k :uint))
+
+(defcfun "Z3_mk_pbeq" ast
+  "Pseudo-Boolean relations. Encode k1*p1 + k2*p2 + ... + kn*pn = k"
+  (c context)
+  (num_args :uint)
+  (args :pointer) ;; input parameter ast[] of length num_args
+  (coeffs :pointer) ;; input parameter int[] of length num_args
+  (k :uint))
 
 ;; ...
 
@@ -1742,3 +2637,15 @@ that are not selected for interrupts are left alone.
   "Convert a statistics into a string."
   (c context)
   (s stats))
+
+(defcfun "Z3_stats_inc_ref" :string
+  "Increment the reference counter of the given statistics object."
+  (c context)
+  (s stats))
+
+(defcfun "Z3_stats_dec_ref" :string
+  "Decrement the reference counter of the given statistics object."
+  (c context)
+  (s stats))
+
+;; ...

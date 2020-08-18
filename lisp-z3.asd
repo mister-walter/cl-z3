@@ -18,6 +18,7 @@
   :pathname "src/z3"
   :components
   ((:file "package")
+   (:file "match-extensions")
    (:file "types")
    (:file "sorts")
    (:file "ast")

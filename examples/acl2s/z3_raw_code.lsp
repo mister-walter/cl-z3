@@ -15,5 +15,3 @@
 
 (defun z3-solver-init ()
   (z3:solver-init))
-
-(import 'z3::distinct)

@@ -264,17 +264,6 @@
                         signed?))
          (otherwise (error "Value ~S is of an unsupported type." stmt))))
 
-;; written by edgar-rft, https://www.lispforum.com/viewtopic.php?f=2&t=1205#p6269
-(defun integer->bit-vector (integer)
-  "Create a bit-vector from a positive integer."
-  (labels ((integer->bit-list (int &optional accum)
-             (cond ((> int 0)
-                    (multiple-value-bind (i r) (truncate int 2)
-                      (integer->bit-list i (push r accum))))
-                   ((null accum) (push 0 accum))
-                   (t accum))))
-    (coerce (integer->bit-list integer) 'bit-vector)))
-
 (defun ast-to-value (ast &optional context)
   (let* ((ctx (or context *default-context*))
          (ast-kind (z3-get-ast-kind ctx ast))
@@ -296,10 +285,8 @@
                      (otherwise (error "Application ASTs for functions with decl-kind ~S are not supported." (z3-get-decl-kind ctx decl))))))
            (:numeral_ast
             (match sort-kind
-                   ((or :int_sort :finite_domain_sort) (values (parse-integer (z3-get-numeral-string ctx ast))))
+                   ((or :int_sort :finite_domain_sort :bv_sort) (values (parse-integer (z3-get-numeral-string ctx ast))))
                    (:real_sort (/ (ast-to-value (z3-get-numerator ctx ast) ctx) (ast-to-value (z3-get-denominator ctx ast) ctx)))
-                   (:bv_sort
-                    (integer->bit-vector (parse-integer (z3-get-numeral-string ctx ast))))
                    (otherwise (error "Values with sort kind ~S are not currently supported." sort-kind))))
            (otherwise (error "ASTs of kind ~S are not currently supported." ast-kind)))))
 

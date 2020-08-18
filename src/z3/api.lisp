@@ -6,16 +6,12 @@
 ;; TODO: integrate defdata's types where possible
 ;; e.g. automatically convert defdatas into "equivalent" Z3 sorts
 ;; but a fair amount of work is needed here to convert back and forth between z3 values and defdata values.
-(defmacro make-var-decls (decls context)
-  (cons 'list
-        (loop for (var ty) on decls by #'cddr
-              collect `(cons ',var (get-sort ,ty ,context)))))
 
-(defun make-var-decls-fn (decls context)
+(defun make-var-decls (decls context)
   (loop for (var ty) on decls by #'cddr
         collect (cons var (get-sort ty context))))
 
-;;(make-var-decls (x :int y :bool) ctx)
+;;(make-var-decls '(x :int y :bool) *default-context*)
 
 (defun solver-init ()
   (setf *default-context* (make-instance 'context))
@@ -42,7 +38,7 @@
          (ctx (get-context slv)))
     (solver-assert slv
                    (convert-to-ast stmt
-                                   (make-var-decls-fn var-decls ctx)
+                                   (make-var-decls var-decls ctx)
                                    ctx))))
 
 (defmacro z3-assert (var-decls stmt &optional solver)
@@ -51,7 +47,7 @@
           (ctx (get-context slv)))
      (solver-assert slv
                     (convert-to-ast ',stmt
-                                    (make-var-decls ,var-decls ctx)
+                                    (make-var-decls ',var-decls ctx)
                                     ctx))))
 
 (defun get-model (&optional solver)

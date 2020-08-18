@@ -17,20 +17,48 @@
    The second argument should be a function object that takes in a single argument (context) and produces a sort."
   (setf (gethash name *sorts*) sort-producer))
 
+;; TODO: currently storing these in a separate hash table, but there's
+;; really no reason why we can't have a unified hash table of objects
+;; that contain the neccesary metadata for each kind of sort that
+;; needs it.
+(defvar *parametric-sorts* (make-hash-table))
+
+(defun register-parametric-sort (name parametric-sort-producer)
+  "Register a sort.
+   The second argument should be a function object that takes in two arguments (context, list of user-provided arguments) and produces a sort."
+  (setf (gethash name *parametric-sorts*) parametric-sort-producer))
+
 ;; TODO: optimization - memoize calls within a context
 ;; i.e. (z3-mk-int-sort ctx) will always return the same value for the same value of ctx (AFAIK unless ctx is reset)
 ;; (but in that case all pointers that we have into Z3 are invalid so ¯\_(ツ)_/¯)
 (defun get-sort (name context)
   "Get the sort associated with a name"
-  (multiple-value-bind (fn exists?)
-      (gethash name *sorts*)
-    (if exists?
-        (funcall fn context)
-      (error "No known sort with name ~S" name))))
+  (if (consp name)
+      (multiple-value-bind (para-fn para-exists?)
+          (gethash (car name) *parametric-sorts*)
+        (if para-exists?
+            (funcall para-fn context (cdr name))
+          (multiple-value-bind (fn exists?)
+              (gethash name *sorts*)
+            (if exists?
+                (funcall fn context)
+              (error "No known sort with name ~S" name)))))
+    (multiple-value-bind (fn exists?)
+              (gethash name *sorts*)
+            (if exists?
+                (funcall fn context)
+              (error "No known sort with name ~S" name)))))
 
 ;; Some built-in sorts
 (register-sort :int #'z3-mk-int-sort)
 (register-sort :bool #'z3-mk-bool-sort)
+
+(register-parametric-sort :bv
+                          #'(lambda (ctx args)
+                              (cond ((not (equal (length args) 1)) (error "bv type only takes a single argument."))
+                                    ((or (not (numberp (car args))) (minusp (car args))) (error "bv type must have a positive integer size"))
+                                    (t (z3-mk-bv-sort ctx (car args))))))
+
 
 ;;;; Finite domain types
 

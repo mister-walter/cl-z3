@@ -1,10 +1,10 @@
-(include-book "tools/include-raw" :dir :system)
+; (include-book "tools/include-raw" :dir :system)
 
 (defttag :z3)
 ;; taken from ccg.lisp
-(include-book "hacking/hacker" :dir :system)
-(acl2::progn+all-ttags-allowed
- (include-book "hacking/all" :dir :system :ttags :all))
+; (include-book "hacking/hacker" :dir :system)
+;(acl2::progn+all-ttags-allowed
+; (include-book "hacking/all" :dir :system :ttags :all))
 (acl2::subsume-ttags-since-defttag)
 
 ;; useful for debugging...
@@ -42,20 +42,24 @@
 ;; It's able to find a counterexample here
 (z3-query
  (x :int y :int z :int a :int b :int)
- (and (and (> x -100) (< x 100))
-      (and (> y -100) (< y 100))
-      (and (> z -100) (< z 100))
-      (and (> a -100) (< a 100))
-      (and (> b -100) (< b 100))
+ (and (> x -100) (< x 100)
+      (> y -100) (< y 100)
+      (> z -100) (< z 100)
+      (> a -100) (< a 100)
+      (> b -100) (< b 100)
+; You can also require some variables are distinct
       (distinct x y z a b)
       (> (+ x y z a b) 100)))
 
 ;; And also here.
 (z3-query
  (x :int y :int z :int a :int b :int)
- (and (and (> x -100) (< x 100))
-      (and (> y -100) (< y 100))
-      (and (> z -100) (< z 100))
-      (and (> a -100) (< a 100))
-      (and (> b -100) (< b 100))
+ (and (> x -100) (< x 100)
+      (> y -100) (< y 100)
+      (> z -100) (< z 100)
+      (> a -100) (< a 100)
+      (> b -100) (< b 100)
+      (distinct x y z)
+      (distinct a b x)
+      (distinct a y x)
       (> (+ x y z a b) 490)))

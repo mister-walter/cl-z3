@@ -8,16 +8,11 @@
 
 (in-package :z3-sudoku-arbitrary-size)
 
-;; This is a built-in Z3 function
-(import 'z3::(distinct))
-
-;; We represent values of an finite-domain type as (fd-val <type> <value>)
-;; This is a temporary solution until we determine a better way to represent them in CL
-(import 'z3::(fd-val))
-
 (defun idx-to-cell-symbol (idx)
   (intern (concatenate 'string "C" (write-to-string idx))))
 
+;; We represent values of an finite-domain type as (fd-val <type> <value>)
+;; This is a temporary solution until we determine a better way to represent them in CL
 (defun val-to-cell-value (val)
   `(fd-val :cell ,val))
 
@@ -76,7 +71,6 @@
   (assert-computed-with-cell-vars n (cons 'and (box-distinct-constraints n)))
   (let ((input-constraints (input-grid-constraints n input-grid)))
     (when input-constraints (assert-computed-with-cell-vars n (cons 'and input-constraints))))
-  ;;(print (z3::z3-solver-to-dimacs-string *default-context* *default-solver* t))
   (check-sat))
 
 (defmacro define-symbol-conversions (&rest cases)
@@ -189,7 +183,7 @@
     _ _ _   1 _ _   7 _ _
     2 _ 4   _ _ 3   1 _ _))
 
-(pretty-print-sudoku-solution 3 (solve-grid 3 (preprocess-grid a-hard-sudoku-grid)))
+(pretty-print-sudoku-solution 3 (time (solve-grid 3 (preprocess-grid a-hard-sudoku-grid))))
 
 ;; need a different definition for this for hexadoku
 (defun grid-value-to-string (val)
@@ -218,7 +212,7 @@
     _ _ B _   _ F _ 0   _ 7 1 _   C _ _ 4
     _ _ 0 D   E _ _ A   4 3 _ _   _ 5 _ 1))
 
-(pretty-print-sudoku-solution 4 (solve-grid 4 (preprocess-grid hexadoku-grid 0)))
+(pretty-print-sudoku-solution 4 (time (solve-grid 4 (preprocess-grid hexadoku-grid 0))))
 
 (defconstant hexadoku-grid2
   '(0 1 2 3   4 5 6 7   8 9 A B   C D E F

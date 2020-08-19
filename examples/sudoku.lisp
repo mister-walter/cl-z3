@@ -1,3 +1,4 @@
+;; (load "~/quicklisp/setup.lisp")
 (pushnew (truename "../") ql:*local-project-directories*)
 (ql:register-local-projects)
 (ql:quickload :lisp-z3)
@@ -6,9 +7,6 @@
   (:use :cl :z3))
 
 (in-package :z3-sudoku)
-
-;; This is a built-in Z3 function
-(import 'z3::(distinct))
 
 (defun idx-to-cell-symbol (idx)
   (assert (and (>= idx 0) (<= idx 81)))
@@ -24,6 +22,8 @@
   (loop for idx below 81
         append `((<= 1 ,(idx-to-cell-symbol idx))
                  (>= 9 ,(idx-to-cell-symbol idx)))))
+
+;; Note that distinct is a built-in Z3 function.
 
 ;; The values in each row must be distinct
 (defconstant row-distinct-constraints
@@ -72,6 +72,22 @@
   (assert-computed-with-cell-vars (cons 'and (input-grid-constraints input-grid)))
   (check-sat))
 
+;; Don't worry about the pretty-print definitions below, just some 
+;; TODO: I'm sure there's a way to do this using just (format) and macros.
+(defmacro pretty-print-sudoku-solution-helper (assignment)
+  `(let ,assignment
+     ,@(loop for row below 9
+             collect '(terpri)
+             append (loop for col below 9
+                          collect `(format t "~A " ,(idx-to-cell-symbol (+ col (* 9 row))))
+                          when (equal (mod col 3) 2)
+                          collect '(format t "  "))
+             when (equal (mod row 3) 2)
+             collect '(terpri))))
+
+(defun pretty-print-sudoku-solution (assignment)
+  (eval `(pretty-print-sudoku-solution-helper ,assignment)))
+
 ;; Formatted for readability.
 (defconstant a-hard-sudoku-grid
   '(6 _ _   3 _ 1   _ 8 4
@@ -87,6 +103,7 @@
     2 _ 4   _ _ 3   1 _ _))
 
 (time (solve-grid a-hard-sudoku-grid))
+(pretty-print-sudoku-solution (time (solve-grid a-hard-sudoku-grid)))
 
 (defconstant a-very-hard-sudoku-grid
   '(_ _ _   _ _ _   _ 1 2
@@ -101,7 +118,7 @@
     9 _ _   _ 4 _   5 _ _
     4 7 _   _ _ 6   _ _ _))
 
-(time (solve-grid a-very-hard-sudoku-grid))
+(pretty-print-sudoku-solution (time (solve-grid a-very-hard-sudoku-grid)))
 
 ;; Some experimentation.
 ;; Pete suggested we try these grids. Note that they are symmetric
@@ -120,7 +137,7 @@
     _ _ _   _ _ _   _ _ _))
 
 ;; ~18s
-(time (solve-grid only-first-row-defined-grid))
+(pretty-print-sudoku-solution (time (solve-grid only-first-row-defined-grid)))
 
 (defconstant only-first-col-defined-grid
   '(1 _ _   _ _ _   _ _ _
@@ -136,7 +153,7 @@
     9 _ _   _ _ _   _ _ _))
 
 ;; ~28s
-(time (solve-grid only-first-col-defined-grid))
+(pretty-print-sudoku-solution (time (solve-grid only-first-col-defined-grid)))
 
 (defconstant only-diag-defined-grid
   '(1 _ _   _ _ _   _ _ _
@@ -152,7 +169,7 @@
     _ _ _   _ _ _   _ _ 9))
 
 ;; ~15s
-(time (solve-grid only-diag-defined-grid))
+(pretty-print-sudoku-solution (time (solve-grid only-diag-defined-grid)))
 
 (defconstant only-first-row-defined-reverse-grid
   '(9 8 7   6 5 4   3 2 1
@@ -168,7 +185,7 @@
     _ _ _   _ _ _   _ _ _))
 
 ;; ~40s
-(time (solve-grid only-first-row-defined-reverse-grid))
+(pretty-print-sudoku-solution (time (solve-grid only-first-row-defined-reverse-grid)))
 
 (defconstant blank-sudoku-grid
   '(_ _ _   _ _ _   _ _ _
@@ -186,21 +203,3 @@
 ;; slooow. This is difficult for Z3 because it may need to do a ton of backtracking
 ;; Maybe would be faster if we represented cells as an enumerated type/finite domain rather than integers.
 ;;(time (solve-grid only-first-col-defined-grid))
-
-;; Don't worry about the pretty-print definitions below, just some 
-;; TODO: I'm sure there's a way to do this using just (format) and macros.
-(defmacro pretty-print-sudoku-solution-helper (assignment)
-  `(let ,assignment
-     ,@(loop for row below 9
-             collect '(terpri)
-             append (loop for col below 9
-                          collect `(format t "~A " ,(idx-to-cell-symbol (+ col (* 9 row))))
-                          when (equal (mod col 3) 2)
-                          collect '(format t "  "))
-             when (equal (mod row 3) 2)
-             collect '(terpri))))
-
-(defun pretty-print-sudoku-solution (assignment)
-  (eval `(pretty-print-sudoku-solution-helper ,assignment)))
-
-(pretty-print-sudoku-solution (solve-grid a-very-hard-sudoku-grid))

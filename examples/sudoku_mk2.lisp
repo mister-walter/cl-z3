@@ -1,3 +1,4 @@
+;; (load "~/quicklisp/setup.lisp")
 (pushnew (truename "../") ql:*local-project-directories*)
 (ql:register-local-projects)
 (ql:quickload :lisp-z3)
@@ -6,13 +7,6 @@
   (:use :cl :z3))
 
 (in-package :z3-sudoku)
-
-;; This is a built-in Z3 function
-(import 'z3::(distinct))
-
-;; We represent elements of an enum type as (enumval <type> <value>)
-;; This is a temporary solution until we determine a better way to represent them in CL
-(import 'z3::(enumval))
 
 ;; Note that we need to do this before calling register-enum-sort, and that registered sorts are wiped out when the context is reset or a new context is created.
 (solver-init)
@@ -24,6 +18,8 @@
   (assert (and (>= idx 0) (<= idx 81)))
   (intern (concatenate 'string "C" (write-to-string idx))))
 
+;; We represent elements of an enum type as (enumval <type> <value>)
+;; This is a temporary solution until we determine a better way to represent them in CL
 (defun val-to-cell-value (val)
   `(enumval :cell ,val))
 
@@ -80,6 +76,22 @@
     (progn (solver-pop)
            res)))
 
+;; Don't worry about the pretty-print definitions below, just some 
+;; TODO: I'm sure there's a way to do this using just (format) and macros.
+(defmacro pretty-print-sudoku-solution-helper (assignment)
+  `(let ,assignment
+     ,@(loop for row below 9
+             collect '(terpri)
+             append (loop for col below 9
+                          collect `(format t "~A " ,(idx-to-cell-symbol (+ col (* 9 row))))
+                          when (equal (mod col 3) 2)
+                          collect '(format t "  "))
+             when (equal (mod row 3) 2)
+             collect '(terpri))))
+
+(defun pretty-print-sudoku-solution (assignment)
+  (eval `(pretty-print-sudoku-solution-helper ,assignment)))
+
 ;; Formatted for readability.
 (defconstant a-hard-sudoku-grid
   '(6 _ _   3 _ 1   _ 8 4
@@ -93,20 +105,8 @@
     _ _ _   _ _ _   _ _ _
     _ _ _   1 _ _   7 _ _
     2 _ 4   _ _ 3   1 _ _))
-#|
-(z3::z3-ast-to-string *default-context*
-                  (z3::convert-to-ast-fn *default-context*
-                       (cons 'and (input-grid-constraints a-hard-sudoku-grid))
-                       (z3::make-var-decls-fn +cell-vars+ *default-context*)))
 
-(z3::z3-ast-to-string *default-context*
-                  (z3::convert-to-ast-fn *default-context*
-                       '(enumval :cell 1)
-                       (z3::make-var-decls-fn +cell-vars+ *default-context*)))
-
-(cdar (z3::enum-sort-metadata-consts (gethash :cell z3::*enum-sort-metadata*)))
-|#
-(time (solve-grid a-hard-sudoku-grid))
+(pretty-print-sudoku-solution (time (solve-grid a-hard-sudoku-grid)))
 
 (defconstant a-very-hard-sudoku-grid
   '(_ _ _   _ _ _   _ 1 2
@@ -121,7 +121,7 @@
     9 _ _   _ 4 _   5 _ _
     4 7 _   _ _ 6   _ _ _))
 
-(time (solve-grid a-very-hard-sudoku-grid))
+(pretty-print-sudoku-solution (time (solve-grid a-very-hard-sudoku-grid)))
 
 ;; Some experimentation.
 ;; Pete suggested we try these grids.
@@ -139,7 +139,7 @@
     _ _ _   _ _ _   _ _ _
     _ _ _   _ _ _   _ _ _))
 
-(time (solve-grid only-first-row-defined-grid))
+(pretty-print-sudoku-solution (time (solve-grid only-first-row-defined-grid)))
 
 (defconstant only-first-col-defined-grid
   '(1 _ _   _ _ _   _ _ _
@@ -154,7 +154,7 @@
     8 _ _   _ _ _   _ _ _
     9 _ _   _ _ _   _ _ _))
 
-(time (solve-grid only-first-col-defined-grid))
+(pretty-print-sudoku-solution (time (solve-grid only-first-col-defined-grid)))
 
 (defconstant only-diag-defined-grid
   '(1 _ _   _ _ _   _ _ _
@@ -169,7 +169,7 @@
     _ _ _   _ _ _   _ 8 _
     _ _ _   _ _ _   _ _ 9))
 
-(time (solve-grid only-diag-defined-grid))
+(pretty-print-sudoku-solution (time (solve-grid only-diag-defined-grid)))
 
 (defconstant only-first-row-defined-reverse-grid
   '(9 8 7   6 5 4   3 2 1
@@ -184,7 +184,7 @@
     _ _ _   _ _ _   _ _ _
     _ _ _   _ _ _   _ _ _))
 
-(time (solve-grid only-first-row-defined-reverse-grid))
+(pretty-print-sudoku-solution (time (solve-grid only-first-row-defined-reverse-grid)))
 
 (defconstant blank-sudoku-grid
   '(_ _ _   _ _ _   _ _ _
@@ -199,22 +199,4 @@
     _ _ _   _ _ _   _ _ _
     _ _ _   _ _ _   _ _ _))
 
-(time (solve-grid blank-sudoku-grid))
-
-;; Don't worry about the pretty-print definitions below, just some 
-;; TODO: I'm sure there's a way to do this using just (format) and macros.
-(defmacro pretty-print-sudoku-solution-helper (assignment)
-  `(let ,assignment
-     ,@(loop for row below 9
-             collect '(terpri)
-             append (loop for col below 9
-                          collect `(format t "~A " ,(idx-to-cell-symbol (+ col (* 9 row))))
-                          when (equal (mod col 3) 2)
-                          collect '(format t "  "))
-             when (equal (mod row 3) 2)
-             collect '(terpri))))
-
-(defun pretty-print-sudoku-solution (assignment)
-  (eval `(pretty-print-sudoku-solution-helper ,assignment)))
-
-(pretty-print-sudoku-solution (solve-grid a-very-hard-sudoku-grid))
+(pretty-print-sudoku-solution (time (solve-grid blank-sudoku-grid)))

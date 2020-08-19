@@ -63,3 +63,18 @@
       (distinct a b x)
       (distinct a y x)
       (> (+ x y z a b) 490)))
+
+;; Let's ask a similar question about list lengths.
+(test? (=> (^ (listp x) (listp y) (listp z)
+              (< (len x) 100)
+              (< (len y) 100)
+              (< (len z) 100))
+           (< (+ (len x) (len y) (len z)) 280)))
+
+;; Z3 does (eventually) find a model.
+(z3-query
+ (x (:seq :int) y (:seq :int) z (:seq :int))
+ (and (< (seq-length x) 100)
+      (< (seq-length y) 100)
+      (< (seq-length z) 100)
+      (>= (+ (seq-length x) (seq-length y) (seq-length z)) 280)))

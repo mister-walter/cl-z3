@@ -25,6 +25,8 @@
 (defun solver-pop (&optional solver &key (n 1))
   (let* ((slv (or solver *default-solver*))
          (ctx (get-context slv)))
+    (unless (<= n (z3-solver-get-num-scopes ctx slv))
+      (error "You can't pop ~S level(s) - the solver is currently at level ~S" n (z3-solver-get-num-scopes ctx slv)))
     (z3-solver-pop ctx slv n)))
 
 (defun solver-reset (&optional solver)

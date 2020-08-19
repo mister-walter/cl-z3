@@ -38,6 +38,15 @@
                        (otherwise (error "You must provide either a list of booleans or a list of (0,1)s to bv.")))))
             (with-foreign-array :bool (length args) arg
                                 (z3-mk-bv-numeral context (length args) array))))
+         ((list* (sym-name seq) args)
+          (assert (plusp (length args)))
+          (with-foreign-array z3-c-types::Z3_ast (length args)
+                              (z3-mk-seq-unit context (convert-to-ast-fn context arg types))
+                              (z3-mk-seq-concat context (length args) array)))
+         ((list (sym-name seq-empty) sort)
+          (z3-mk-seq-empty context (get-sort (list :seq sort) context)))
+         ((list (sym-name seq-unit) x)
+          (z3-mk-seq-unit context (convert-to-ast-fn context x types)))
          ((type list) (convert-funccall-to-ast context stmt types))
          (otherwise (error "Value ~S is of an unsupported type." stmt))))
 
@@ -262,7 +271,40 @@
           (z3-mk-bv2int context
                         (convert-to-ast-fn context x types)
                         signed?))
+         ((list* (sym-name seq-concat) args)
+          (with-foreign-array z3-c-types::Z3_ast (length args)
+                              (convert-to-ast-fn context arg types)
+                              (z3-mk-seq-concat context (length args) array)))
+         ((list (sym-name seq-at) x idx)
+          (z3-mk-seq-at context
+                        (convert-to-ast-fn context x types)
+                        (convert-to-ast-fn context idx types)))
+         ((list (sym-name seq-nth) x idx)
+          (z3-mk-seq-nth context
+                        (convert-to-ast-fn context x types)
+                        (convert-to-ast-fn context idx types)))
+         ((list (sym-name seq-length) x)
+          (z3-mk-seq-length context (convert-to-ast-fn context x types)))
          (otherwise (error "Value ~S is of an unsupported type." stmt))))
+
+(defun app-ast-args-to-list (ast ctx)
+  (assert (equal (z3-get-ast-kind ctx ast) :app_ast))
+  (loop for i below (z3-get-app-num-args ctx ast)
+        collect (z3-get-app-arg ctx ast i)))
+
+(defun seq-ast-to-value (ast ctx)
+  (assert (equal (z3-get-ast-kind ctx ast) :app_ast))
+  (assert (equal (z3-get-sort-kind ctx (z3-get-sort ctx ast)) :seq_sort))
+  (let* ((decl (z3-get-app-decl ctx ast))
+         (decl-kind (z3-get-decl-kind ctx decl))
+         (sort (z3-get-sort ctx ast)))
+    (match decl-kind
+           (:OP_SEQ_EMPTY nil)
+           (:OP_SEQ_UNIT (list (ast-to-value (z3-get-app-arg ctx ast 0))))
+           (:OP_SEQ_CONCAT
+            (loop for arg in (app-ast-args-to-list ast ctx)
+                  append (seq-ast-to-value arg ctx)))
+           (otherwise (error "Unsupported operation when trying to convert sequence AST to value: ~S" decl-kind)))))
 
 (defun ast-to-value (ast &optional context)
   (let* ((ctx (or context *default-context*))
@@ -282,6 +324,8 @@
                                                 (loop for field in (get-tuple-fields sort (z3-to-app ctx ast) ctx)
                                                       collect (cons (car field) (ast-to-value (cdr field)))))))
                             (t (error "We don't support custom datatypes like ~S yet." (sort-name sort context)))))
+                     ((or :OP_SEQ_CONCAT :OP_SEQ_UNIT :OP_SEQ_EMPTY)
+                      (seq-ast-to-value ast ctx))
                      (otherwise (error "Application ASTs for functions with decl-kind ~S are not supported." (z3-get-decl-kind ctx decl))))))
            (:numeral_ast
             (match sort-kind

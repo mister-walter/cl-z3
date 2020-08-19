@@ -52,12 +52,19 @@
 ;; Some built-in sorts
 (register-sort :int #'z3-mk-int-sort)
 (register-sort :bool #'z3-mk-bool-sort)
+(register-sort :string #'z3-mk-string-sort)
 
 (register-parametric-sort :bv
                           #'(lambda (ctx args)
                               (cond ((not (equal (length args) 1)) (error "bv type only takes a single argument."))
                                     ((or (not (numberp (car args))) (minusp (car args))) (error "bv type must have a positive integer size"))
                                     (t (z3-mk-bv-sort ctx (car args))))))
+
+(register-parametric-sort :seq
+                          #'(lambda (ctx args)
+                              (if (not (equal (length args) 1))
+                                  (error "seq type only takes a single argument.")
+                                (z3-mk-seq-sort ctx (get-sort (car args) ctx)))))
 
 
 ;;;; Finite domain types

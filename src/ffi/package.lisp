@@ -1,5 +1,6 @@
 (defpackage #:z3-c-types
   (:use #:cffi)
+  (:import-from #:cl #:in-package)
   (:shadow #:sort #:optimize)
   (:export
    #:Z3_config

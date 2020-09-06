@@ -66,6 +66,12 @@
                                   (error "seq type only takes a single argument.")
                                 (z3-mk-seq-sort ctx (get-sort (car args) ctx)))))
 
+(register-parametric-sort :array
+                          #'(lambda (ctx args)
+                              (unless (equal (length args) 2) (error "array type takes two arguments: domain and range sorts"))
+                              (z3-mk-array-sort ctx (get-sort (car args) ctx) (get-sort (second args) ctx))))
+
+
 
 ;;;; Finite domain types
 
@@ -115,17 +121,6 @@
   (testers))
 
 (defvar *enum-sort-metadata* (make-hash-table))
-
-(defun foreign-array-to-list (arr ty len)
-  "Convert a foreign array of the given element type and length into a list."
-  (loop for i below len
-        collect (cffi:mem-aref arr ty i)))
-
-(defmacro write-to-foreign-array (foreign-array element-type length lisp-list set-ith &optional (elt-var 'elt) (idx-var 'i))
-  `(loop for ,elt-var in ,lisp-list
-         for ,idx-var below ,length
-         do (setf (cffi:mem-aref ,foreign-array ,element-type ,idx-var)
-                  ,set-ith)))
 
 (defun register-enum-sort-fn (name elements ctx)
   "Register an enum sort with the given name and elements in the given context."

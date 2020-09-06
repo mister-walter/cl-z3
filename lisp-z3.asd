@@ -19,6 +19,7 @@
   :components
   ((:file "package")
    (:file "match-extensions")
+   (:file "util")
    (:file "types")
    (:file "sorts")
    (:file "ast")

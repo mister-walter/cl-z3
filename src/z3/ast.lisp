@@ -10,7 +10,10 @@
          ((type symbol) (if (not (assoc stmt types))
                             (error "You must provide types for all variables. You did not for the variable ~S." stmt)
                           (z3-mk-const context (z3-mk-string-symbol context (symbol-name stmt)) (cdr (assoc stmt types)))))
-         ((type string) (error "Strings not yet supported."))
+         ((type string) (z3-mk-string context stmt))
+         ((list (sym-name unescaped-string) str)
+          (assert (stringp str))
+          (z3-mk-lstring context (length str) str))
          ((list (sym-name fd-val) name val)
           (finite-domain-value-to-ast name val context))
          ((list (sym-name enumval) name val)
@@ -39,8 +42,21 @@
           (z3-mk-seq-empty context (get-sort (list :seq sort) context)))
          ((list (sym-name seq-unit) x)
           (z3-mk-seq-unit context (convert-to-ast-fn context x types)))
+         ((list (sym-name re-empty) sort)
+          (z3-mk-re-empty context (get-sort sort context)))
+         ((list (sym-name re-full) sort)
+          (z3-mk-re-full context (get-sort sort context)))
+         ((list* (sym-name set) sort args)
+          (mk-set (get-sort sort context) args context types))
          ((type list) (convert-funccall-to-ast context stmt types))
          (otherwise (error "Value ~S is of an unsupported type." stmt))))
+
+(defun mk-set (sort values ctx types)
+  (if (endp values)
+            (z3-mk-empty-set ctx sort)
+      (z3-mk-set-add ctx
+                     (mk-set sort (cdr values) ctx types)
+                     (convert-to-ast-fn ctx (car values) types))))
 
 (defun convert-to-ast (stmt types ctx)
   (make-instance 'ast
@@ -109,6 +125,51 @@
     ;; map special
     (array-default :arity 1)
     ;; as_array special
+    (set-has-size :arity 2)
+    ;;; Set functions
+    ;; mk-set-sort special
+    ;; mk-empty-set special
+    ;; mk-full-set special
+    (set-add :arity 2)
+    (set-del :arity 2)
+    (set-union :arity -)
+    (set-intersect :arity -)
+    (set-difference :arity 2)
+    (set-complement :arity 1)
+    (set-member :arity 2)
+    (set-subset :arity 2)
+    (array-ext :arity 2)
+    ;;; Sequence functions
+    ;; seq_empty special
+    (seq-unit :arity 1)
+    (seq-concat :arity -)
+    (seq-prefix :arity 2)
+    (seq-contains :arity 2)
+    (str-lt :arity 2)
+    (str-le :arity 2)
+    (seq-extract :arity 3)
+    (seq-replace :arity 3)
+    (seq-at :arity 2)
+    (seq-nth :arity 2)
+    (seq-length :arity 1)
+    (seq-index :arity 3)
+    (seq-last-index :arity 2)
+    (str-to-int :arity 1)
+    (int-to-str :arity 1)
+    ;;; Regular expression functions
+    (seq-to-re :arity 1)
+    (seq-in-re :arity 2)
+    (re-plus :arity 1)
+    (re-star :arity 1)
+    (re-option :arity 1)
+    (re-union :arity -)
+    (re-concat :arity -)
+    (re-range :arity 2)
+    ;; re-loop special
+    (re-intersect :arity -)
+    (re-complement :arity 1)
+    (re-empty :arity 1)
+    (re-full :arity 1)
     ;;; Special relations
     ;; these are all special
     ))
@@ -172,6 +233,16 @@
           (z3-mk-bv2int context
                         (convert-to-ast-fn context x types)
                         signed?))
+         ((list (sym-name empty-set) sort)
+          (z3-mk-empty-set context (get-sort sort context)))
+         ((list (sym-name full-set) sort)
+          (z3-mk-full-set context (get-sort sort context)))
+         ((list (sym-name re-loop) r lo hi)
+          (assert (and (numberp lo) (>= lo 0)))
+          (assert (and (numberp hi) (>= hi 0)))
+          (z3-mk-re-loop context
+                         (convert-to-ast-fn context r types)
+                         lo hi))
          ((list* op args)
           (multiple-value-bind (op-fn exists?)
               (gethash (symbol-name op) *ops-hash*)
@@ -200,6 +271,18 @@
                   append (seq-ast-to-value arg ctx)))
            (otherwise (error "Unsupported operation when trying to convert sequence AST to value: ~S" decl-kind)))))
 
+(defun get-lstring (context ast)
+  (assert (z3-is-string context ast))
+  (cffi:with-foreign-object
+   (size-ptr :uint 1)
+   (let* ((str-ptr (z3-get-lstring context ast size-ptr))
+          (size (cffi:mem-ref size-ptr :uint))
+          (res-vec (make-array (list size) :element-type '(unsigned-byte 8))))
+     (loop for i below size
+           do (setf (aref res-vec i) (cffi:mem-aref str-ptr :char i)))
+     ;; TODO use something implementation-indepedent
+     (sb-ext:octets-to-string res-vec))))
+
 (defun ast-to-value (ast ctx)
   (let* ((ast-kind (z3-get-ast-kind ctx ast))
          (sort (z3-get-sort ctx ast))
@@ -219,7 +302,14 @@
                             (t (error "We don't support custom datatypes like ~S yet." (sort-name sort ctx)))))
                      ((or :OP_SEQ_CONCAT :OP_SEQ_UNIT :OP_SEQ_EMPTY)
                       (seq-ast-to-value ast ctx))
-                     (otherwise (error "Application ASTs for functions with decl-kind ~S are not supported." (z3-get-decl-kind ctx decl))))))
+                     (otherwise
+                      ;; TODO fix this ugly special-case
+                      (if (z3-is-string ctx ast)
+                          ;; TODO: do we want to use get-lstring or z3-get-string here?
+                          ;; benefits to using get-lstring: interface can roundtrip strings, more accurate representation of model
+                          ;; downsides: more annoying to use in a REPL, unclear how different lisps handle printing strings with "unprintable" characters like control codes
+                          (get-lstring ctx ast)
+                        (error "Translation of application ASTs for functions with decl-kind ~S is not currently supported." (z3-get-decl-kind ctx decl)))))))
            (:numeral_ast
             (match sort-kind
                    ((or :int_sort :finite_domain_sort :bv_sort) (values (parse-integer (z3-get-numeral-string ctx ast))))

@@ -66,6 +66,14 @@
                                   (error "seq type only takes a single argument.")
                                 (z3-mk-seq-sort ctx (get-sort (car args) ctx)))))
 
+(register-parametric-sort :regex
+                          #'(lambda (ctx args)
+                              (unless (equal (length args) 1)
+                                (error "regex type only takes a single argument."))
+                              (let ((sort (get-sort (car args) ctx)))
+                                (unless (z3-is-seq-sort ctx sort) (error "Regex type must be over a sequence sort."))
+                                (z3-mk-re-sort ctx sort))))
+
 (register-parametric-sort :array
                           #'(lambda (ctx args)
                               (unless (equal (length args) 2) (error "array type takes two arguments: domain and range sorts"))

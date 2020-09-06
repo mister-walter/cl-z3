@@ -13,9 +13,31 @@
 
 ;;(make-var-decls '(x :int y :bool) *default-context*)
 
+(cffi:defcallback error-handler :void ((ctx z3-c-types:context) (error-code z3-c-types:error_code))
+                  (restart-case
+                   (match error-code
+                          (:OK (error "Z3: error handler called with error code OK - should not occur."))
+                          (:SORT_ERROR (error "Z3: tried to build an AST that is not well-sorted"))
+                          (:IOB (error "Z3: index out of bounds"))
+                          (:INVALID_ARG (error "Z3: Invalid argument was provided"))
+                          (:NO_PARSER (error "Z3: parser output is not available"))
+                          (:INVALID_PATTERN (error "Z3: invalid pattern used to build a quantifier"))
+                          (:MEMOUT_FAIL (error "Z3: unable to allocate memory"))
+                          (:FILE_ACCESS_ERROR (error "Z3: unable to access file"))
+                          (:INTERNAL_FATAL (error "Z3: internal error occurred"))
+                          (:DEC_REF_ERROR (error "Z3: Tried to decrement the reference counter of an AST that was deleted or the reference counter was not initialized with Z3_inc_ref."))
+                          (:INVALID_USAGE (error "Z3: API call is invalid in the current state: ~a" (z3-get-error-msg ctx error-code)))
+                          (:PARSER_ERROR (error "Z3: An error occurred when parsing a string or file: ~a" (z3-get-error-msg ctx error-code)))
+                          (:EXCEPTION (error "Z3: An exception occurred: ~a" (z3-get-error-msg ctx error-code)))
+                          #| (let ((error-msg (z3-get-error-msg ctx error-code)))
+                             (format t "Z3 exception ~S" error-msg)))|#
+                          (otherwise (error "Z3: an unknown error occurred with code ~S" error-code)))
+                   (ignore-and-continue () :report "Ignore the error and return control to Z3." nil)))
+
 (defun solver-init ()
   (setf *default-context* (make-instance 'context))
-  (setf *default-solver* (make-simple-solver *default-context*)))
+  (setf *default-solver* (make-simple-solver *default-context*))
+  (z3-set-error-handler *default-context* (cffi:callback error-handler)))
 
 (defun solver-push (&optional solver)
   (let* ((slv (or solver *default-solver*))
@@ -67,7 +89,7 @@
     (match (z3-solver-check ctx slv)
            (:L_TRUE (model-constants-to-assignment (get-model solver) ctx)) ;; assertions are satisfiable (a model may be generated)
            (:L_FALSE :UNSAT) ;; assertions are not satisfiable (a proof may be generated)
-           ;; TODO: in the undef case we may want to get the model and see if the assignment satisfies the assertions
+           ;; TODO: in the unknown case we may want to get the model and see if the assignment satisfies the assertions
            ;; if so we can return it.
            (:L_UNDEF :UNKNOWN)))) ;; get_model may succeed but the model may not satisfy the assertions
 

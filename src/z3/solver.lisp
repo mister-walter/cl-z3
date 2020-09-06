@@ -6,13 +6,6 @@
                    :handle (z3-mk-simple-solver ctx)
                    :context ctx)))
 
-(defgeneric get-context (v)
-  (:documentation "Get a context object from another value")
-  (:method (v)
-           (error "get-context unsupported for values of type ~S" (type-of v)))
-  (:method ((v solver))
-           (slot-value v 'context)))
-
 (defgeneric solver-assert (solver stmt)
   (:documentation "Assert a statement in a solver")
   (:method (solver stmt)

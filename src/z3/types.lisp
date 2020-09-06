@@ -14,12 +14,21 @@
 (defmethod translate-to-foreign ((v context) (type z3-c-types::context-type))
   (slot-value v 'handle))
 
+(defclass z3-object-with-handle ()
+  ((handle :initarg :handle)
+   (context :initarg :context)))
+
+(defgeneric get-context (v)
+  (:documentation "Get a context object from another value")
+  (:method (v)
+           (error "get-context unsupported for values of type ~S" (type-of v)))
+  (:method ((v z3-object-with-handle))
+           (slot-value v 'context)))
+
 
 ;; The lifetimes of ast handles are determined by the scope level of solver-push and solver-pop
 ;; i.e. an ast handle will remain valid until there is a call to solver-pop that takes the current scope below the level where the object was created
-(defclass ast ()
-  ((handle :initarg :handle)
-   (context :initarg :context)))
+(defclass ast (z3-object-with-handle) ())
 
 (defmethod translate-to-foreign ((v ast) (type z3-c-types::ast-type))
   (slot-value v 'handle))
@@ -29,9 +38,7 @@
     (format stream "~&~A" (z3-ast-to-string context handle))))
 
 
-(defclass func-decl ()
-  ((handle :initarg :handle)
-   (context :initarg :context)))
+(defclass func-decl (z3-object-with-handle) ())
 
 (defmethod translate-to-foreign ((v func-decl) (type z3-c-types::func-decl-type))
   (slot-value v 'handle))
@@ -41,9 +48,7 @@
     (format stream "~&~A" (z3-func-decl-to-string context handle))))
 
 
-(defclass sort ()
-  ((handle :initarg :handle)
-   (context :initarg :context)))
+(defclass sort (z3-object-with-handle) ())
 
 (defmethod translate-to-foreign ((v sort) (type z3-c-types::sort-type))
   (slot-value v 'handle))
@@ -54,9 +59,7 @@
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
-(defclass model ()
-  ((handle :initarg :handle)
-   (context :initarg :context)))
+(defclass model (z3-object-with-handle) ())
 
 (defmethod translate-to-foreign ((v model) (type z3-c-types::model-type))
   (slot-value v 'handle))
@@ -71,9 +74,7 @@
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
-(defclass solver ()
-  ((handle :initarg :handle)
-   (context :initarg :context)))
+(defclass solver (z3-object-with-handle) ())
 
 (defmethod translate-to-foreign ((v solver) (type z3-c-types::solver-type))
   (slot-value v 'handle))

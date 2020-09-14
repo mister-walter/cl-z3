@@ -23,6 +23,7 @@
    (:file "ast-vector")
    (:file "sorts")
    (:file "ast")
+   (:file "func-decl")
    (:file "model")
    (:file "solver")
    (:file "api")

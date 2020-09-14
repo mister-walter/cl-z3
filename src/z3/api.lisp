@@ -8,10 +8,42 @@
 ;; but a fair amount of work is needed here to convert back and forth between z3 values and defdata values.
 
 (defun make-var-decls (decls context)
+    "Translate a user-provided list of variable and function
+declarations into a variable sort alist for internal use."
   (loop for (var ty) on decls by #'cddr
-        collect (cons var (get-sort ty context))))
+        unless (and (consp ty) (equal (car ty) :fn))
+        collect (cons var (make-instance 'sort
+                                         :handle (get-sort ty context)
+                                         :context context))))
 
 ;;(make-var-decls '(x :int y :bool) *default-context*)
+
+(defun make-fn-decls (decls context)
+  "Translate a user-provided list of variable and function
+declarations into a function declaration alist for internal use."
+  (loop for (var ty) on decls by #'cddr
+        when (and (consp ty) (equal (car ty) :fn))
+        collect (list var (make-fn-decl var (second ty) (third ty) context) ty)))
+
+;; TODO: we may want to use z3-mk-fresh-func-decl to avoid name
+;; clashes with builtin functions. This would also require changes to
+;; the model translation code.
+;; TODO: weird SBCL note when compiled:
+;; note: Type assertion too complex to check:
+;; (VALUES Z3::FUNC-DECL &REST T).
+;; It allows an unknown number of values, consider using
+;; (VALUES Z3::FUNC-DECL &OPTIONAL).
+(declaim (ftype (function (symbol * * context) func-decl) make-fn-decl))
+(defun make-fn-decl (name domain range context)
+  "Given a name, a list of domain sort specifiers, and a range sort specifier, create an uninterpreted func-decl with that name and signature."
+  (with-foreign-array (domain-sorts-array z3-c-types::Z3_sort domain (get-sort arg context))
+                      (make-instance 'func-decl
+                                     :handle (z3-mk-func-decl context
+                                                              (z3-mk-string-symbol context (symbol-name name))
+                                                              (length domain)
+                                                              domain-sorts-array
+                                                              (get-sort range context))
+                                     :context context)))
 
 (cffi:defcallback error-handler :void ((ctx z3-c-types:context) (error-code z3-c-types:error_code))
                   (restart-case
@@ -68,7 +100,7 @@ any Z3 declarations or assertions that occurred between the relevant
          (ctx (get-context slv)))
     (solver-assert
      slv
-     (convert-to-ast stmt (make-var-decls var-decls ctx) ctx))))
+     (convert-to-ast stmt (make-var-decls var-decls ctx) (make-fn-decls var-decls ctx) ctx))))
 
 (defmacro z3-assert (var-decls stmt &optional solver)
   `(z3-assert-fn ',var-decls ',stmt ,solver))
@@ -89,7 +121,9 @@ bindings corresponding to the model that Z3 generated."
   (let* ((slv (or solver *default-solver*))
          (ctx (get-context slv)))
     (match (z3-solver-check ctx slv)
-           (:L_TRUE (model-constants-to-assignment (get-model solver) ctx)) ;; assertions are satisfiable (a model may be generated)
+           (:L_TRUE ;; assertions are satisfiable (a model may be generated)
+            (append (model-constants-to-assignment (get-model solver) ctx)
+                    (model-funcs (get-model solver) ctx)))
            (:L_FALSE :UNSAT) ;; assertions are not satisfiable (a proof may be generated)
            ;; TODO: in the unknown case we may want to get the model and see if the assignment satisfies the assertions
            ;; if so we can return it.

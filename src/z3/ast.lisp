@@ -2,7 +2,17 @@
 
 (import 'z3-c-types::(Z3_ast))
 
-(defun convert-to-ast-fn (context stmt &optional types)
+(defun make-fn-call (name args types fns ctx)
+  (let ((fn-entry (assoc name fns)))
+    (unless fn-entry (error "No function with name ~S is known" name))
+    (let* ((decl (second fn-entry))
+           (arg-sorts-debug (second (third fn-entry)))
+           (return-sort-debug (third (third fn-entry))))
+      (unless (equal (length arg-sorts-debug) (length args)) (error "Incorrect number of arguments given for function ~S of type ~S" name (third fn-entry)))
+      (with-foreign-array (array z3-c-types::Z3_ast args (convert-to-ast-fn ctx arg types fns))
+                          (z3-mk-app ctx decl (length args) array)))))
+
+(defun convert-to-ast-fn (context stmt &optional types fns)
   (match stmt
          (t (z3-mk-true context))
          (nil (z3-mk-false context))
@@ -19,10 +29,10 @@
          ((list (sym-name enumval) name val)
           (enum-value-to-ast name val context))
          ((list* (sym-name tuple-val) tuple-name field-values)
-          (construct-tuple-fn tuple-name (mapcar (lambda (value) (convert-to-ast-fn context value types)) field-values) context types))
+          (construct-tuple-fn tuple-name (mapcar (lambda (value) (convert-to-ast-fn context value types fns)) field-values) context types))
          ((list (sym-name tuple-get) tuple-name field-name value)
           (construct-tuple-field-accessor-fn tuple-name field-name
-                                             (convert-to-ast-fn context value types) context))
+                                             (convert-to-ast-fn context value types fns) context))
          ((list* (sym-name bv) args)
           (let ((args
                  (cond ((every #'(lambda (arg) (typep arg 'boolean)) args)
@@ -35,31 +45,33 @@
          ((list* (sym-name seq) args)
           (assert (plusp (length args)))
           (with-foreign-array (array z3-c-types::Z3_ast args
-                                     (z3-mk-seq-unit context (convert-to-ast-fn context arg types)))
+                                     (z3-mk-seq-unit context (convert-to-ast-fn context arg types fns)))
                               (z3-mk-seq-concat context (length args) array)))
          ((list (sym-name seq-empty) sort)
           (z3-mk-seq-empty context (get-sort (list :seq sort) context)))
          ((list (sym-name seq-unit) x)
-          (z3-mk-seq-unit context (convert-to-ast-fn context x types)))
+          (z3-mk-seq-unit context (convert-to-ast-fn context x types fns)))
          ((list (sym-name re-empty) sort)
           (z3-mk-re-empty context (get-sort sort context)))
          ((list (sym-name re-full) sort)
           (z3-mk-re-full context (get-sort sort context)))
          ((list* (sym-name set) sort args)
           (mk-set (get-sort sort context) args context types))
-         ((type list) (convert-funccall-to-ast context stmt types))
+         ((list* (sym-name _) name args)
+          (make-fn-call name args types fns context))
+         ((type list) (convert-funccall-to-ast context stmt types fns))
          (otherwise (error "Value ~S is of an unsupported type." stmt))))
 
-(defun mk-set (sort values ctx types)
+(defun mk-set (sort values ctx types fns)
   (if (endp values)
             (z3-mk-empty-set ctx sort)
       (z3-mk-set-add ctx
-                     (mk-set sort (cdr values) ctx types)
-                     (convert-to-ast-fn ctx (car values) types))))
+                     (mk-set sort (cdr values) ctx types fns)
+                     (convert-to-ast-fn ctx (car values) types fns))))
 
-(defun convert-to-ast (stmt types ctx)
+(defun convert-to-ast (stmt types fns ctx)
   (make-instance 'ast
-                 :handle (convert-to-ast-fn ctx stmt types)
+                 :handle (convert-to-ast-fn ctx stmt types fns)
                  :context ctx))
 
 ;; A partial list of built-in functions.
@@ -182,17 +194,17 @@
                       (intern (concatenate 'string "Z3-MK-" (symbol-name name)) :z3)))
          (arity (get-key :arity (cdr op))))
     (if (equal arity '-)
-        `(lambda (context types &rest args)
+        `(lambda (context types fns &rest args)
            (if (endp args)
                (error "The function ~S must be called with at least one argument." ',name)
              (with-foreign-array (array
                                   z3-c-types::Z3_ast
                                   args
-                                  (convert-to-ast-fn context arg types))
+                                  (convert-to-ast-fn context arg types fns))
                                  (,z3-name context (length args) array))))
       (let ((arg-names (loop for i below arity collect (gensym))))
-        `(lambda (context types ,@arg-names)
-           (,z3-name context . ,(mapcar (lambda (arg-name) `(convert-to-ast-fn context ,arg-name types)) arg-names)))))))
+        `(lambda (context types fns ,@arg-names)
+           (,z3-name context . ,(mapcar (lambda (arg-name) `(convert-to-ast-fn context ,arg-name types fns)) arg-names)))))))
 
 (defvar *ops-hash* (make-hash-table :test 'equal))
 (loop for op in *builtin-ops*
@@ -200,38 +212,38 @@
       do (setf (gethash (symbol-name name) *ops-hash*)
                (eval `(mk-op-fn ,op))))
 
-(defun convert-funccall-to-ast (context stmt &optional types)
+(defun convert-funccall-to-ast (context stmt types fns)
   (match stmt
          ((list (or '= 'equal '==) x y)
           (z3-mk-eq context
-                    (convert-to-ast-fn context x types)
-                    (convert-to-ast-fn context y types)))
+                    (convert-to-ast-fn context x types fns)
+                    (convert-to-ast-fn context y types fns)))
          ((list '- arg)
-          (z3-mk-unary-minus context (convert-to-ast-fn context arg types)))
+          (z3-mk-unary-minus context (convert-to-ast-fn context arg types fns)))
          ((list (sym-name extract) x hi lo)
           (z3-mk-extract context
                          hi
                          lo
-                         (convert-to-ast-fn context x types)))
+                         (convert-to-ast-fn context x types fns)))
          ((list (sym-name signext) x len)
           (z3-mk-sign-ext context
                           len
-                          (convert-to-ast-fn context x types)))
+                          (convert-to-ast-fn context x types fns)))
          ((list (sym-name zeroext) x len)
           (z3-mk-zero-ext context
                           len
-                          (convert-to-ast-fn context x types)))
+                          (convert-to-ast-fn context x types fns)))
          ((list (sym-name repeat) x maxlen)
           (z3-mk-repeat context
                         maxlen
-                        (convert-to-ast-fn context x types)))
+                        (convert-to-ast-fn context x types fns)))
          ((list (sym-name int2bv) x nbits)
           (z3-mk-int2bv context
                         nbits
-                        (convert-to-ast-fn context x types)))
+                        (convert-to-ast-fn context x types fns)))
          ((list (sym-name bv2int) x signed?)
           (z3-mk-bv2int context
-                        (convert-to-ast-fn context x types)
+                        (convert-to-ast-fn context x types fns)
                         signed?))
          ((list (sym-name empty-set) sort)
           (z3-mk-empty-set context (get-sort sort context)))
@@ -241,13 +253,13 @@
           (assert (and (numberp lo) (>= lo 0)))
           (assert (and (numberp hi) (>= hi 0)))
           (z3-mk-re-loop context
-                         (convert-to-ast-fn context r types)
+                         (convert-to-ast-fn context r types fns)
                          lo hi))
          ((list* op args)
           (multiple-value-bind (op-fn exists?)
               (gethash (symbol-name op) *ops-hash*)
             (if exists?
-                (apply op-fn context types args)
+                (apply op-fn context types fns args)
               (trivia.skip:skip))))
          (otherwise (error "We currently do not support translation of the following expression into Z3.~%~S" stmt))))
 

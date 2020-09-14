@@ -35,16 +35,21 @@
                    (ignore-and-continue () :report "Ignore the error and return control to Z3." nil)))
 
 (defun solver-init ()
+  "Initialize the Z3 interface with a context and a solver."
   (setf *default-context* (make-instance 'context))
-  (setf *default-solver* (make-simple-solver *default-context*))
-  (z3-set-error-handler *default-context* (cffi:callback error-handler)))
+  (z3-set-error-handler *default-context* (cffi:callback error-handler))
+  (setf *default-solver* (make-simple-solver *default-context*)))
 
 (defun solver-push (&optional solver)
+  "Create a new scope. This is useful for incremental solving."
   (let* ((slv (or solver *default-solver*))
          (ctx (get-context slv)))
     (z3-solver-push ctx slv)))
 
-(defun solver-pop (&optional solver &key (n 1))
+(defun solver-pop (&key (solver nil) (n 1))
+  "Pop one or more scopes off the Z3 stack. This essentially undoes
+any Z3 declarations or assertions that occurred between the relevant
+'push' operation and this 'pop' operation."
   (let* ((slv (or solver *default-solver*))
          (ctx (get-context slv)))
     (unless (<= n (z3-solver-get-num-scopes ctx slv))
@@ -66,13 +71,7 @@
      (convert-to-ast stmt (make-var-decls var-decls ctx) ctx))))
 
 (defmacro z3-assert (var-decls stmt &optional solver)
-  ;; TODO we do nicer error handling here
-  (when (oddp (length var-decls)) (error "Each declared variable must have a type."))
-  `(let* ((slv (or ,solver *default-solver*))
-          (ctx (get-context slv)))
-     (solver-assert
-      slv
-      (convert-to-ast ',stmt (make-var-decls ',var-decls ctx) ctx))))
+  `(z3-assert-fn ',var-decls ',stmt ,solver))
 
 (defun get-model (&optional solver)
   "Get the model object for the last solver-check[-assumptions] call.
@@ -84,6 +83,9 @@
                    :context ctx)))
 
 (defun check-sat (&optional solver)
+  "Ask Z3 to check satisfiability of the global assertion stack.
+Returns either :UNSAT, :UNKNOWN, or a (possibly empty) list of
+bindings corresponding to the model that Z3 generated."
   (let* ((slv (or solver *default-solver*))
          (ctx (get-context slv)))
     (match (z3-solver-check ctx slv)
@@ -92,48 +94,3 @@
            ;; TODO: in the unknown case we may want to get the model and see if the assignment satisfies the assertions
            ;; if so we can return it.
            (:L_UNDEF :UNKNOWN)))) ;; get_model may succeed but the model may not satisfy the assertions
-
-
-;; i.e. will use default context and solver
-;; maybe will init for you, optional context and solver
-;; use defunc/definec code to figure out types
-;; and then export types to z3 sorts
-#|
-
-(solver-init)
-(z3-assert
-  (x :bool y :bool)
-  (and x y t))
-
-(CONVERT-TO-AST (OR NIL *DEFAULT-CONTEXT*) '(AND X Y T)
-                '((X . 94544999634200) (Y . 94544999634200)))
-
-                               (MAKE-VAR-DECLS (X :BOOL Y :BOOL)
-                                               (OR NIL *DEFAULT-CONTEXT*))))
-
-(z3-solver-check *default-context* *default-solver*)
-
-(make-instance 'model
-:handle
-(z3-solver-get-model *default-context* *default-solver*)
-:context *default-context*)
-
-(defvar blah (make-instance 'model
-:handle
-(z3-solver-get-model *default-context* *default-solver*)
-:context *default-context*))
-
-(describe blah)
-
-(defvar bleh (make-instance 'model
-:handle
-(z3-solver-get-model *default-context* *default-solver*)
-:context *default-context*))
-
-(describe bleh)
-
-|#
-
-#|
-(check-sat)
-|#

@@ -2241,7 +2241,8 @@ while ((_ update-field car) (cons 2 nil) 1) is (cons 1 nil).
    value of `f` in a particular point.
    \pre i < Z3_func_interp_get_num_entries(c, f)"
   (c context)
-  (f func-interp))
+  (f func-interp)
+  (i :uint))
 
 (defcfun "Z3_func_interp_get_else" ast
   "Return the 'else' value of the given function interpretation.

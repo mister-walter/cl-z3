@@ -30,13 +30,12 @@
                        ((every #'(lambda (arg) (or (eql arg 0) (eql arg 1))) args)
                         (mapcar #'(lambda (arg) (= arg 1)) args))
                        (t (error "You must provide either a list of booleans or a list of (0,1)s to bv.")))))
-            (with-foreign-array (:bool args arg)
+            (with-foreign-array (array :bool args arg)
                                 (z3-mk-bv-numeral context (length args) array))))
          ((list* (sym-name seq) args)
           (assert (plusp (length args)))
-          (with-foreign-array (z3-c-types::Z3_ast
-                               args
-                               (z3-mk-seq-unit context (convert-to-ast-fn context arg types)))
+          (with-foreign-array (array z3-c-types::Z3_ast args
+                                     (z3-mk-seq-unit context (convert-to-ast-fn context arg types)))
                               (z3-mk-seq-concat context (length args) array)))
          ((list (sym-name seq-empty) sort)
           (z3-mk-seq-empty context (get-sort (list :seq sort) context)))
@@ -186,7 +185,8 @@
         `(lambda (context types &rest args)
            (if (endp args)
                (error "The function ~S must be called with at least one argument." ',name)
-             (with-foreign-array (z3-c-types::Z3_ast
+             (with-foreign-array (array
+                                  z3-c-types::Z3_ast
                                   args
                                   (convert-to-ast-fn context arg types))
                                  (,z3-name context (length args) array))))

@@ -94,9 +94,16 @@
   (with-slots (handle context) obj
     (z3-solver-to-string context handle)))
 
+;; We need this because we have the unset-solver type in
+;; globals.lisp. We don't want to call solver-inc-ref in
+;; initialize-instance for that class because it doesn't have a real
+;; solver value.
 (defmethod initialize-instance :after ((obj solver) &key)
   (with-slots (handle context) obj
-    (z3-solver-inc-ref context handle)))
+    (if handle
+        (z3-solver-inc-ref context handle)
+      (warn "Not incrementing reference count of the solver object because its handle is set to nil."))))
+
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
 (defclass ast-vector (z3-object-with-handle) ())

@@ -1,8 +1,5 @@
 (in-package :z3)
 
-(defparameter *default-context* (make-instance 'context))
-(defparameter *default-solver* (make-simple-solver *default-context*))
-
 ;; TODO: integrate defdata's types where possible
 ;; e.g. automatically convert defdatas into "equivalent" Z3 sorts
 ;; but a fair amount of work is needed here to convert back and forth between z3 values and defdata values.

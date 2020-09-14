@@ -20,6 +20,7 @@
    (:file "match-extensions")
    (:file "util")
    (:file "types")
+   (:file "globals")
    (:file "ast-vector")
    (:file "sorts")
    (:file "ast")

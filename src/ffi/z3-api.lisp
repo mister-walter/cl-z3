@@ -2958,3 +2958,65 @@ that are not selected for interrupts are left alone.
   (s stats))
 
 ;; ...
+
+;;;; z3_ast_containers.h
+
+(defcfun "Z3_mk_ast_vector" ast-vector
+  "Return an empty AST vector.
+   Reference counting must be used to manage AST vectors, even when the Z3_context was
+   created using #Z3_mk_context instead of #Z3_mk_context_rc."
+  (c context))
+
+(defcfun "Z3_ast_vector_inc_ref" :void
+  "Increment the reference counter of the given AST vector."
+  (c context)
+  (v ast-vector))
+
+(defcfun "Z3_ast_vector_dec_ref" :void
+  "Decrement the reference counter of the given AST vector."
+  (c context)
+  (v ast-vector))
+
+(defcfun "Z3_ast_vector_size" :uint
+  "Return the size of the given AST vector."
+  (c context)
+  (v ast-vector))
+
+(defcfun "Z3_ast_vector_get" Z3_ast
+  "Return the AST at position `i` in the AST vector `v`."
+  (c context)
+  (v ast-vector)
+  (i :uint)) ;; i < Z3_ast_vector_size(c,v)
+
+(defcfun "Z3_ast_vector_set" :void
+  "Update position `i` of the AST vector `v` with the AST `a`."
+  (c context)
+  (v ast-vector)
+  (i :uint) ;; i < Z3_ast_vector_size(c,v)
+  (a ast))
+
+(defcfun "Z3_ast_vector_resize" :void
+  "Resize the AST vector `v`."
+  (c context)
+  (v ast-vector)
+  (n :uint))
+
+(defcfun "Z3_ast_vector_push" :void
+  "Add the AST `a` in the end of the AST vector `v`. The size of `v` is increased by one."
+  (c context)
+  (v ast-vector)
+  (a ast))
+
+(defcfun "Z3_ast_vector_translate" ast-vector
+  "Translate the AST vector `v` from context `source` into an AST vector in context `target`."
+  (source context)
+  (v ast-vector)
+  (target context))
+
+(defcfun "Z3_ast_vector_to_string" :string
+  "Convert the AST vector `v` into a string."
+  (c context)
+  (v ast-vector))
+
+;; skip Z3_ast_map functions because we don't need them right now.
+

@@ -8,7 +8,6 @@
      (:cffi-grovel-file "z3-grovel")
      (:file "z3-c-types")
      (:file "z3-c")
-     (:file "z3-ast-containers")
      (:file "z3-api")
      ))
 
@@ -21,6 +20,7 @@
    (:file "match-extensions")
    (:file "util")
    (:file "types")
+   (:file "ast-vector")
    (:file "sorts")
    (:file "ast")
    (:file "model")

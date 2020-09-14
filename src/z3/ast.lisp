@@ -291,8 +291,7 @@
           (size (cffi:mem-ref size-ptr :uint))
           (res-vec (make-array (list size) :element-type '(unsigned-byte 8))))
      (loop for i below size
-           do (setf (aref res-vec i) (cffi:mem-aref str-ptr :char i)))
-     ;; TODO use something implementation-indepedent
+           do (setf (aref res-vec i) (cffi:mem-aref str-ptr :unsigned-char i)))
      (octets-to-string res-vec :external-format :UTF-8))))
 
 (defun ast-to-value (ast ctx)

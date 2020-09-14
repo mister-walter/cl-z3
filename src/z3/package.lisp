@@ -7,4 +7,7 @@
            #:z3-assert #:check-sat
            #:convert-to-ast #:ast-to-value
            #:register-finite-domain-sort #:register-enum-sort #:register-tuple-sort
-           #:*default-context* #:*default-solver*))
+           #:z3-object-to-string
+           #:*default-context* #:*default-solver*
+           #:parse-smt2-file
+           #:ast-vector-to-list))

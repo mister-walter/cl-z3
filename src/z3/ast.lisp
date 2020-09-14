@@ -329,3 +329,40 @@
                    (otherwise (error "Translation of numeric values with sort kind ~S is not currently supported." sort-kind))))
            (otherwise (error "Translation of ASTs of kind ~S are not currently supported.~%AST that triggered this: ~S" ast-kind (z3-ast-to-string ctx ast))))))
 
+
+;; TODO these two functions are very similar - should factor common code into a macro or something.
+(defun parse-smt2-string (filename &key sorts decls context)
+  "Parse the given string using the SMT-LIB2 parser.
+   It returns an ast-vector comprising of the conjunction of assertions in the scope
+   (up to push/pop) at the end of the string."
+  (let ((ctx (or context *default-context*)))
+    (make-instance 'ast-vector
+                   :handle
+                   (with-foreign-arrays ((sort-names z3-c-types::Z3_symbol sorts (z3-get-sort-name ctx arg))
+                                         (z3-sorts z3-c-types::Z3_sort sorts arg)
+                                         (decl-names z3-c-types::Z3_symbol decls (z3-get-decl-name ctx arg))
+                                         (z3-decls z3-c-types::Z3_func_decl decls arg))
+                                        (z3-parse-smtlib2-string ctx filename
+                                                               (length sorts) sort-names z3-sorts
+                                                               (length decls) decl-names z3-decls))
+                   :context ctx)))
+
+;; TODO: use lisp file functions to produce an absolute path here? I
+;; have a gut feeling that Z3's file access will not work the same as
+;; lisp's in all cases, and that may result in confusion...
+(defun parse-smt2-file (filename &key sorts decls context)
+  "Parse the file with the given filename  using the SMT-LIB2 parser.
+   It returns an ast-vector comprising of the conjunction of assertions in the scope
+   (up to push/pop) at the end of the file.
+   Calls the error handler if the file does not exist or cannot be accessed."
+  (let ((ctx (or context *default-context*)))
+    (make-instance 'ast-vector
+                   :handle
+                   (with-foreign-arrays ((sort-names z3-c-types::Z3_symbol sorts (z3-get-sort-name ctx arg))
+                                         (z3-sorts z3-c-types::Z3_sort sorts arg)
+                                         (decl-names z3-c-types::Z3_symbol decls (z3-get-decl-name ctx arg))
+                                         (z3-decls z3-c-types::Z3_func_decl decls arg))
+                                        (z3-parse-smtlib2-file ctx filename
+                                                               (length sorts) sort-names z3-sorts
+                                                               (length decls) decl-names z3-decls))
+                   :context ctx)))

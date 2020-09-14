@@ -25,6 +25,17 @@
   (:method ((v z3-object-with-handle))
            (slot-value v 'context)))
 
+(defgeneric z3-object-to-string (obj)
+  (:method ((v z3-object-with-handle))
+           (error "You must provide an implementation of the z3-object-to-string generic method for the type ~A" (type-of v))))
+
+(defmethod describe-object ((obj z3-object-with-handle) stream)
+  (format stream "~&~A" (z3-object-to-string obj)))
+
+(defmethod print-object ((obj z3-object-with-handle) stream)
+  (print-unreadable-object (obj stream :type t)
+                           (format stream "~A" (z3-object-to-string obj))))
+
 
 ;; The lifetimes of ast handles are determined by the scope level of solver-push and solver-pop
 ;; i.e. an ast handle will remain valid until there is a call to solver-pop that takes the current scope below the level where the object was created
@@ -33,9 +44,9 @@
 (defmethod translate-to-foreign ((v ast) (type z3-c-types::ast-type))
   (slot-value v 'handle))
 
-(defmethod describe-object ((v ast) stream)
-  (with-slots (handle context) v
-    (format stream "~&~A" (z3-ast-to-string context handle))))
+(defmethod z3-object-to-string ((obj ast))
+  (with-slots (handle context) obj
+    (z3-ast-to-string context handle)))
 
 
 (defclass func-decl (z3-object-with-handle) ())
@@ -43,9 +54,9 @@
 (defmethod translate-to-foreign ((v func-decl) (type z3-c-types::func-decl-type))
   (slot-value v 'handle))
 
-(defmethod describe-object ((v func-decl) stream)
-  (with-slots (handle context) v
-    (format stream "~&~A" (z3-func-decl-to-string context handle))))
+(defmethod z3-object-to-string ((obj func-decl))
+  (with-slots (handle context) obj
+    (z3-func-decl-to-string context handle)))
 
 
 (defclass sort (z3-object-with-handle) ())
@@ -53,9 +64,9 @@
 (defmethod translate-to-foreign ((v sort) (type z3-c-types::sort-type))
   (slot-value v 'handle))
 
-(defmethod describe-object ((v sort) stream)
-  (with-slots (handle context) v
-    (format stream "~&~A" (z3-sort-to-string context handle))))
+(defmethod z3-object-to-string ((obj sort))
+  (with-slots (handle context) obj
+    (z3-sort-to-string context handle)))
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
@@ -64,9 +75,9 @@
 (defmethod translate-to-foreign ((v model) (type z3-c-types::model-type))
   (slot-value v 'handle))
 
-(defmethod describe-object ((v model) stream)
-  (with-slots (handle context) v
-    (format stream "~&~A" (z3-model-to-string context handle))))
+(defmethod z3-object-to-string ((obj model))
+  (with-slots (handle context) obj
+    (z3-model-to-string context handle)))
 
 (defmethod initialize-instance :after ((obj model) &key)
   (with-slots (handle context) obj
@@ -79,10 +90,24 @@
 (defmethod translate-to-foreign ((v solver) (type z3-c-types::solver-type))
   (slot-value v 'handle))
 
-(defmethod describe-object ((v solver) stream)
-  (with-slots (handle context) v
-    (format stream "~&~A" (z3-solver-to-string context handle))))
+(defmethod z3-object-to-string ((obj solver))
+  (with-slots (handle context) obj
+    (z3-solver-to-string context handle)))
 
 (defmethod initialize-instance :after ((obj solver) &key)
   (with-slots (handle context) obj
     (z3-solver-inc-ref context handle)))
+
+;; NOTE: we need to manually increment/decrement reference counter for this type
+(defclass ast-vector (z3-object-with-handle) ())
+
+(defmethod translate-to-foreign ((v ast-vector) (type z3-c-types::ast-vector-type))
+  (slot-value v 'handle))
+
+(defmethod z3-object-to-string ((obj ast-vector))
+  (with-slots (handle context) obj
+    (z3-ast-vector-to-string context handle)))
+
+(defmethod initialize-instance :after ((obj ast-vector) &key)
+  (with-slots (handle context) obj
+    (z3-ast-vector-inc-ref context handle)))

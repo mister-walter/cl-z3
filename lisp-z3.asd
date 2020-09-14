@@ -12,7 +12,7 @@
      ))
 
 (defsystem "lisp-z3/z3"
-  :depends-on ("lisp-z3/ffi" "trivia")
+  :depends-on ("lisp-z3/ffi" "trivia" "flexi-streams")
   :serial t
   :pathname "src/z3"
   :components

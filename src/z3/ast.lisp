@@ -293,7 +293,7 @@
      (loop for i below size
            do (setf (aref res-vec i) (cffi:mem-aref str-ptr :char i)))
      ;; TODO use something implementation-indepedent
-     (sb-ext:octets-to-string res-vec))))
+     (octets-to-string res-vec :external-format :UTF-8))))
 
 (defun ast-to-value (ast ctx)
   (let* ((ast-kind (z3-get-ast-kind ctx ast))
@@ -317,9 +317,14 @@
                      (otherwise
                       ;; TODO fix this ugly special-case
                       (if (z3-is-string ctx ast)
-                          ;; TODO: do we want to use get-lstring or z3-get-string here?
-                          ;; benefits to using get-lstring: interface can roundtrip strings, more accurate representation of model
-                          ;; downsides: more annoying to use in a REPL, unclear how different lisps handle printing strings with "unprintable" characters like control codes
+                          ;; TODO: do we want to use get-lstring or get-string here?
+                          ;; benefits to using get-lstring: interface
+                          ;;   can roundtrip strings, more accurate
+                          ;;   representation of model
+                          ;; downsides: more annoying to use in a
+                          ;;   REPL, unclear how different lisps handle
+                          ;;   printing strings with "unprintable"
+                          ;;   characters like control codes
                           (get-lstring ctx ast)
                         (error "Translation of application ASTs for functions with decl-kind ~S is not currently supported." (z3-get-decl-kind ctx decl)))))))
            (:numeral_ast

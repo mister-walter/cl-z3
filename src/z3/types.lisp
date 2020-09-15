@@ -106,6 +106,46 @@
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
+(defclass params (z3-object-with-handle) ())
+
+(defmethod translate-to-foreign ((v params) (type z3-c-types::params-type))
+  (slot-value v 'handle))
+
+(defmethod z3-object-to-string ((obj params))
+  (with-slots (handle context) obj
+    (z3-params-to-string context handle)))
+
+(defmethod initialize-instance :after ((obj params) &key)
+  (with-slots (handle context) obj
+    (z3-params-inc-ref context handle)))
+
+
+(defclass param-descrs (z3-object-with-handle) ())
+
+(defmethod translate-to-foreign ((v param-descrs) (type z3-c-types::param-descrs-type))
+  (slot-value v 'handle))
+
+(defmethod z3-object-to-string ((obj param-descrs))
+  (with-slots (handle context) obj
+    (z3-param-descrs-to-string context handle)))
+
+
+;; NOTE: we need to manually increment/decrement reference counter for this type
+(defclass statistics (z3-object-with-handle) ())
+
+(defmethod translate-to-foreign ((v statistics) (type z3-c-types::stats-type))
+  (slot-value v 'handle))
+
+(defmethod z3-object-to-string ((obj statistics))
+  (with-slots (handle context) obj
+    (z3-stats-to-string context handle)))
+
+(defmethod initialize-instance :after ((obj statistics) &key)
+  (with-slots (handle context) obj
+    (z3-stats-inc-ref context handle)))
+
+
+;; NOTE: we need to manually increment/decrement reference counter for this type
 (defclass ast-vector (z3-object-with-handle) ())
 
 (defmethod translate-to-foreign ((v ast-vector) (type z3-c-types::ast-vector-type))

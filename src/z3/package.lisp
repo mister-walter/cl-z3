@@ -5,10 +5,11 @@
   (:import-from :flexi-streams :octets-to-string)
   (:import-from :cffi :translate-to-foreign)
   (:export #:solver-init #:solver-push #:solver-pop
-           #:z3-assert #:check-sat
+           #:z3-assert #:z3-assert-fn #:check-sat
            #:convert-to-ast #:ast-to-value
            #:register-finite-domain-sort #:register-enum-sort #:register-tuple-sort
            #:z3-object-to-string
+           #:set-params
            #:*default-context* #:*default-solver*
            #:parse-smt2-file
            #:ast-vector-to-list))

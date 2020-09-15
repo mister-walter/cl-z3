@@ -14,6 +14,26 @@
   (:method (solver (stmt ast))
            (z3-solver-assert (get-context solver) solver stmt)))
 
+(defun get-solver-help (&optional solver)
+  (let ((slv (or solver *default-solver*)))
+    (z3-solver-get-help (get-context slv) slv)))
+
+(defun get-solver-param-descrs (&optional solver)
+  (let ((slv (or solver *default-solver*)))
+    (make-instance 'param-descrs
+                   :handle (z3-solver-get-param-descrs (get-context slv) slv)
+                   :context (get-context slv))))
+
+(defun get-solver-stats (&optional solver)
+  (let ((slv (or solver *default-solver*)))
+    (make-instance 'statistics
+                   :handle (z3-solver-get-statistics (get-context slv) slv)
+                   :context (get-context slv))))
+
+(defmacro set-params (settings &optional solver)
+  `(let ((slv (or ,solver *default-solver*)))
+     (z3-solver-set-params (get-context slv) slv (make-params ,settings))))
+
 #|
 ;; This is an example of using the z3 bound functions to find a satisfying assignment
 (let* ((config (Z3-mk-config))

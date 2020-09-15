@@ -22,6 +22,7 @@
    (:file "types")
    (:file "globals")
    (:file "ast-vector")
+   (:file "params")
    (:file "sorts")
    (:file "ast")
    (:file "func-decl")

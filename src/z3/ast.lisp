@@ -283,6 +283,14 @@
                   append (seq-ast-to-value arg ctx)))
            (otherwise (error "Unsupported operation when trying to convert sequence AST to value: ~S" decl-kind)))))
 
+;; TODO: this is an experimental feature, don't rely on this switch
+;; existing.
+(defvar *STRING-REP* :string
+  "EXPERIMENTAL.
+Controls how strings are represented when converting from the Z3 model
+into lisp. Currently there are two modes: :string (the default) and
+:list (convert into list of uint8 values)")
+
 (defun get-lstring (context ast)
   (assert (z3-is-string context ast))
   (cffi:with-foreign-object
@@ -292,7 +300,10 @@
           (res-vec (make-array (list size) :element-type '(unsigned-byte 8))))
      (loop for i below size
            do (setf (aref res-vec i) (cffi:mem-aref str-ptr :unsigned-char i)))
-     (octets-to-string res-vec :external-format :UTF-8))))
+     (match *STRING-REP*
+            (:string (octets-to-string res-vec :external-format :UTF-8))
+            (:list (coerce res-vec 'list))
+            (otherwise (error "Unknown string representation mode ~S" *STRING-REP*))))))
 
 (defun ast-to-value (ast ctx)
   (let* ((ast-kind (z3-get-ast-kind ctx ast))

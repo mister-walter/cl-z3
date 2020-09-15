@@ -2451,14 +2451,36 @@ So, the buffer is invalidated in the next call to \c Z3_benchmark_to_smtlib_stri
 
 ;; Miscellaneous
 
-;; ...
+(defcfun "Z3_get_version" :void
+  "Return Z3 version number information."
+  (major :pointer) ;; output parameter uint*
+  (minor :pointer) ;; output parameter uint*
+  (build_number :pointer) ;; output parameter uint*
+  (revision_number :pointer)) ;; output parameter uint*
 
-#|
-(defconstant c (z3-mk-config))
-(defconstant ctx (z3-mk-context c))
-(defconstant a (z3-mk-true ctx))
-(z3-ast-to-string ctx a)
-|#
+(defcfun "Z3_get_full_version" :string
+  "Return a string that fully describes the version of Z3 in use.")
+
+(defcfun "Z3_enable_trace" :void
+  "Enable tracing messages tagged as `tag` when Z3 is compiled in debug mode.
+   It is a NOOP otherwise"
+  (tag :string))
+
+(defcfun "Z3_disable_trace" :void
+  "Disable tracing messages tagged as `tag` when Z3 is compiled in debug mode.
+   It is a NOOP otherwise"
+  (tag :string))
+
+(defcfun "Z3_reset_memory" :void
+  "Reset all allocated resources.
+   Use this facility on out-of memory errors.
+   It allows discharging the previous state and resuming afresh.
+   Any pointers previously returned by the API become invalid.")
+
+(defcfun "Z3_finalize_memory" :void
+  "Destroy all allocated resources.
+   Any pointers previously returned by the API become invalid.
+   Can be used for memory leak detection.")
 
 ;; Goals
 

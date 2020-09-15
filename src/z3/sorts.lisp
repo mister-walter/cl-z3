@@ -2,15 +2,43 @@
 
 (defvar *sorts* (make-hash-table))
 
-;; Q: Why do we not register the sort value itself?
+#|
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  A short discussion on "sort specifiers"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-;; A: Well, the sort value is managed by a context. So we need to
-;; ensure that when the context changes, get-sort responds
-;; appropriately. It seemed easiest to register (lisp) functions that
-;; produce sorts. However, we may need to add arbitrarily many
-;; arguments in the future for parametric types (like arrays) unless
-;; we want to register specialized versions of each sort.
-;; Or maybe we can do so on demand, we'll see.
+The user will often use what I call "sort specifiers" to refer to
+sorts when interacting with the Z3 interface.
+
+These are symbols (or S-expressions) that fully specify a concrete Z3 sort.
+For example:
+- :int is the sort specifier for the unbounded integer sort produced
+  by (z3-mk-int-sort ctx)
+- (:bv 5) is the sort specifier for 5-bit bitvector sort produced
+  by (z3-mk-bv-sort ctx 5)
+
+Note that the :bv sort is a parametric sort - it takes in a single
+parameter, which corresponds to the length of the bitvector that the
+sort represents.
+
+Also note that the sort specifiers correspond to Z3 calls that include
+a context value. This is because Z3 sort values are managed by the
+context that created them, and are tied to that context. One of the
+benefits of using sort specifiers is that the interface can handle
+creating the relevant sorts in the current context for the user, who
+does not have to worry about whether or not they are in the same
+context that a sort was created in.
+
+There is one special sort specifier that is handled in api.lisp:
+the (:fn (domain...) range) specifier. This corresponds to an
+uninterpreted function that takes in parameters of sorts described by
+the list `domain` and produces a value of sort described by
+`range`. These are not handled the same as sorts because they behave
+differently - the interface needs to create a function declaration
+whenever a user specifies that some variable name should be
+represented as an uninterpreted function.
+
+|#
 
 (defun register-sort (name sort-producer)
   "Register a sort.
@@ -283,6 +311,7 @@
             do (setf (cffi:mem-aref ,name ',array-ty i) elt))
       ,@body)))
 
+;; TODO does this function need to take in types?
 (defun construct-tuple-fn (tuple-name values context &optional types)
   "Make an AST node that constructs a value of the given tuple with the given field values.
    Field values must be provided in the same order as they were defined in the register-tuple-sort call for this tuple sort."
@@ -297,6 +326,7 @@
           (t (with-foreign-array-from-list values-array z3-c-types::Z3_ast values
                                            (z3-mk-app context (tuple-sort-metadata-constructor metadata) (length values) values-array))))))
 
+;; TODO why do we take in context?
 (defun get-tuple-field-accessor-decl-fn (tuple-name field-name context)
   (multiple-value-bind (metadata exists?)
       (gethash tuple-name *tuple-sort-metadata*)

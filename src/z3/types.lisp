@@ -44,6 +44,11 @@
 (defmethod translate-to-foreign ((v ast) (type z3-c-types::ast-type))
   (slot-value v 'handle))
 
+(defmethod translate-to-foreign ((v ast) (type z3-c-types::app-type))
+  (unless (z3-is-app (get-context v) v)
+    (error "Tried to convert non-app AST ~a into an app value." v))
+  (slot-value v 'handle))
+
 (defmethod z3-object-to-string ((obj ast))
   (with-slots (handle context) obj
     (z3-ast-to-string context handle)))

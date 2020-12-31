@@ -6,6 +6,18 @@
                    :handle (z3-mk-simple-solver ctx)
                    :context ctx)))
 
+(defun make-composite-solver (&optional context)
+  (let ((ctx (or context (make-instance 'context))))
+    (make-instance 'solver
+                   :handle (z3-mk-solver ctx)
+                   :context ctx)))
+
+(defun make-solver-from-tactic (tactic &optional context)
+  (let ((ctx (or context *default-context*)))
+    (make-instance 'solver
+                   :handle (z3-mk-solver-from-tactic ctx tactic)
+                   :context ctx)))
+
 (defgeneric solver-assert (solver stmt)
   (:documentation "Assert a statement in a solver")
   (:method (solver stmt)

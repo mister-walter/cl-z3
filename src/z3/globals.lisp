@@ -19,3 +19,6 @@
 
 (defparameter *default-context* (make-instance 'unset-context :handle nil))
 (defparameter *default-solver* (make-instance 'unset-solver :handle nil :context *default-context*))
+
+(defun set-solver (solver)
+  (setf *default-solver* solver))

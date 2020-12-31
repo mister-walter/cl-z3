@@ -4,7 +4,10 @@
   (:import-from :trivia :match)
   (:import-from :flexi-streams :octets-to-string)
   (:import-from :cffi :translate-to-foreign)
-  (:export #:solver-init #:solver-push #:solver-pop
+  (:export #:solver-init #:set-solver
+           #:make-simple-solver #:make-composite-solver #:make-solver-from-tactic
+           #:make-tactic
+           #:solver-push #:solver-pop
            #:z3-assert #:z3-assert-fn #:check-sat
            #:convert-to-ast #:ast-to-value
            #:register-finite-domain-sort #:register-enum-sort #:register-tuple-sort

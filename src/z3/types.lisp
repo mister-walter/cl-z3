@@ -151,6 +151,21 @@
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
+(defclass tactic (z3-object-with-handle) ())
+
+(defmethod translate-to-foreign ((v tactic) (type z3-c-types::tactic-type))
+  (slot-value v 'handle))
+
+(defmethod z3-object-to-string ((obj tactic))
+  (with-slots (handle context) obj
+    (z3-tactic-get-help context handle)))
+
+(defmethod initialize-instance :after ((obj tactic) &key)
+  (with-slots (handle context) obj
+    (z3-tactic-inc-ref context handle)))
+
+
+;; NOTE: we need to manually increment/decrement reference counter for this type
 (defclass ast-vector (z3-object-with-handle) ())
 
 (defmethod translate-to-foreign ((v ast-vector) (type z3-c-types::ast-vector-type))

@@ -27,6 +27,7 @@
    (:file "ast")
    (:file "func-decl")
    (:file "model")
+   (:file "tactic")
    (:file "solver")
    (:file "api")
    ))

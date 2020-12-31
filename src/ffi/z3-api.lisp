@@ -2608,6 +2608,74 @@ If the formula \c a is \c false, then the entire goal is replaced by the formula
 
 ;; Tactics and Probes
 
+(defcfun "Z3_mk_tactic" tactic
+  "Return a tactic associated with the given name.
+   The complete list of tactics may be obtained using the procedures #Z3_get_num_tactics and #Z3_get_tactic_name.
+   It may also be obtained using the command \ccode{(help-tactic)} in the SMT 2.0 front-end."
+  (c context)
+  (name :string))
+
+(defcfun "Z3_tactic_inc_ref" :void
+  "Increment the reference counter of the given tactic."
+  (c context)
+  (tac tactic))
+
+(defcfun "Z3_tactic_dec_ref" :void
+  "Decrement the reference counter of the given tactic."
+  (c context)
+  (tac tactic))
+
+;; ...
+
+(defcfun "Z3_tactic_and_then" tactic
+  "Return a tactic that applies \c t1 to a given goal and \c t2
+   to every subgoal produced by \c t1."
+  (c context)
+  (t1 tactic)
+  (t2 tactic))
+
+(defcfun "Z3_tactic_or_else" tactic
+  "Return a tactic that first applies \c t1 to a given goal,
+   if it fails then returns the result of \c t2 applied to the given goal."
+  (c context)
+  (t1 tactic)
+  (t2 tactic))
+
+(defcfun "Z3_tactic_par_or" tactic
+  "Return a tactic that applies the given tactics in parallel."
+  (c context)
+  (t1 tactic)
+  (t2 tactic))
+
+(defcfun "Z3_tactic_par_and_then" tactic
+  "Return a tactic that applies \c t1 to a given goal and then \c t2
+   to every subgoal produced by \c t1. The subgoals are processed in parallel."
+  (c context)
+  (t1 tactic)
+  (t2 tactic))
+
+(defcfun "Z3_tactic_try_for" tactic
+  "Return a tactic that applies \c t to a given goal for \c ms milliseconds.
+   If \c t does not terminate in \c ms milliseconds, then it fails."
+  (c context)
+  (tac tactic)
+  (ms :uint))
+
+;; ...
+
+(defcfun "Z3_tactic_using_params" tactic
+  "Return a tactic that applies \c t using the given set of parameters."
+  (c context)
+  (tac tactic)
+  (p params))
+
+;; ...
+
+(defcfun "Z3_tactic_get_help" :string
+  "Return a string containing a description of parameters accepted by the given tactic."
+  (c context)
+  (tac tactic))
+
 ;; ...
 
 ;; Solvers

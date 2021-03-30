@@ -56,3 +56,25 @@
  (= v (bvadd (int2bv 15 4) (int2bv -1 4))))
 (check-sat)
 (solver-pop)
+
+(solver-push)
+(z3-assert (x :int y :int z (:bv 8))
+           (and (>= x 0)
+                (>= y 0)
+                (< (+ x y) 256)
+                (= z (int2bv (+ x y) 8))))
+(check-sat)
+(solver-pop)
+
+;; TODO why is this slow? Performance regression?
+(solver-push)
+(z3-assert
+ (x :int y :int z (:bv 8) w (:bv 8))
+ (and (>= x 0)
+      (>= y 0)
+      (< (+ x y) 256)
+      (= z (int2bv x 8))
+      (= w (int2bv y 8))
+      (not (= (+ x y) (bv2int (bvadd z w) nil)))))
+(check-sat)
+(solver-pop)

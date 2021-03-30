@@ -8,7 +8,9 @@
 
 (in-package :z3-sudoku)
 
-;; Note that we need to do this before calling register-enum-sort, and that registered sorts are wiped out when the context is reset or a new context is created.
+;; Note that we need to do this before calling register-enum-sort, and
+;; that registered sorts are wiped out when the context is reset or a
+;; new context is created.
 (solver-init)
 
 ;; Register a new enum type that represents a sudoku cell.
@@ -62,16 +64,13 @@
         when (not (equal entry '_))
         collect `(= ,(idx-to-cell-symbol idx) ,(val-to-cell-value entry))))
 
-;; TODO: there's definitely a way to do this without eval.
-(defun assert-computed-with-cell-vars (stmt)
-  (eval `(z3-assert ,+cell-vars+ ,stmt)))
-
 (defun solve-grid (input-grid)
   (solver-push)
-  (assert-computed-with-cell-vars (cons 'and row-distinct-constraints))
-  (assert-computed-with-cell-vars (cons 'and col-distinct-constraints))
-  (assert-computed-with-cell-vars (cons 'and box-distinct-constraints))
-  (assert-computed-with-cell-vars (cons 'and (input-grid-constraints input-grid)))
+  (z3-assert-fn +cell-vars+ (cons 'and row-distinct-constraints))
+  (z3-assert-fn +cell-vars+ (cons 'and col-distinct-constraints))
+  (z3-assert-fn +cell-vars+ (cons 'and box-distinct-constraints))
+  ;; We append a t to this because Z3 requires that conjunctions
+  (z3-assert-fn +cell-vars+ (append '(and t) (input-grid-constraints input-grid))) ;; fix
   (let ((res (check-sat)))
     (progn (solver-pop)
            res)))

@@ -32,10 +32,12 @@
 (check-sat)
 (solver-pop)
 
+;; For convenience, many of the string operations can be referred to using the names given in Z3's tutorial (https://rise4fun.com/Z3/tutorial/sequences)
+;; For example, you can write str.++ instead of seq-concat; they both will produce the same AST.
 (solver-push)
 (z3-assert
  (x :string y :string)
- (= (seq-concat x y) "Hello, World!"))
+ (= (str.++ x y) "Hello, World!"))
 (check-sat)
 (solver-pop)
 
@@ -43,8 +45,8 @@
 (solver-push)
 (z3-assert
  (x :string)
- (and (> (seq-length x) 2)
-      (= (seq-at x 2) "a")))
+ (and (> (str.len x) 2)
+      (= (str.at x 2) "a")))
 (check-sat)
 (solver-pop)
 
@@ -53,8 +55,8 @@
 (z3-assert
  (x :string y :string)
  (and
-  (<= (seq-length x) 3)
-  (= (seq-at x 4) y)))
+  (<= (str.len x) 3)
+  (= (str.at x 4) y)))
 (check-sat)
 (solver-pop)
 
@@ -63,9 +65,9 @@
 (z3-assert
  (x :string y :string z :string)
  (and
-  (seq-prefix "a" x)
-  (seq-prefix "ab" y)
-  (seq-prefix "a" z)
+  (str.prefixof "a" x)
+  (str.prefixof "ab" y)
+  (str.prefixof "a" z)
   (str-lt x y)
   (str-lt y z)))
 (check-sat)
@@ -75,7 +77,16 @@
 (solver-push)
 (z3-assert
  (x :string y :int)
- (and (= x (int-to-str 5))
-      (= y (str-to-int "3"))))
+ (and (= x (int.to.str 5))
+      (= y (str.to.int "3"))))
+(check-sat)
+(solver-pop)
+
+;; Here's an example taken almost verbatim from the Z3 sequences tutorial (https://rise4fun.com/Z3/tutorial/sequences).
+(solver-push)
+(z3-assert (a :string b :string c :string)
+           (and (= (str.++ a b) "abcd")
+                (= (str.++ b c) "cdef")
+                (not (= b ""))))
 (check-sat)
 (solver-pop)

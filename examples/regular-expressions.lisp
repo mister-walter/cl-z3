@@ -28,8 +28,8 @@
 (solver-push)
 (z3-assert
  (x :string)
- (and (> (seq-length x) 3)
-      (seq-in-re x (re-plus (re-union (re-range "a" "b") (re-range "d" "e"))))))
+ (and (> (str.len x) 3)
+      (seq.in.re x (re.+ (re.union (re.range "a" "b") (re.range "d" "e"))))))
 (check-sat)
 (solver-pop)
 

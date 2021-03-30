@@ -58,19 +58,15 @@
         when (not (equal entry '_))
         collect `(= ,(idx-to-cell-symbol idx) ,(val-to-cell-value entry))))
 
-;; TODO: there's definitely a way to do this without eval.
-(defun assert-computed-with-cell-vars (n stmt)
-  (eval `(z3-assert ,(cell-vars n) ,stmt)))
-
 (defun solve-grid (n input-grid)
   ;; We need to do solver-init here because we want to wipe out the old sort definition for :cell
   (solver-init)
   (register-finite-domain-sort :cell (* n n))
-  (assert-computed-with-cell-vars n (cons 'and (row-distinct-constraints n)))
-  (assert-computed-with-cell-vars n (cons 'and (col-distinct-constraints n)))
-  (assert-computed-with-cell-vars n (cons 'and (box-distinct-constraints n)))
+  (z3-assert-fn (cell-vars n) (cons 'and (row-distinct-constraints n)))
+  (z3-assert-fn (cell-vars n) (cons 'and (col-distinct-constraints n)))
+  (z3-assert-fn (cell-vars n) (cons 'and (box-distinct-constraints n)))
   (let ((input-constraints (input-grid-constraints n input-grid)))
-    (when input-constraints (assert-computed-with-cell-vars n (cons 'and input-constraints))))
+    (when input-constraints (z3-assert-fn (cell-vars n) (cons 'and input-constraints))))
   (check-sat))
 
 (defmacro define-symbol-conversions (&rest cases)

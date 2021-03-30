@@ -59,17 +59,13 @@
         when (not (equal entry '_))
         collect `(= ,(idx-to-cell-symbol idx) ,entry)))
 
-;; TODO: there's definitely a way to do this without eval.
-(defun assert-computed-with-cell-vars (stmt)
-  (eval `(z3-assert ,+cell-vars+ ,stmt)))
-
 (defun solve-grid (input-grid)
   (solver-init)
-  (assert-computed-with-cell-vars (cons 'and cell-range-constraints))
-  (assert-computed-with-cell-vars (cons 'and row-distinct-constraints))
-  (assert-computed-with-cell-vars (cons 'and col-distinct-constraints))
-  (assert-computed-with-cell-vars (cons 'and box-distinct-constraints))
-  (assert-computed-with-cell-vars (cons 'and (input-grid-constraints input-grid)))
+  (z3-assert-fn +cell-vars+ (cons 'and cell-range-constraints))
+  (z3-assert-fn +cell-vars+ (cons 'and row-distinct-constraints))
+  (z3-assert-fn +cell-vars+ (cons 'and col-distinct-constraints))
+  (z3-assert-fn +cell-vars+ (cons 'and box-distinct-constraints))
+  (z3-assert-fn +cell-vars+ (cons 'and (input-grid-constraints input-grid)))
   (check-sat))
 
 ;; Don't worry about the pretty-print definitions below, just some 

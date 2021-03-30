@@ -24,6 +24,13 @@
 (defmacro z3-register-tuple-sort (name fields)
   `(z3-register-tuple-sort-bridge ',name ',fields))
 
+(acl2::defun-bridge z3-register-enum-sort-bridge (name elements)
+  :program nil
+  :raw (progn (z3-register-enum-sort-fn name elements (z3-default-context)) nil))
+
+(defmacro z3-register-enum-sort (name elements)
+  `(z3-register-enum-sort-bridge ',name ',elements))
+
 (acl2::defun-bridge z3-query-bridge (query types)
   :program nil
   :raw

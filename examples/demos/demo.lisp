@@ -1,16 +1,5 @@
 (include-book "acl2s-z3")
 
-(z3-query
- (x :int y :int z :int a :int b :int)
- (and (> x -100) (< x 100)
-      (> y -100) (< y 100)
-      (> z -100) (< z 100)
-      (> a -100) (< a 100)
-      (> b -100) (< b 100)
-      ;; You can also require some variables are distinct
-      (distinct x y z a b)
-      (> (+ x y z a b) 100)))
-
 ;; Scopes
 (z3-init)
 
@@ -36,15 +25,18 @@
 ;; Cool, that works. I now want to remove that constraint. I can go back to
 ;; the checkpoint I just created with z3-pop
 (z3-pop)
+(z3-assert (a :int) (> a 50))
 (check-sat)
 ;; Note that we get something back with a = 0 - the previous assignment is still valid
 
+;; Note that z3-query is not provided by the Z3 FFI.
+;; It's just a convenient function I wrote that does (z3-init), (z3-assert ...), and (check-sat)
 ;; Bitvectors
 (z3-query
  (v (:bv 4))
  (= (bvadd v (int2bv -1 4)) (int2bv 7 4)))
 ;; Note that we interpret any bitvectors that Z3 produces in a model
-;; as unsigned integers.
+;; as unsigned integers. This is a choice of our interface.
 
 ;; Sequences
 (z3-query
@@ -60,19 +52,22 @@
 
 ;; Tuples
 (z3-init)
-(z3-register-tuple-sort :blah ((a . :int) (b . :bool)))
+(z3-register-tuple-sort :foo
+                        ((a . :int) (b . :bool)))
 (z3-push)
 (z3-assert
- (r :blah)
- (and (= (tuple-get :blah a r) 5)
-      (tuple-get :blah b r)))
+ (r :foo)
+ (and (= (tuple-get :foo a r) 5)
+      (tuple-get :foo b r)))
 (check-sat)
 (z3-pop)
 
+;; tuple-val is a constructor for a tuple
+;;
 (z3-assert
  (a :int b :bool)
- (= (tuple-val :blah 123 nil)
-    (tuple-val :blah a b)))
+ (= (tuple-val :foo 123 nil)
+    (tuple-val :foo a b)))
 (check-sat)
 
 ;; Strings
@@ -105,6 +100,7 @@
 ;; We can also get some statistics from Z3
 (z3-get-solver-stats)
 
+;; Tactics
 (z3-init)
 (z3-set-solver-from-tactic "sat")
 (z3-assert (x :bool y :int)
@@ -123,4 +119,3 @@
 (z3-assert (x :bool y :int)
            (and x (>= y 5)))
 (check-sat)
-

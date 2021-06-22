@@ -23,6 +23,7 @@
    (:file "globals")
    (:file "ast-vector")
    (:file "params")
+   (:file "config")
    (:file "sorts")
    (:file "ast")
    (:file "func-decl")
@@ -33,7 +34,7 @@
    ))
 
 (defsystem "lisp-z3"
-  :depends-on ("lisp-z3/z3" "trivia")
+  :depends-on ("lisp-z3/z3")
   :serial t
   :components
   ())

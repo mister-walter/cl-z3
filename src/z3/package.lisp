@@ -12,6 +12,7 @@
            #:convert-to-ast #:ast-to-value
            #:register-finite-domain-sort #:register-enum-sort #:register-tuple-sort
            #:z3-object-to-string
+           #:set-global-param #:get-global-param
            #:set-params
            #:*default-context* #:*default-solver*
            #:parse-smt2-file

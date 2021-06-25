@@ -10,6 +10,8 @@
 
 (defun list-to-ast-vector (list ctx)
   (let ((vec (z3-mk-ast-vector ctx)))
+    ;;TODO: does this actually help anything? I think push automatically increments length...
+    ;;(z3-ast-vector-resize ctx vec (length list))
     (loop for elt in list
           do (z3-ast-vector-push ctx vec elt))
     vec))

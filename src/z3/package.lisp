@@ -15,5 +15,5 @@
            #:set-global-param #:get-global-param
            #:set-params
            #:*default-context* #:*default-solver*
-           #:parse-smt2-file
+           #:parse-smt2-file #:parse-smt2-string
            #:ast-vector-to-list))

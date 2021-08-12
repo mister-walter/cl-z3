@@ -331,6 +331,11 @@ into lisp. Currently there are two modes: :string (the default) and
                             (t (error "We don't support custom datatypes like ~S yet." (sort-name sort ctx)))))
                      ((or :OP_SEQ_CONCAT :OP_SEQ_UNIT :OP_SEQ_EMPTY)
                       (seq-ast-to-value ast ctx))
+                     ;; TODO: do something better here. For example, this AST
+                     ;; may represent a string variable.
+                     (:OP_UNINTERPRETED
+                      (warn "Handling of OP_UNINTERPRETED is currently a work in progress.")
+                      (z3-ast-to-string ctx ast))
                      (otherwise
                       ;; TODO fix this ugly special-case
                       (if (z3-is-string ctx ast)

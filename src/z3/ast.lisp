@@ -283,6 +283,11 @@
            (:OP_SEQ_CONCAT
             (loop for arg in (app-ast-args-to-list ast ctx)
                   append (seq-ast-to-value arg ctx)))
+           ;; TODO: do something better here. For example, this AST
+           ;; may represent a string variable.
+           (:OP_UNINTERPRETED
+            (warn "Handling of OP_UNINTERPRETED is currently a work in progress.")
+            (z3-ast-to-string ctx ast))
            (otherwise (error "Unsupported operation when trying to convert sequence AST to value: ~S" decl-kind)))))
 
 ;; TODO: this is an experimental feature, don't rely on this switch

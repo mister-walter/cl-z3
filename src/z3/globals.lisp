@@ -16,6 +16,7 @@
 (defmethod z3-object-to-string ((obj unset-solver))
   "SOLVER NOT SET - NEED TO (SOLVER-INIT)")
 (defmethod initialize-instance :after ((obj unset-solver) &key) nil)
+(defmethod get-context ((v unset-solver))  (error "You need to call (solver-init) before calling other Z3 interface functions!"))
 
 (defparameter *default-context* (make-instance 'unset-context :handle nil))
 (defparameter *default-solver* (make-instance 'unset-solver :handle nil :context *default-context*))

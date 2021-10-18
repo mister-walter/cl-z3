@@ -90,7 +90,8 @@
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
-(defclass solver (z3-object-with-handle) ())
+(defclass solver (z3-object-with-handle)
+  ((scopes :initform '(()) :accessor solver-scopes)))
 
 (defmethod translate-to-foreign ((v solver) (type z3-c-types::solver-type))
   (slot-value v 'handle))

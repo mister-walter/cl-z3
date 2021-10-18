@@ -73,6 +73,7 @@ declarations into a function declaration alist for internal use."
   "Create a new scope. This is useful for incremental solving."
   (let* ((slv (or solver *default-solver*))
          (ctx (get-context slv)))
+    (push '() (solver-scopes slv))
     (z3-solver-push ctx slv)))
 
 (defun solver-pop (&key (solver nil) (n 1))
@@ -83,11 +84,14 @@ any Z3 declarations or assertions that occurred between the relevant
          (ctx (get-context slv)))
     (unless (<= n (z3-solver-get-num-scopes ctx slv))
       (error "You can't pop ~S level(s) - the solver is currently at level ~S" n (z3-solver-get-num-scopes ctx slv)))
+    (loop for i below n
+          do (pop (solver-scopes slv)))
     (z3-solver-pop ctx slv n)))
 
 (defun solver-reset (&optional solver)
   (let* ((slv (or solver *default-solver*))
          (ctx (get-context slv)))
+    (setf (solver-scopes slv) '(()))
     (z3-solver-reset ctx slv)))
 
 ;; TODO: note that the assertions that are printed out may have
@@ -96,14 +100,23 @@ any Z3 declarations or assertions that occurred between the relevant
 ;; that we can provide better output.
 (defun print-solver (&optional solver)
   (let* ((slv (or solver *default-solver*)))
-    (format t "~%~a" (z3-object-to-string slv))
+    (terpri)
+    (print-scopes slv)
+    ;;(format t "~%~a" (z3-object-to-string slv))
     nil))
+
+(defun print-scopes (solver)
+  (let ((*print-case* :downcase))
+    (loop for scope in (solver-scopes solver)
+          do (loop for assertion in scope
+                   do (format t "~S~%" assertion)))))
 
 (defun z3-assert-fn (var-decls stmt &optional solver)
   ;; TODO we do nicer error handling here
   (when (oddp (length var-decls)) (error "Each declared variable must have a type."))
   (let* ((slv (or solver *default-solver*))
          (ctx (get-context slv)))
+    (push `(assert ,var-decls ,stmt) (car (solver-scopes slv)))
     (solver-assert
      slv
      (convert-to-ast stmt (make-var-decls var-decls ctx) (make-fn-decls var-decls ctx) ctx))))

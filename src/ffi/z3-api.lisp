@@ -1499,7 +1499,169 @@ The resulting relation f+ represents the transitive closure of f."
 
 ;; Quantifiers
 
-;; ...
+(defcfun "Z3_mk_pattern" pattern
+  "Create a pattern for quantifier instantiation.
+Patterns comprise a list of terms. The list should be non-empty. If
+the list comprises of more than one term, it is called a
+multi-pattern."
+  (c context)
+  (n :uint)
+  (terms :pointer)) ;; Z3_ast const []
+
+(defcfun "Z3_mk_bound" ast
+  "Create a bound variable.
+Bound variables are indexed by de-Bruijn indices."
+  (c context)
+  (index :uint)
+  (ty sort))
+
+(defcfun "Z3_mk_forall" ast
+  "Create a forall formula.
+It takes an expression that contains bound variables of the same sorts
+as those given. Bound variables must be created by #Z3_mk_bound. Note
+that the last element of the sorts and decl_names arrays refer to the
+variable with index 0, the second-to-last to the variable with index
+1, etc.
+
+The weight argument represents the importance of using the quantifier
+during instantiation. By default, pass the weight 0.
+"
+  (c context)
+  (weight :uint)
+  (num-patterns :uint)
+  (patterns :pointer) ;; Z3_pattern const []
+  (num-decls :uint)
+  (sorts :pointer) ;; Z3_sort const []
+  (decl-names :pointer) ;; Z3_symbol []
+  (body ast))
+
+(defcfun "Z3_mk_exists" ast
+  "Create an exists formula.
+See #Z3_mk_forall for more details regarding parameters.
+"
+  (c context)
+  (weight :uint)
+  (num-patterns :uint)
+  (patterns :pointer) ;; Z3_pattern const []
+  (num-decls :uint)
+  (sorts :pointer) ;; Z3_sort const []
+  (decl-names :pointer) ;; Z3_symbol []
+  (body ast))
+
+(defcfun "Z3_mk_quantifier" ast
+  "Create a quantifier with pattern hints.
+See #Z3_mk_forall for more details regarding parameters.
+"
+  (c context)
+  (is-forall :bool)
+  (weight :uint)
+  (num-patterns :uint)
+  (patterns :pointer) ;; Z3_pattern const []
+  (num-decls :uint)
+  (sorts :pointer) ;; Z3_sort const []
+  (decl-names :pointer) ;; Z3_symbol []
+  (body ast))
+
+(defcfun "Z3_mk_quantifier_ex" ast
+  "Create a quantifier with pattern hints, no patterns, and attributes.
+See #Z3_mk_forall for more details regarding parameters.
+
+The no-patterns parameter denotes subexpressions to be excluded from
+inferred patterns.
+"
+  (c context)
+  (is-forall :bool)
+  (weight :uint)
+  (quantifier-id sym)
+  (skolem-id sym)
+  (num-patterns :uint)
+  (patterns :pointer) ;; Z3_pattern const []
+  (num-no-patterns :uint)
+  (no-patterns :pointer) ;; Z3_ast const []
+  (num-decls :uint)
+  (sorts :pointer) ;; Z3_sort const []
+  (decl-names :pointer) ;; Z3_symbol []
+  (body ast))
+
+(defcfun "Z3_mk_forall_const" ast
+  "Create a universal quantifier using a list of constants that will
+form the set of bound variables.
+See #Z3_mk_forall for more details regarding parameters.
+"
+  (c context)
+  (weight :uint)
+  (num-bound :uint)
+  (bound :pointer) ;; Z3_app const []
+  (num-patterns :uint)
+  (patterns :pointer) ;; Z3_pattern const []
+  (body ast))
+
+(defcfun "Z3_mk_exists_const" ast
+  "Create an existential quantifier using a list of constants that
+will form the set of bound variables.
+See #Z3_mk_forall_const for more details regarding parameters.
+"
+  (c context)
+  (weight :uint)
+  (num-bound :uint)
+  (bound :pointer) ;; Z3_app const []
+  (num-patterns :uint)
+  (patterns :pointer) ;; Z3_pattern const []
+  (body ast))
+
+(defcfun "Z3_mk_quantifier_const" ast
+  "Create an quantifier using a list of constants that will form the
+set of bound variables.
+See #Z3_mk_forall_const for more details regarding parameters.
+"
+  (c context)
+  (is-forall :bool)
+  (weight :uint)
+  (num-bound :uint)
+  (bound :pointer) ;; Z3_app const []
+  (num-patterns :uint)
+  (patterns :pointer) ;; Z3_pattern const []
+  (body ast))
+
+(defcfun "Z3_mk_quantifier_const_ex" ast
+  "Create an quantifier using a list of constants that will form the
+set of bound variables.
+See #Z3_mk_quantifier_ex for more details regarding parameters.
+"
+  (c context)
+  (is-forall :bool)
+  (weight :uint)
+  (quantifier-id sym)
+  (skolem-id sym)
+  (num-bound :uint)
+  (bound :pointer) ;; Z3_app const []
+  (num-patterns :uint)
+  (patterns :pointer) ;; Z3_pattern const []
+  (num-no-patterns :uint)
+  (no-patterns :pointer) ;; Z3_ast const []
+  (body ast))
+
+(defcfun "Z3_mk_lambda" ast
+  "Create a lambda expression.
+See #Z3_mk_forall for more details regarding parameters.
+The sort of the resulting expression is `(Array sorts range)`, where
+`range` is the sort of `body`.
+"
+  (c context)
+  (num-decls :uint)
+  (sorts :pointer) ;; Z3_sort const []
+  (decl-names :pointer) ;; Z3_symbol const []
+  (body ast))
+
+(defcfun "Z3_mk_lambda_const" ast
+  "Create a lambda expression using a list of constants that form the
+set of bound variables.
+See #Z3_mk_forall_const for more details regarding parameters.
+"
+  (c context)
+  (num-bound :uint)
+  (bound :pointer) ;; Z3_app const []
+  (body ast))
 
 ;; Accessors
 
@@ -2023,7 +2185,84 @@ while ((_ update-field car) (cons 2 nil) 1) is (cons 1 nil).
   (p pattern)
   (idx :uint))
 
-;; ... (quantifier stuff)
+(defcfun "Z3_get_index_value" ast
+  "Return index of de-Bruijn bound variable."
+  (c context)
+  (a ast))
+
+(defcfun "Z3_is_quantifier_forall" :bool
+  "Determine if the given AST is a universal quantifier."
+  (c context)
+  (a ast))
+
+(defcfun "Z3_is_quantifier_exists" :bool
+  "Determine if the given AST is an existential quantifier."
+  (c context)
+  (a ast))
+
+(defcfun "Z3_is_lambda" :bool
+  "Determine if the given AST is a lambda expression.
+\pre Z3_get_ast_kind(a) == Z3_QUANTIFIER_AST"
+  (c context)
+  (a ast))
+
+(defcfun "Z3_get_quantifier_weight" :uint
+  "Get the weight of the quantifier.
+\pre Z3_get_ast_kind(a) == Z3_QUANTIFIER_AST"
+  (c context)
+  (a ast))
+
+(defcfun "Z3_get_quantifier_num_patterns" :uint
+  "Get the number of patterns used in the quantifier.
+\pre Z3_get_ast_kind(a) == Z3_QUANTIFIER_AST"
+  (c context)
+  (a ast))
+
+(defcfun "Z3_get_quantifier_pattern_ast" pattern
+  "Get the i'th pattern of the quantifier.
+\pre Z3_get_ast_kind(a) == Z3_QUANTIFIER_AST"
+  (c context)
+  (a ast)
+  (i :uint))
+
+(defcfun "Z3_get_quantifier_num_no_patterns" :uint
+  "Get the number of no-patterns used in the quantifier.
+\pre Z3_get_ast_kind(a) == Z3_QUANTIFIER_AST"
+  (c context)
+  (a ast))
+
+(defcfun "Z3_get_quantifier_no_pattern_ast" ast
+  "Get the i'th no-pattern of the quantifier.
+\pre Z3_get_ast_kind(a) == Z3_QUANTIFIER_AST"
+  (c context)
+  (a ast)
+  (i :uint))
+
+(defcfun "Z3_get_quantifier_num_bound" :uint
+  "Get the number of bound variables in the quantifier.
+\pre Z3_get_ast_kind(a) == Z3_QUANTIFIER_AST"
+  (c context)
+  (a ast))
+
+(defcfun "Z3_get_quantifier_bound_name" sym
+  "Get the name of the i'th bound variable.
+\pre Z3_get_ast_kind(a) == Z3_QUANTIFIER_AST"
+  (c context)
+  (a ast)
+  (i :uint))
+
+(defcfun "Z3_get_quantifier_bound_sort" sort
+  "Get the sort of the i'th bound variable.
+\pre Z3_get_ast_kind(a) == Z3_QUANTIFIER_AST"
+  (c context)
+  (a ast)
+  (i :uint))
+
+(defcfun "Z3_get_quantifier_body" ast
+  "Get the body of the quantifier.
+\pre Z3_get_ast_kind(a) == Z3_QUANTIFIER_AST"
+  (c context)
+  (a ast))
 
 (defcfun "Z3_simplify" ast
   "Interface to simplifier.

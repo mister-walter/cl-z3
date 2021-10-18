@@ -1,10 +1,10 @@
 ;; Generate (:exports ...) entries for the z3-api defcfuns
-(pushnew (truename "/home/drew/lisp-z3/") ql:*local-project-directories* )
-(ql:register-local-projects)
-(ql:quickload :lisp-z3)
+
+(load "~/quicklisp/setup.lisp")
+(ql:quickload :cffi)
 
 (defvar foo
-  (with-open-file (s "/home/drew/lisp-z3/src/ffi/z3-api.lisp" :direction :input)
+  (with-open-file (s "./z3-api.lisp" :direction :input)
                   (loop for v = (read s nil :eof)
                         while (not (equal v :eof))
                         collect v)))

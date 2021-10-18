@@ -84,27 +84,33 @@ represented as an uninterpreted function.
 
 (register-parametric-sort :bv
                           #'(lambda (ctx args)
-                              (cond ((not (equal (length args) 1)) (error "bv type only takes a single argument."))
-                                    ((or (not (numberp (car args))) (minusp (car args))) (error "bv type must have a positive integer size"))
+                              (cond ((not (equal (length args) 1)) (error "bv sort only takes a single argument."))
+                                    ((or (not (numberp (car args))) (minusp (car args))) (error "bv sort must have a positive integer size"))
                                     (t (z3-mk-bv-sort ctx (car args))))))
 
 (register-parametric-sort :seq
                           #'(lambda (ctx args)
                               (if (not (equal (length args) 1))
-                                  (error "seq type only takes a single argument.")
+                                  (error "seq sort only takes a single argument.")
                                 (z3-mk-seq-sort ctx (get-sort (car args) ctx)))))
+
+(register-parametric-sort :set
+                          #'(lambda (ctx args)
+                              (if (not (equal (length args) 1))
+                                  (error "set sort only takes a single argument.")
+                                (z3-mk-set-sort ctx (get-sort (car args) ctx)))))
 
 (register-parametric-sort :regex
                           #'(lambda (ctx args)
                               (unless (equal (length args) 1)
-                                (error "regex type only takes a single argument."))
+                                (error "regex sort only takes a single argument."))
                               (let ((sort (get-sort (car args) ctx)))
-                                (unless (z3-is-seq-sort ctx sort) (error "Regex type must be over a sequence sort."))
+                                (unless (z3-is-seq-sort ctx sort) (error "Regex sort must be over a sequence sort."))
                                 (z3-mk-re-sort ctx sort))))
 
 (register-parametric-sort :array
                           #'(lambda (ctx args)
-                              (unless (equal (length args) 2) (error "array type takes two arguments: domain and range sorts"))
+                              (unless (equal (length args) 2) (error "array sort takes two arguments: domain and range sorts"))
                               (z3-mk-array-sort ctx (get-sort (car args) ctx) (get-sort (second args) ctx))))
 
 

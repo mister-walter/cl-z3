@@ -47,9 +47,9 @@
           (with-foreign-array (array z3-c-types::Z3_ast args
                                      (z3-mk-seq-unit context (convert-to-ast-fn context arg types fns)))
                               (z3-mk-seq-concat context (length args) array)))
-         ((list (sym-name seq-empty) sort)
+         ((list (or (sym-name seq-empty) (sym-name seq.empty)) sort)
           (z3-mk-seq-empty context (get-sort (list :seq sort) context)))
-         ((list (sym-name seq-unit) x)
+         ((list (or (sym-name seq-unit) (sym-name seq.unit)) x)
           (z3-mk-seq-unit context (convert-to-ast-fn context x types fns)))
          ((list (sym-name re-empty) sort)
           (z3-mk-re-empty context (get-sort sort context)))
@@ -121,6 +121,10 @@
     (- :ctor z3-mk-sub :arity -)
     ;; note that we special-case unary - by adding a case for it in convert-funccall-to-ast.
     (* :ctor z3-mk-mul :arity -)
+    (/ :ctor z3-mk-div :arity 2)
+    (mod :ctor z3-mk-mod :arity 2)
+    (rem :ctor z3-mk-rem :arity 2)
+    (power :ctor z3-mk-power :arity 2)
     (distinct :arity -)
     ((implies =>) :arity 2)
     (xor :arity 2)
@@ -176,7 +180,6 @@
     ;; as_array special
     (set-has-size :arity 2)
     ;;; Set functions
-    ;; mk-set-sort special
     ;; mk-empty-set special
     ;; mk-full-set special
     (set-add :arity 2)

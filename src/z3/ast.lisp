@@ -57,10 +57,48 @@
           (z3-mk-re-full context (get-sort sort context)))
          ((list* (sym-name set) sort args)
           (mk-set (get-sort sort context) args context types))
+         ((list (sym-name forall) bound-vars body)
+          (mk-quantifier t bound-vars body context types fns))
+         ((list (sym-name exists) bound-vars body)
+          (mk-quantifier nil bound-vars body context types fns))
          ((list* (sym-name _) name args)
           (make-fn-call name args types fns context))
          ((type list) (convert-funccall-to-ast context stmt types fns))
          (otherwise (error "Value ~S is of an unsupported type." stmt))))
+
+;; Given a list of bound variables (e.g. a list consisting of
+;; variables, each followed by a type), return (values consts tys)
+;; where:
+;; - consts is a list containing a Z3 constant for each bound variable
+;; - tys is an alist mapping each bound variable to its Z3 sort
+(defun process-bound-vars (bound-vars context)
+  (let ((consts nil)
+        (tys nil))
+    (loop for (var ty) on bound-vars by #'cddr while ty
+          do (let ((sort (get-sort ty context)))
+               (push (z3-mk-const context (z3-mk-string-symbol context (symbol-name var)) sort) consts)
+               (push (cons var sort) tys)))
+    (values consts tys)))
+
+;; Make a quantifier, given its body and a list of bound variables.
+(defun mk-quantifier (is-forall bound-vars body context types fns)
+  ;; create a constant for each bound variable
+  (multiple-value-bind
+    (bound-var-consts bound-types)
+    (process-bound-vars bound-vars context)
+    ;; move the constants into a C array
+    (with-foreign-array (bound-vars z3-c-types::Z3_ast bound-var-consts arg)
+                        (z3-mk-quantifier-const context
+                                                is-forall
+                                                0 ;; weight
+                                                (length bound-var-consts)
+                                                bound-vars
+                                                0 ;; no patterns
+                                                (cffi:null-pointer)
+                                                ;; the body has access to the bound
+                                                ;; variables, so we throw them in with
+                                                ;; the existing known variables.
+                                                (convert-to-ast-fn context body (append bound-types types) fns)))))
 
 (defun mk-set (sort values ctx types fns)
   (if (endp values)
@@ -216,11 +254,11 @@
 
 (defun convert-funccall-to-ast (context stmt types fns)
   (match stmt
-         ((list (or '= 'equal '==) x y)
+         ((list (or (sym-name =) (sym-name equal) (sym-name ==)) x y)
           (z3-mk-eq context
                     (convert-to-ast-fn context x types fns)
                     (convert-to-ast-fn context y types fns)))
-         ((list '- arg)
+         ((list (sym-name -) arg)
           (z3-mk-unary-minus context (convert-to-ast-fn context arg types fns)))
          ((list (sym-name extract) x hi lo)
           (z3-mk-extract context

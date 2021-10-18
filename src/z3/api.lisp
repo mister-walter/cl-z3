@@ -90,6 +90,15 @@ any Z3 declarations or assertions that occurred between the relevant
          (ctx (get-context slv)))
     (z3-solver-reset ctx slv)))
 
+;; TODO: note that the assertions that are printed out may have
+;; simplifications applied, and may not look much like the asserted
+;; expressions. We should track the stack of scopes on the side so
+;; that we can provide better output.
+(defun print-solver (&optional solver)
+  (let* ((slv (or solver *default-solver*)))
+    (format t "~%~a" (z3-object-to-string slv))
+    nil))
+
 (defun z3-assert-fn (var-decls stmt &optional solver)
   ;; TODO we do nicer error handling here
   (when (oddp (length var-decls)) (error "Each declared variable must have a type."))

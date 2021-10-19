@@ -202,7 +202,7 @@
     ((seq-extract seq.extract) :arity 3)
     ((seq-replace seq.replace str.replace) :arity 3)
     ((seq-at seq.at str.at) :arity 2)
-    (seq-nth :arity 2)
+    ((seq-nth seq.nth) :arity 2)
     ((seq-length seq.len str.len) :arity 1)
     ((seq-index seq.indexof str.indexof) :arity 3)
     (seq-last-index :arity 2)

@@ -49,5 +49,5 @@
           collect (list (intern name)
                         (list 'quote (list :fn
                                            ;; TODO: it might be better to return the user-provided sort specifiers for this function. But this will work for now.
-                                           (list (write-to-string (func-decl-domain decl ctx)) (write-to-string (func-decl-range decl ctx)))
+                                           (list (func-decl-domain decl ctx) (func-decl-range decl ctx))
                                            (func-interp-to-alist interp ctx)))))))

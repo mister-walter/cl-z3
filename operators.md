@@ -71,28 +71,30 @@ than 3.
 
 ## Functions
 
-`+` in the list of arguments denotes that the function takes one or more arguments.
-
 Names in parentheses after a function call denote alternative names
 for the same function.
 
 ### Propositional Logic
 - `(equal <x> <y>)` (`=`,`==`): true if `x` and `y` are equal under Z3's notion of equality
-- `(not <x>)`
-- `(and +)`, `(or +)`
-- `implies` (`=>`)
+- `(not <x>)`: Boolean negation
+- `(and <v1> ... <vn>)`: Boolean conjunction of `v1` through `vn`
+- `(or <v1> ... <vn>)`: Boolean disjunction of `v1` through `vn`
+- `implies` (`=>`): Boolean implication
 - `(distinct <v1> ... <vn>)`: true if none of `v1` through `vn` are equal to each other
 - `(atleast <v1> ... <vn> <k>)` is true if `k` or more of `v1` through `vn` are true
 - `(atmost <v1> ... <vn> <k>)` is true if `k` or fewer of `v1` through `vn` are true
 
 ### Arithmetic
 Typically, functions with arity greater than unary require both
-arguments to be of the same type.
+arguments to be of the same sort. This is not an issue at the moment,
+as the interface currently does not support any numeric sorts aside
+from integers.
 
 Note that operations that may cause exceptions in other languages
 (like division by zero) are underspecified in Z3. This means that Z3
 treats `(/ x 0)` as an uninterpreted function that it may assign any
-value to. This can lead to unexpected behavior if you're not careful.
+interpretation to. This can lead to unexpected behavior if you're not
+careful.
 
 For example, Z3 reports that the following is satisfiable, since it
 can assign `x` and `y` different values, and has the flexibility to
@@ -106,46 +108,79 @@ for the value of `y` return 4.
 (check-sat)
 ```
 
-- `>`,`<`,`>=`,`<=`
-- `(+ +)`, `(- +)`, `(* +)`
-- `(/ <x> <y>)`: division, will result in an interpretation for division by 0 being added
-- `(mod <x> <y>)`: integer modulus, will result in an interpretation for division by 0 and modulus by 0 being added
-- `(rem <x> <y>)`: integer remainder, will result in an interpretation for division by 0, modulus by 0, and remainder by 0 being added
+- `(> <x> <y>)`,`(< <x> <y>)`,`(>= <x> <y>)`,`(<= <x> <y>)`: Comparisons
+  between two numbers
+- `(+ <v1> ... <vn>)`: Numerical (real) addition of all `vi`
+- `(- <x>)`: Unary negation of the number `x`
+- `(- <v1> ... <vn>)`: Numerical (real) subtraction of `v2` through `vn`
+  from `v1`. More than one argument must be provided.
+- `(* <v1> ... <vn>)`: Numerical (real) multiplication of all `vi`
+- `(/ <x> <y>)`: division, will result in an interpretation for division
+  by 0 being added
+- `(mod <x> <y>)`: integer modulus, will result in an interpretation for
+  division by 0 and modulus by 0 being added
+- `(rem <x> <y>)`: integer remainder, will result in an interpretation
+  for division by 0, modulus by 0, and remainder by 0 being added
 - `(power <x> <y>)`: raises `x` to the power of `y`
 
 ### Function Application
-- `(_ <fn> <arg1> ... <argn>)`: apply the function `fn` to the arguments `arg1` through `argn`
+- `(_ <fn> <arg1> ... <argn>)`: apply the function `fn` to the arguments
+  `arg1` through `argn`
 
 ### Quantifiers
-- `(exists (<v1> <v1sort> ... <vn> <vnsort>) <body>)`: true if there exist assignments for `v1`, ... `vn` of sort `v1sort`, ... , `vnsort` respectively such that the body is true under the assignments
-- `(forall (<v1> <v1sort> ... <vn> <vnsort>) <body>)`: true if for all assignments for `v1`, ... `vn` of sort `v1sort`, ... , `vnsort` respectively, the body is true
+- `(exists (<v1> <v1sort> ... <vn> <vnsort>) <body>)`: true if there
+  exist assignments for `v1`, ... `vn` of sort `v1sort`, ... ,
+  `vnsort` respectively such that the body is true under the
+  assignments
 
-### Bitvector
+- `(forall (<v1> <v1sort> ... <vn> <vnsort>) <body>)`: true if for
+  all assignments for `v1`, ... `vn` of sort `v1sort`, ... , `vnsort`
+  respectively, the body is true under the assignments
+
+### Bitvectors
 TODO
 
 ### Sequences
 Most of these functions operate on both strings and sequences (since
 strings are essentially just a special case of sequences).
 
-- `(seq-empty <sort>)`/`seq.empty`: create an empty sequence with element sort `sort`
-- `(seq-unit <val>)`/`seq.unit`: create a length-1 sequence containing the element `val`
-- `(seq-concat <seq1> <seq2>)` (`seq.++`,`str.++`): concatenate `seq1` and `seq2`
-- `(seq-prefix <seqp> <seq>)` (`seq.prefixof`,`str.prefixof`): true if `seqp` is a prefix of `seq`
-- `(seq-contains <container> <containee>)` (`seq.contains`/`str.contains`): true if `container` contains the sequence `containee`
-- `(str-lt <x> <y>)`,`(str-le <x> <y>)`: lexicographic comparisons of strings
-- `(seq-extract <seq> <off> <len>)`: returns the subsequence of `seq` of length `len` starting at offset `off`
-- `(seq-replace <seq> <src> <dst>)`: replace the first occurrence of `src` with `dst` in `seq`
-- `(seq-at <seq> <idx>)`: get the unit sequence of `seq` at index `idx`, or the empty sequence if `idx` is out of bounds
-- `(seq-nth <seq> <idx>)`: get the element of `seq` at index `idx`. Under-specified if `idx` is out of bounds
+- `(seq-empty <sort>)`/`seq.empty`: create an empty sequence with
+  element sort `sort`
+- `(seq-unit <val>)`/`seq.unit`: create a length-1 sequence containing
+  the element `val`
+- `(seq-concat <seq1> <seq2>)` (`seq.++`,`str.++`): concatenate `seq1`
+  and `seq2`
+- `(seq-prefix <seqp> <seq>)` (`seq.prefixof`,`str.prefixof`): true if
+  `seqp` is a prefix of `seq`
+- `(seq-contains <container> <containee>)` (`seq.contains`/`str.contains`):
+  true if `container` contains the sequence `containee`
+- `(str-lt <x> <y>)`,`(str-le <x> <y>)`: lexicographic comparisons of
+  strings
+- `(seq-extract <seq> <off> <len>)`: returns the subsequence of `seq`
+  of length `len` starting at offset `off`
+- `(seq-replace <seq> <src> <dst>)`: replace the first occurrence of
+  `src` with `dst` in `seq`
+- `(seq-at <seq> <idx>)`: get the unit sequence of `seq` at index `idx`,
+  or the empty sequence if `idx` is out of bounds
+- `(seq-nth <seq> <idx>)`: get the element of `seq` at index `idx`.
+  Under-specified if `idx` is out of bounds
 - `(seq-length <seq>)` (`seq.len`,`str.len`): get the length of `seq`
-- `(seq-index <seq> <subseq> <off>)` (`seq.indexof`,`str.indexof`): returns the index of the first occurrence of the sequence `subseq` in `seq` starting from offset `off`, or -1 if `subseq` does not occur in `seq` after offset `off`
-- `(seq-last-index <seq> <substr>)`: returns the index of the last occurrence of the sequence `substr` in `seq`, or -1 if `substr` is not contained in `seq`
+- `(seq-index <seq> <subseq> <off>)` (`seq.indexof`,`str.indexof`):
+  returns the index of the first occurrence of the sequence `subseq`
+  in `seq` starting from offset `off`, or -1 if `subseq` does not
+  occur in `seq` after offset `off`
+- `(seq-last-index <seq> <substr>)`: returns the index of the last
+  occurrence of the sequence `substr` in `seq`, or -1 if `substr` is
+  not contained in `seq`
 
 ### Conversions
-- `(int2bv <val> <nbits>)`
-- `(bv2int <val> <signed?>)`: interprets the bitvector `val` as an integer, treating as signed if `signed?` is true.
-- `str-to-int`
-- `int-to-str`
+- `(int2bv <val> <nbits>)`: Interprets the integer `val` as a bitvector
+  of length `nbits`
+- `(bv2int <val> <signed?>)`: Interprets the bitvector `val` as an
+  integer, treating as signed if `signed?` is true.
+- `(str-to-int <x>)`: Converts string `x` into an integer. Returns -1 if
+  `x` cannot be converted into an integer.
+- `(int-to-str <x>)`: Converts integer `x` into a string.
 - `seq-to-re`
 
 ### Regular expressions
@@ -167,4 +202,5 @@ currently supported.
 - `(set-subset <set1> <set2>)`
 
 ### Arrays
+TODO
 - `array-ext`: Mostly useful for internal usage, see https://github.com/Z3Prover/z3/issues/2123

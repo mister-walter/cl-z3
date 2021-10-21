@@ -82,6 +82,8 @@ for the same function.
 - `(and +)`, `(or +)`
 - `implies` (`=>`)
 - `(distinct <v1> ... <vn>)`: true if none of `v1` through `vn` are equal to each other
+- `(atleast <v1> ... <vn> <k>)` is true if `k` or more of `v1` through `vn` are true
+- `(atmost <v1> ... <vn> <k>)` is true if `k` or fewer of `v1` through `vn` are true
 
 ### Arithmetic
 Typically, functions with arity greater than unary require both
@@ -113,6 +115,10 @@ for the value of `y` return 4.
 
 ### Function Application
 - `(_ <fn> <arg1> ... <argn>)`: apply the function `fn` to the arguments `arg1` through `argn`
+
+### Quantifiers
+- `(exists (<v1> <v1sort> ... <vn> <vnsort>) <body>)`: true if there exist assignments for `v1`, ... `vn` of sort `v1sort`, ... , `vnsort` respectively such that the body is true under the assignments
+- `(forall (<v1> <v1sort> ... <vn> <vnsort>) <body>)`: true if for all assignments for `v1`, ... `vn` of sort `v1sort`, ... , `vnsort` respectively, the body is true
 
 ### Bitvector
 TODO

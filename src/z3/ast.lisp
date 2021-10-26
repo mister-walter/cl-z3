@@ -312,7 +312,7 @@
             (unless (and (integerp k) (>= k 0))
               (error "atmost requires that the last argument is a positive integer"))
             (with-foreign-array (array z3-c-types::Z3_ast (butlast args) (convert-to-ast-fn context arg types fns))
-                                (z3-mk-atmost context (1- (length args)) array k))))
+                                (z3-mk-atleast context (1- (length args)) array k))))
          ((list* op args)
           (multiple-value-bind (op-fn exists?)
               (gethash (symbol-name op) *ops-hash*)

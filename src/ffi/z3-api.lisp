@@ -3277,12 +3277,12 @@ that are not selected for interrupts are left alone.
   (c context)
   (s stats))
 
-(defcfun "Z3_stats_inc_ref" :string
+(defcfun "Z3_stats_inc_ref" :void
   "Increment the reference counter of the given statistics object."
   (c context)
   (s stats))
 
-(defcfun "Z3_stats_dec_ref" :string
+(defcfun "Z3_stats_dec_ref" :void
   "Decrement the reference counter of the given statistics object."
   (c context)
   (s stats))

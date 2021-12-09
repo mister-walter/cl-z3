@@ -179,3 +179,35 @@
 (defmethod initialize-instance :after ((obj ast-vector) &key)
   (with-slots (handle context) obj
     (z3-ast-vector-inc-ref context handle)))
+
+(defclass algebraic-number (ast) ())
+
+(defparameter *ALGEBRAIC-NUMBER-PRINT-MODE* :decimal
+  "Controls how algebraic numbers are displayed. Default is :decimal.")
+(defparameter *ALGEBRAIC-NUMBER-DECIMAL-PRECISION* 4
+  "The number of decimal places to include when printing algebraic numbers in :decimal mode or converting algebraic numbers to floats.")
+
+(defmethod z3-object-to-string ((obj algebraic-number))
+  (with-slots (handle context) obj
+    (ecase *ALGEBRAIC-NUMBER-PRINT-MODE*
+      (:decimal (z3-get-numeral-decimal-string context handle *ALGEBRAIC-NUMBER-DECIMAL-PRECISION*))
+      (:root (z3-ast-to-string context handle)))))
+
+(defun make-algebraic-number (context handle)
+  (make-instance 'algebraic-number
+                 :context context
+                 :handle handle))
+
+;; For now, we simply turn the algebraic number into a double. Ideally
+;; we would use z3-get-numeral-decimal-string because we could then
+;; control the precision more easily, but in that case we would also
+;; need to write a function to parse floats from strings.
+(defmethod algebraic-number-to-float ((obj algebraic-number))
+  (with-slots (handle context)
+      (z3-get-numeral-double context handle)))
+
+#|
+(defmethod algebraic-number-to-float ((obj algebraic-number) &key (precision *ALGEBRAIC-NUMBER-DECIMAL-PRECISION*))
+  (with-slots (handle context)
+      (z3-get-numeral-decimal-string context handle precision)))
+|#

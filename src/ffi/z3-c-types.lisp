@@ -120,6 +120,11 @@
   (:actual-type Z3_solver)
   (:simple-parser solver))
 
+(define-foreign-type solver-callback-type ()
+  ()
+  (:actual-type Z3_solver_callback)
+  (:simple-parser solver-callback))
+
 (define-foreign-type stats-type ()
   ()
   (:actual-type Z3_stats)

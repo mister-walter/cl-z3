@@ -6,6 +6,13 @@
 
 (in-package :z3-c)
 
+(defmacro defcfun? (name &rest args)
+  "A version of defcfun that first checks whether the foreign function
+exists, and warns if it does not."
+  `(if (not (cffi:foreign-symbol-pointer ,name))
+       (warn "Couldn't find Z3 function with name ~S, skipping..." ,name)
+     (defcfun ,name ,@args)))
+
 ;; When a Z3 module is initialized it will use the value of these parameters
 ;; when Z3_params objects are not provided.
 
@@ -3139,6 +3146,68 @@ that are not selected for interrupts are left alone.
   (literals ast-vector)
   (sz :uint)
   (levels :pointer)) ;; unsigned[] with size >= sz
+
+;; User propagators
+
+(defcfun? "Z3_solver_propagate_init" :void
+  "Register a user propagator with the solver"
+  (c context)
+  (s solver)
+  (user-context :pointer) ;; void*
+  (push_eh :pointer) ;; Z3_push_eh
+  (pop_eh :pointer) ;; Z3_pop_eh
+  (fresh_eh :pointer)) ;; Z3_fresh_eh
+
+(defcfun? "Z3_solver_propagate_fixed" :void
+  "Register a callback for when an expression is bound to a fixed
+  value. Only supports Boolean and bit-vector expressions sorts."
+  (c context)
+  (s solver)
+  (fixed_eh :pointer)) ;; Z3_fixed_eh
+
+(defcfun? "Z3_solver_propagate_final" :void
+  "Register a callback on final check.
+The final_eh callback takes as argument the original user_context that
+was used when calling `Z3_solver_propagate_init`, and it takes a
+callback context for propagations. It may use the callback context to
+invoke the `Z3_solver_propagate_consequence` function. If the callback
+context gets used, the solver continues."
+  (c context)
+  (s solver)
+  (final_eh :pointer)) ;; Z3_final_eh
+
+(defcfun? "Z3_solver_propagate_eq" :void
+  "Register a callback on expression equalities"
+  (c context)
+  (s solver)
+  (eq_eh :pointer)) ;; Z3_eq_eh
+
+(defcfun? "Z3_solver_propagate_diseq" :void
+  "Register a callback on expression disequalities"
+  (c context)
+  (s solver)
+  (eq_eh :pointer)) ;; Z3_eq_eh
+
+(defcfun? "Z3_solver_propagate_register" :uint
+  "Register an expression to propagate on with the solver. Only
+expressions of sort Boolean and bit-vector can be registered for
+propagation."
+  (c context)
+  (s solver)
+  (e ast))
+
+(defcfun? "Z3_solver_propagate_consequence" :void
+  "Propagate a consequence based on fixed values.
+This is a callback a client may invoke during the fixed_eh callback. 
+The callback adds a propagation consequence based on the fixed values of the `ids`."
+  (c context)
+  (cb solver-callback)
+  (num-fixed :uint)
+  (fixed-ids :pointer) ;; unsigned const*
+  (num-eqs :uint)
+  (eq-lhs :pointer) ;; unsigned const*
+  (eq-rhs :pointer) ;; unsigned const*
+  (conseq ast))
 
 (defcfun "Z3_solver_check" lbool
   "Check whether the assertions in a given solver are consistent or not."

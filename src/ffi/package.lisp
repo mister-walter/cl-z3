@@ -27,6 +27,7 @@
    #:Z3_probe
    #:Z3_apply_results
    #:Z3_solver
+   #:Z3_solver_callback
    #:Z3_stats
    ;; Enums
    #:lbool
@@ -64,6 +65,7 @@
    #:probe
    #:apply-results
    #:solver
+   #:solver-callback
    #:stats
    ))
 

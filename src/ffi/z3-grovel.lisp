@@ -51,6 +51,7 @@ export LD_LIBRARY_PATH=$HOME/bin/lib
 (ctype Z3_probe "Z3_probe")
 (ctype Z3_apply_result "Z3_apply_result")
 (ctype Z3_solver "Z3_solver")
+(ctype Z3_solver_callback "Z3_solver_callback")
 (ctype Z3_stats "Z3_stats")
 
 ;; Lifted Boolean type

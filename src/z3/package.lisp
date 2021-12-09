@@ -1,4 +1,5 @@
 (defpackage #:z3
+  (:documentation "The Lisp-Z3 interface frontend.")
   (:use #:cl #:z3-c)
   (:shadow #:sort #:optimize)
   (:import-from :trivia :match)
@@ -6,11 +7,14 @@
   (:import-from :cffi :translate-to-foreign)
   (:export #:solver-init #:set-solver
            #:make-simple-solver #:make-composite-solver #:make-solver-from-tactic
+           #:make-optimizer
            #:make-tactic
            #:solver-push #:solver-pop #:print-solver #:solver-reset
-           #:z3-assert #:z3-assert-fn #:check-sat
+           #:z3-assert #:z3-assert-fn
+           #:z3-assert-soft #:optimize-minimize #:optimize-maximize
+           #:check-sat
            #:convert-to-ast #:ast-to-value
-           #:register-finite-domain-sort #:register-enum-sort #:register-tuple-sort
+           #:register-enum-sort #:register-tuple-sort
            #:z3-object-to-string
            #:set-global-param #:get-global-param
            #:set-params

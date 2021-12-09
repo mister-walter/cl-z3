@@ -64,24 +64,40 @@ declarations into a function declaration alist for internal use."
   (z3-set-error-handler *default-context* (cffi:callback error-handler))
   (setf *default-solver* (make-simple-solver *default-context*)))
 
+(defgeneric solver-push-fn (solver)
+  (:method ((solver solver))
+           (let ((ctx (get-context solver)))
+             (push '() (solver-scopes solver))
+             (z3-solver-push ctx solver)))
+  (:method ((solver optimizer))
+           (let ((ctx (get-context solver)))
+             (push '() (solver-scopes solver))
+             (z3-optimize-push ctx solver))))
+
 (defun solver-push (&optional solver)
   "Create a new scope. This is useful for incremental solving."
-  (let* ((slv (or solver *default-solver*))
-         (ctx (get-context slv)))
-    (push '() (solver-scopes slv))
-    (z3-solver-push ctx slv)))
+  (solver-push-fn (or solver *default-solver*)))
+
+(defgeneric solver-pop-fn (solver n)
+  (:method ((solver solver) n)
+           (let ((ctx (get-context solver)))
+             (unless (<= n (z3-solver-get-num-scopes ctx solver))
+               (error "You can't pop ~S level(s) - the solver is currently at level ~S" n (z3-solver-get-num-scopes ctx solver)))
+             (loop for i below n
+                   do (pop (solver-scopes solver)))
+             (z3-solver-pop ctx solver n)))
+  (:method ((solver optimizer) n)
+           (let ((ctx (get-context solver)))
+             (loop for i below n
+                   do (progn
+                        (pop (solver-scopes solver))
+                        (z3-optimize-pop ctx solver))))))
 
 (defun solver-pop (&key (solver nil) (n 1))
   "Pop one or more scopes off the Z3 stack. This essentially undoes
 any Z3 declarations or assertions that occurred between the relevant
 'push' operation and this 'pop' operation."
-  (let* ((slv (or solver *default-solver*))
-         (ctx (get-context slv)))
-    (unless (<= n (z3-solver-get-num-scopes ctx slv))
-      (error "You can't pop ~S level(s) - the solver is currently at level ~S" n (z3-solver-get-num-scopes ctx slv)))
-    (loop for i below n
-          do (pop (solver-scopes slv)))
-    (z3-solver-pop ctx slv n)))
+  (solver-pop-fn (or solver *default-solver*) n))
 
 (defun solver-reset (&optional solver)
   (let* ((slv (or solver *default-solver*))
@@ -117,24 +133,79 @@ any Z3 declarations or assertions that occurred between the relevant
      (convert-to-ast stmt (make-var-decls var-decls ctx) (make-fn-decls var-decls ctx) ctx))))
 
 (defmacro z3-assert (var-decls stmt &optional solver)
+  "Assert that the given statement holds in Z3. Any free variable
+occurring in the statement must be declared with its sort in
+`var-decls`."
   `(z3-assert-fn ',var-decls ',stmt ,solver))
+
+(defun z3-assert-soft-fn (var-decls stmt weight &optional solver)
+  (when (oddp (length var-decls)) (error "Each declared variable must have a type."))
+  (let* ((slv (or solver *default-solver*))
+         (ctx (get-context slv)))
+    (push `(assert ,var-decls ,stmt) (car (solver-scopes slv)))
+    (solver-assert-soft
+     slv
+     (convert-to-ast stmt (make-var-decls var-decls ctx) (make-fn-decls var-decls ctx) ctx)
+     weight)))
+
+(defmacro z3-assert-soft (var-decls stmt weight &optional solver)
+  "Assert that the given statement holds in Z3. Any free variable
+occurring in the statement must be declared with its sort in
+`var-decls`. `weight` should be a positive number representing the
+penalty for violating this constraint."
+  `(z3-assert-soft-fn ',var-decls ',stmt ',weight ,solver))
+
+(defun z3-optimize-minimize-fn (var-decls stmt &optional solver)
+  (when (oddp (length var-decls)) (error "Each declared variable must have a type."))
+  (let* ((slv (or solver *default-solver*))
+         (ctx (get-context slv)))
+    (push `(minimize ,var-decls ,stmt) (car (solver-scopes slv)))
+    (z3-optimize-minimize (get-context slv) slv
+                          (convert-to-ast stmt (make-var-decls var-decls ctx) (make-fn-decls var-decls ctx) ctx))))
+
+(defmacro optimize-minimize (var-decls stmt &optional solver)
+  `(z3-optimize-minimize-fn ',var-decls ',stmt ,solver))
+
+(defun z3-optimize-maximize-fn (var-decls stmt &optional solver)
+  (when (oddp (length var-decls)) (error "Each declared variable must have a type."))
+  (let* ((slv (or solver *default-solver*))
+         (ctx (get-context slv)))
+    (push `(maximize ,var-decls ,stmt) (car (solver-scopes slv)))
+    (z3-optimize-maximize (get-context slv) slv
+                          (convert-to-ast stmt (make-var-decls var-decls ctx) (make-fn-decls var-decls ctx) ctx))))
+
+(defmacro optimize-maximize (var-decls stmt &optional solver)
+  `(z3-optimize-maximize-fn ',var-decls ',stmt ,solver))
+
+(defgeneric get-model-fn (solver)
+  (:method ((solver solver))
+           (let ((ctx (get-context solver)))
+             (make-instance 'model
+                            :handle (z3-solver-get-model ctx solver)
+                            :context ctx)))
+  (:method ((solver optimizer))
+           (let ((ctx (get-context solver)))
+             (make-instance 'model
+                            :handle (z3-optimize-get-model ctx solver)
+                            :context ctx))))
 
 (defun get-model (&optional solver)
   "Get the model object for the last solver-check[-assumptions] call.
    Will invoke the error handler if no model is available."
-  (let* ((slv (or solver *default-solver*))
-         (ctx (get-context slv)))
-    (make-instance 'model
-                   :handle (z3-solver-get-model ctx slv)
-                   :context ctx)))
+  (get-model-fn (or solver *default-solver*)))
 
+(defgeneric solver-check (solver)
+  (:method ((solver solver)) (z3-solver-check (get-context solver) solver))
+  (:method ((solver optimizer)) (z3-optimize-check (get-context solver) solver 0 (cffi:null-pointer))))
+
+(declaim (ftype (function (&optional (or solver optimizer)) (values (or (member :unsat :unknown) list) &optional)) check-sat))
 (defun check-sat (&optional solver)
   "Ask Z3 to check satisfiability of the global assertion stack.
 Returns either :UNSAT, :UNKNOWN, or a (possibly empty) list of
 bindings corresponding to the model that Z3 generated."
   (let* ((slv (or solver *default-solver*))
          (ctx (get-context slv)))
-    (match (z3-solver-check ctx slv)
+    (match (solver-check slv)
            (:L_TRUE ;; assertions are satisfiable (a model may be generated)
             (append (model-constants-to-assignment (get-model solver) ctx)
                     (model-funcs (get-model solver) ctx)))

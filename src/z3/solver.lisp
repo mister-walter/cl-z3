@@ -18,13 +18,33 @@
                    :handle (z3-mk-solver-from-tactic ctx tactic)
                    :context ctx)))
 
+(defun make-optimizer (&optional context)
+  (let ((ctx (or context (make-instance 'context))))
+    (make-instance 'optimizer
+                   :handle (z3-mk-optimize ctx)
+                   :context ctx)))
+
 (defgeneric solver-assert (solver stmt)
   (:documentation "Assert a statement in a solver")
   (:method (solver stmt)
            ;; TBD try to convert
            (error "Currently we only support stmt arguments that are ASTs."))
-  (:method (solver (stmt ast))
-           (z3-solver-assert (get-context solver) solver stmt)))
+  (:method ((solver solver) (stmt ast))
+           (z3-solver-assert (get-context solver) solver stmt))
+  (:method ((solver optimizer) (stmt ast))
+           (z3-optimize-assert (get-context solver) solver stmt)))
+
+(defgeneric solver-assert-soft (solver stmt weight)
+  (:documentation "Assert a statement in a solver")
+  (:method (solver stmt weight)
+           (error "Currently we only support stmt arguments that are ASTs."))
+  (:method ((solver solver) (stmt ast) weight)
+           (error "Cannot add a soft assertion to a non-optimizer solver"))
+  (:method ((solver optimizer) (stmt ast) weight)
+           (z3-optimize-assert-soft (get-context solver)
+                                    solver stmt
+                                    (if (stringp weight) weight (write-to-string weight))
+                                    (z3-mk-string-symbol (get-context solver) ""))))
 
 (defun get-solver-help (&optional solver)
   (let ((slv (or solver *default-solver*)))
@@ -36,11 +56,18 @@
                    :handle (z3-solver-get-param-descrs (get-context slv) slv)
                    :context (get-context slv))))
 
+(defgeneric get-solver-stats-fn (slv)
+  (:method ((slv solver))
+           (make-instance 'statistics
+                          :handle (z3-solver-get-statistics (get-context slv) slv)
+                          :context (get-context slv)))
+  (:method ((slv optimizer))
+            (make-instance 'statistics
+                           :handle (z3-optimize-get-statistics (get-context slv) slv)
+                           :context (get-context slv))))
+
 (defun get-solver-stats (&optional solver)
-  (let ((slv (or solver *default-solver*)))
-    (make-instance 'statistics
-                   :handle (z3-solver-get-statistics (get-context slv) slv)
-                   :context (get-context slv))))
+  (get-solver-stats-fn (or solver *default-solver*)))
 
 (defmacro set-params (settings &optional solver)
   `(let ((slv (or ,solver *default-solver*)))

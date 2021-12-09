@@ -25,12 +25,7 @@ declarations into a function declaration alist for internal use."
 ;; TODO: we may want to use z3-mk-fresh-func-decl to avoid name
 ;; clashes with builtin functions. This would also require changes to
 ;; the model translation code.
-;; TODO: weird SBCL note when compiled:
-;; note: Type assertion too complex to check:
-;; (VALUES Z3::FUNC-DECL &REST T).
-;; It allows an unknown number of values, consider using
-;; (VALUES Z3::FUNC-DECL &OPTIONAL).
-(declaim (ftype (function (symbol * * context) func-decl) make-fn-decl))
+(declaim (ftype (function (symbol list (or symbol cons) context) (values func-decl &optional)) make-fn-decl))
 (defun make-fn-decl (name domain range context)
   "Given a name, a list of domain sort specifiers, and a range sort specifier, create an uninterpreted func-decl with that name and signature."
   (with-foreign-array (domain-sorts-array z3-c-types::Z3_sort domain (get-sort arg context))

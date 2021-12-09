@@ -113,6 +113,24 @@
                  :context ctx))
 
 ;; A partial list of built-in functions.
+;; Each entry should have the following form:
+;; (<name/loname> &key :arity :ctor)
+;; - <name/loname> is either a symbol or a nonempty list of symbols
+;;   corresponding to the symbols that should be translated into this
+;;   operator. If :ctor is not provided, the first name is used to
+;;   generate the name of the CFFI'ed Z3 function to use to construct
+;;   an application AST for this operator, by appending Z3-MK- to the
+;;   name.
+;; - If :arity is provided, it should either be a positive integer
+;;   describing the number of arguments this operator takes, or -
+;;   indicating that this operator has arbitrary arity.
+;; - If :ctor is provided, it should be a symbol corresponding to the
+;;   CFFI'ed Z3 function that constructs an application AST for this
+;;   operator.
+;; These operator specs will be used to generate lambdas for each
+;; operator that take in an S-expression of the appropriate form,
+;; convert all arguments into Z3 ASTs recursively, and apply the
+;; relevant constructor to those arguments.
 (defvar *builtin-ops*
   '((not :arity 1)
     (and :arity -)
@@ -374,6 +392,13 @@ into lisp. Currently there are two modes: :string (the default) and
             (:list (coerce res-vec 'list))
             (otherwise (error "Unknown string representation mode ~S" *STRING-REP*))))))
 
+(defun assert-app-decl-kind (ctx ast kind)
+  (assert (equal (z3-get-ast-kind ctx ast) :app_ast))
+  (let* ((decl (z3-get-app-decl ctx (z3-to-app ctx ast)))
+         (decl-kind (z3-get-decl-kind ctx decl)))
+    (assert (equal decl-kind kind))))
+
+;; Attempt to translate an AST into a Lisp value.
 (defun ast-to-value (ast ctx)
   (let* ((ast-kind (z3-get-ast-kind ctx ast))
          (sort (z3-get-sort ctx ast))
@@ -398,6 +423,14 @@ into lisp. Currently there are two modes: :string (the default) and
                      (:OP_UNINTERPRETED
                       (warn "Handling of OP_UNINTERPRETED is currently a work in progress.")
                       (z3-ast-to-string ctx ast))
+                     (:OP_ADD
+                      (cons '+ (mapcar #'(lambda (arg) (ast-to-value arg ctx)) (app-ast-args-to-list ast ctx))))
+                     (:OP_ITE
+                      (cons 'if (mapcar #'(lambda (arg) (ast-to-value arg ctx)) (app-ast-args-to-list ast ctx))))
+                     (:OP_EQ
+                      (cons '= (mapcar #'(lambda (arg) (ast-to-value arg ctx)) (app-ast-args-to-list ast ctx))))
+                     (:OP_OR
+                      (cons 'or (mapcar #'(lambda (arg) (ast-to-value arg ctx)) (app-ast-args-to-list ast ctx))))
                      ;; Algebraic number
                      (:OP_AGNUM
                       (make-algebraic-number ctx ast))
@@ -419,6 +452,8 @@ into lisp. Currently there are two modes: :string (the default) and
                    ((or :int_sort :finite_domain_sort :bv_sort) (values (parse-integer (z3-get-numeral-string ctx ast))))
                    (:real_sort (/ (ast-to-value (z3-get-numerator ctx ast) ctx) (ast-to-value (z3-get-denominator ctx ast) ctx)))
                    (otherwise (error "Translation of numeric values with sort kind ~S is not currently supported." sort-kind))))
+           (:var_ast
+            (cons :arg (z3-get-index-value ctx ast)))
            (otherwise (error "Translation of ASTs of kind ~S are not currently supported.~%AST that triggered this: ~S" ast-kind (z3-ast-to-string ctx ast))))))
 
 

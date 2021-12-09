@@ -81,6 +81,7 @@ represented as an uninterpreted function.
 (register-sort :int #'z3-mk-int-sort)
 (register-sort :bool #'z3-mk-bool-sort)
 (register-sort :string #'z3-mk-string-sort)
+(register-sort :real #'z3-mk-real-sort)
 
 (register-parametric-sort :bv
                           #'(lambda (ctx args)

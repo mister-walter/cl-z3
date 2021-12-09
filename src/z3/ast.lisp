@@ -125,6 +125,9 @@
     (mod :ctor z3-mk-mod :arity 2)
     (rem :ctor z3-mk-rem :arity 2)
     (power :ctor z3-mk-power :arity 2)
+    ((int2real int-to-real) :arity 1)
+    ((real2int real-to-int) :arity 1)
+    ;;(divides :arity 2)
     (distinct :arity -)
     ((implies =>) :arity 2)
     (xor :arity 2)
@@ -261,6 +264,9 @@
           (z3-mk-eq context
                     (convert-to-ast-fn context x types fns)
                     (convert-to-ast-fn context y types fns)))
+         ((list (sym-name !=) x y)
+          (convert-funccall-to-ast context `(not (equal ,x ,y)) types fns))
+         ;; Unary subtraction, binary is taken care of thru *builtin-ops*
          ((list (sym-name -) arg)
           (z3-mk-unary-minus context (convert-to-ast-fn context arg types fns)))
          ((list (sym-name extract) x hi lo)
@@ -392,6 +398,9 @@ into lisp. Currently there are two modes: :string (the default) and
                      (:OP_UNINTERPRETED
                       (warn "Handling of OP_UNINTERPRETED is currently a work in progress.")
                       (z3-ast-to-string ctx ast))
+                     ;; Algebraic number
+                     (:OP_AGNUM
+                      (make-algebraic-number ctx ast))
                      (otherwise
                       ;; TODO fix this ugly special-case
                       (if (z3-is-string ctx ast)

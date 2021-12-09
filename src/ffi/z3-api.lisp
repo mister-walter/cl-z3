@@ -3368,6 +3368,111 @@ The callback adds a propagation consequence based on the fixed values of the `id
 
 ;; ...
 
+;;;; z3_optimization.h
+(defcfun "Z3_mk_optimize" optimize
+  "Create a new optimize context"
+  (c context))
+
+(defcfun "Z3_optimize_inc_ref" :void
+  "Increment the reference counter of the given optimize context."
+  (c context)
+  (o optimize))
+
+(defcfun "Z3_optimize_dec_ref" :void
+  "Decrement the reference counter of the given optimize context."
+  (c context)
+  (o optimize))
+
+(defcfun "Z3_optimize_assert" :void
+  "Assert a hard constraint to the optimization context."
+  (c context)
+  (o optimize)
+  (a ast))
+
+;; ...
+
+(defcfun "Z3_optimize_assert_soft" :uint
+  "Assert soft constraint to the optimization context.
+weight - a positive weight, penalty for violating soft constraint
+id - optional identifier to group soft constraints"
+  (c context)
+  (o optimize)
+  (a ast)
+  (weight :string)
+  (id sym))
+
+(defcfun "Z3_optimize_maximize" :uint
+  "Add a maximization constraint."
+  (c context)
+  (o optimize)
+  (a ast))
+
+(defcfun "Z3_optimize_minimize" :uint
+  "Add a minimization constraint."
+  (c context)
+  (o optimize)
+  (a ast))
+
+(defcfun "Z3_optimize_push" :void
+  "Create a backtracking point."
+  (c context)
+  (o optimize))
+
+(defcfun "Z3_optimize_pop" :void
+  "Backtrack one level."
+  (c context)
+  (o optimize))
+
+(defcfun "Z3_optimize_check" lbool
+  "Check consistency and produce optimal values."
+  (c context)
+  (o optimize)
+  (num-assumptions :uint)
+  (assumptions :pointer)) ;; ast const assumptions[]
+
+(defcfun "Z3_optimize_get_reason_unknown" :string
+  "Retrieve a string that describes the last status returned by `Z3_optimize_check`."
+  (c context)
+  (o optimize))
+
+(defcfun "Z3_optimize_get_model" model
+  "Retrieve the model for the last `Z3_optimize_check`.
+The error handler is invoked if a model is not available because
+the commands above were not invoked for the given optimization
+solver, or if the result was `Z3_L_FALSE`"
+  (c context)
+  (o optimize))
+
+;; ...
+
+(defcfun "Z3_optimize_get_lower" ast
+  "Retrieve lower bound value or approximation for the i'th optimization objective."
+  (c context)
+  (o optimize)
+  (idx :uint))
+
+(defcfun "Z3_optimize_get_upper" ast
+  "Retrieve upper bound value or approximation for the i'th optimization objective."
+  (c context)
+  (o optimize)
+  (idx :uint))
+
+;; ...
+
+(defcfun "Z3_optimize_to_string" :string
+  "Print the current optimization context as a string."
+  (c context)
+  (o optimize))
+
+;; ...
+
+(defcfun "Z3_optimize_get_statistics" stats
+  "Retrieve statistics information from the last call to `Z3_optimize_check`"
+  (c context)
+  (o optimize))
+
+;; ...
+
 ;;;; z3_ast_containers.h
 
 (defcfun "Z3_mk_ast_vector" ast-vector

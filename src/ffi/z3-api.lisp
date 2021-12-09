@@ -45,6 +45,7 @@ exists, and warns if it does not."
   (param_id :string)
   (param_value :pointer))
 
+#|
 (defconstant +ptr-size+ (foreign-type-size :pointer))
 
 (with-foreign-pointer (ptr +ptr-size+)
@@ -52,6 +53,7 @@ exists, and warns if it does not."
                         (if status
                             (mem-ref ptr :string)
                           (error "Unknown parameter"))))
+|#
 
 (defcfun "Z3_mk_config" config
   "Create a configuration object for the Z3 context object.
@@ -465,7 +467,7 @@ Z3 will return the same pointer twice.
   (t2 ast))
 
 (defcfun "Z3_mk_and" ast
-  "Create an AST node representing `args[0] oamd ... and args[num_args-1]`
+  "Create an AST node representing `args[0] and ... and args[num_args-1]`
    All arguments must have Boolean sort.
    The number of arguments must be greater than zero."
   (c context)
@@ -1383,7 +1385,15 @@ If `s` does not contain `substr`, then the value is -1."
   (c context)
   (s ast))
 
-;; ... (regular expression stuff)
+(defcfun "Z3_mk_ubv_to_str" ast
+  "Unsigned bit-vector to string conversion"
+  (c context)
+  (s ast))
+
+(defcfun "Z3_mk_sbv_to_str" ast
+  "Signed bit-vector to string conversion"
+  (c context)
+  (s ast))
 
 (defcfun "Z3_mk_seq_to_re" ast
   "Create a regular expression that accepts the sequence `seq`."
@@ -2192,7 +2202,7 @@ while ((_ update-field car) (cons 2 nil) 1) is (cons 1 nil).
   (p pattern)
   (idx :uint))
 
-(defcfun "Z3_get_index_value" ast
+(defcfun "Z3_get_index_value" :uint
   "Return index of de-Bruijn bound variable."
   (c context)
   (a ast))

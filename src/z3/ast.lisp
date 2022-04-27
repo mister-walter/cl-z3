@@ -56,7 +56,7 @@
          ((list (sym-name re-full) sort)
           (z3-mk-re-full context (get-sort sort context)))
          ((list* (sym-name set) sort args)
-          (mk-set (get-sort sort context) args context types))
+          (mk-set (get-sort sort context) args context types fns))
          ((list (sym-name forall) bound-vars body)
           (mk-quantifier t bound-vars body context types fns))
          ((list (sym-name exists) bound-vars body)

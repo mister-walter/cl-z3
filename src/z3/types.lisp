@@ -227,7 +227,7 @@
 ;; control the precision more easily, but in that case we would also
 ;; need to write a function to parse floats from strings.
 (defmethod algebraic-number-to-float ((obj algebraic-number))
-  (with-slots (handle context)
+  (with-slots (handle context) obj
       (z3-get-numeral-double context handle)))
 
 #|

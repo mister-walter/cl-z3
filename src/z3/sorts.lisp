@@ -320,6 +320,7 @@ represented as an uninterpreted function.
 
 ;; TODO does this function need to take in types?
 (defun construct-tuple-fn (tuple-name values context &optional types)
+  (declare (ignore types))
   "Make an AST node that constructs a value of the given tuple with the given field values.
    Field values must be provided in the same order as they were defined in the register-tuple-sort call for this tuple sort."
   ;; TODO: write a version of this function that takes in an alist of field-name -> field-value
@@ -335,6 +336,7 @@ represented as an uninterpreted function.
 
 ;; TODO why do we take in context?
 (defun get-tuple-field-accessor-decl-fn (tuple-name field-name context)
+  (declare (ignore context))
   (multiple-value-bind (metadata exists?)
       (gethash tuple-name *tuple-sort-metadata*)
     (cond ((not exists?) (error "~S does not name a tuple sort." tuple-name))

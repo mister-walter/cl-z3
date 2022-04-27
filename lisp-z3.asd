@@ -37,4 +37,13 @@
   :depends-on ("lisp-z3/z3")
   :serial t
   :components
-  ())
+  ()
+  :in-order-to ((test-op (test-op "lisp-z3/tests"))))
+
+(defsystem "lisp-z3/tests"
+    :depends-on ("lisp-z3" "parachute")
+    :pathname "test/"
+    :components
+    ((:file "package")
+     (:file "tests" :depends-on ("package")))
+    :perform (test-op (o c) (symbol-call :parachute :test :lisp-z3/tests)))

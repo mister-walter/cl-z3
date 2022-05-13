@@ -1,3 +1,4 @@
+(load "try-load-quicklisp.lisp")
 (pushnew (truename "../") ql:*local-project-directories*)
 (ql:register-local-projects)
 (ql:quickload :lisp-z3)

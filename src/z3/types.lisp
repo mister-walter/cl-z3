@@ -100,7 +100,11 @@
 
 (defmethod z3-object-to-string ((obj solver))
   (with-slots (handle context) obj
-    (z3-solver-to-string context handle)))
+    (format nil "~a" handle)))
+
+(defmethod describe-object ((obj solver) stream)
+  (with-slots (handle context) obj
+    (format stream "~a" (z3-solver-to-string context handle))))
 
 ;; We need this because we have the unset-solver type in
 ;; globals.lisp. We don't want to call solver-inc-ref in

@@ -1,12 +1,7 @@
-(include-book "interface/itest-cgen")
-(include-book "interface/itest-ithm")
-
+(include-book "acl2s/interface/acl2s-utils/top" :dir :system)
 :q
 
-(load "~/quicklisp/setup.lisp")
-(load "interface/acl2s-interface.lisp")
-(load "interface/acl2s-highlevel-interface.lisp")
-
+(load "../try-load-quicklisp.lisp")
 (pushnew (truename "../../") ql:*local-project-directories*)
 (ql:register-local-projects)
 (ql:quickload :lisp-z3)
@@ -15,8 +10,8 @@
   (:use :cl :z3 :acl2s :acl2s-interface))
 
 (in-package :z3-lengths)
-(import 'acl2s::(acl2s-compute))
-(import 'acl2s-interface::(itest?-query))
+(import 'acl2s-interface::acl2s-compute)
+(import 'acl2s-interface-extras::itest?-query)
 
 ;; When we ask ACL2s, we don't get any counterexamples...
 (itest?-query 'acl2s::(implies (and (intp x) (intp y) (intp z) (intp a) (intp b)

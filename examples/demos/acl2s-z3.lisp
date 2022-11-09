@@ -7,6 +7,7 @@
 ;; (set-debugger-enable t)
 
 ;; Some stuff has to be include-raw'ed because it uses packages not known to ACL2.
+;; (depends-on "z3_raw_code.lsp")
 (acl2::include-raw "z3_raw_code.lsp" :host-readtable t)
 
 (acl2::defun-bridge z3-get-solver-stats ()

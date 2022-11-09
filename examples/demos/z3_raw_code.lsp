@@ -1,5 +1,5 @@
 (in-package "ACL2S")
-(load "~/quicklisp/setup.lisp")
+(load "../try-load-quicklisp.lisp")
 
 (pushnew (truename "../../") ql:*local-project-directories*)
 (ql:register-local-projects)
@@ -27,10 +27,12 @@
   z3::*default-context*)
 
 (defun z3-register-tuple-sort-fn (name fields ctx)
-  (z3::register-tuple-sort-fn name fields ctx))
+  (z3::register-tuple-sort-fn name fields ctx)
+  name)
 
 (defun z3-register-enum-sort-fn (name elements ctx)
-  (z3::register-enum-sort-fn name elements ctx))
+  (z3::register-enum-sort-fn name elements ctx)
+  name)
 
 (defun z3-get-solver-stats-fn ()
   (z3::get-solver-stats))

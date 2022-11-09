@@ -1064,12 +1064,6 @@ Z3 will return the same pointer twice.
   (c context)
   (f func-decl))
 
-(defcfun "Z3_mk_set_has_size" ast
-  "Create predicate that holds if Boolean array `set` has `k` elements set to true."
-  (c context)
-  (set ast)
-  (k ast))
-
 ;; Sets
 
 (defcfun "Z3_mk_set_sort" sort

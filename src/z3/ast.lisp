@@ -199,7 +199,7 @@
     ;; map special
     (array-default :arity 1)
     ;; as_array special
-    (set-has-size :arity 2)
+    ;;(set-has-size :arity 2) deprecated
     ;;; Set functions
     ;; mk-empty-set special
     ;; mk-full-set special

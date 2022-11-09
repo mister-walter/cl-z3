@@ -370,6 +370,21 @@
             (z3-ast-to-string ctx ast))
            (otherwise (error "Unsupported operation when trying to convert sequence AST to value: ~S" decl-kind)))))
 
+(defun array-ast-to-value (ast ctx)
+  "Translate an array AST into a Lisp alist value"
+  (assert (equal (z3-get-ast-kind ctx ast) :app_ast))
+  (assert (equal (z3-get-sort-kind ctx (z3-get-sort ctx ast)) :array_sort))
+  (let* ((decl (z3-get-app-decl ctx ast))
+         (decl-kind (z3-get-decl-kind ctx decl)))
+    (match decl-kind
+      (:OP_STORE (cons (cons (ast-to-value (z3-get-app-arg ctx ast 1) ctx)
+                             (ast-to-value (z3-get-app-arg ctx ast 2) ctx))
+                       (array-ast-to-value (z3-get-app-arg ctx ast 0) ctx)))
+      (:OP_CONST_ARRAY `((:default . ,(ast-to-value (z3-get-app-arg ctx ast 0) ctx))))
+      ;;(:OP_ARRAY_MAP)
+      (otherwise (error "Unsupported operation when trying to convert array AST to value: ~S" decl-kind)))))
+
+
 ;; TODO: this is an experimental feature, don't rely on this switch
 ;; existing.
 (defvar *STRING-REP* :string
@@ -398,63 +413,73 @@ into lisp. Currently there are two modes: :string (the default) and
          (decl-kind (z3-get-decl-kind ctx decl)))
     (assert (equal decl-kind kind))))
 
+(defun app-ast-to-value (ast ctx)
+  (assert (equal (z3-get-ast-kind ctx ast) :app_ast))
+  (let* ((decl (z3-get-app-decl ctx (z3-to-app ctx ast))))
+    (match (z3-get-decl-kind ctx decl)
+      (:OP_TRUE t)
+      (:OP_FALSE nil)
+      (:OP_DT_CONSTRUCTOR
+       (let* ((sort (z3-get-sort ctx ast)))
+         (cond ((enum-sort? sort ctx) (get-enum-value sort decl ctx))
+               ((tuple-sort? sort ctx)
+                (list 'quote (cons (cons :type (sort-name sort ctx))
+                                   (loop for field in (get-tuple-fields sort (z3-to-app ctx ast) ctx)
+                                         collect (cons (car field) (ast-to-value (cdr field) ctx))))))
+               (t (error "We don't support custom datatypes like ~S yet." (sort-name sort ctx))))))
+      ;; TODO: do something better here. For example, this AST
+      ;; may represent a string variable.
+      (:OP_UNINTERPRETED
+       (warn "Handling of OP_UNINTERPRETED is currently a work in progress.")
+       (z3-ast-to-string ctx ast))
+      ((or :OP_SEQ_CONCAT :OP_SEQ_UNIT :OP_SEQ_EMPTY)
+       (seq-ast-to-value ast ctx))
+      ((or :OP_STORE :OP_CONST_ARRAY :OP_ARRAY_MAP)
+       (array-ast-to-value ast ctx))
+      (:OP_ADD
+       (cons '+ (mapcar #'(lambda (arg) (ast-to-value arg ctx)) (app-ast-args-to-list ast ctx))))
+      (:OP_ITE
+       (cons 'if (mapcar #'(lambda (arg) (ast-to-value arg ctx)) (app-ast-args-to-list ast ctx))))
+      (:OP_EQ
+       (cons '= (mapcar #'(lambda (arg) (ast-to-value arg ctx)) (app-ast-args-to-list ast ctx))))
+      (:OP_OR
+       (cons 'or (mapcar #'(lambda (arg) (ast-to-value arg ctx)) (app-ast-args-to-list ast ctx))))
+      ;; Algebraic number
+      (:OP_AGNUM
+       (make-algebraic-number ctx ast))
+      ;;(:OP_ARRAY_DEFAULT)
+      ;;(:OP_SELECT)
+      (otherwise
+       ;; TODO fix this ugly special-case
+       (if (z3-is-string ctx ast)
+           ;; TODO: do we want to use get-lstring or get-string here?
+           ;; benefits to using get-lstring: interface
+           ;;   can roundtrip strings, more accurate
+           ;;   representation of model
+           ;; downsides: more annoying to use in a
+           ;;   REPL, unclear how different lisps handle
+           ;;   printing strings with "unprintable"
+           ;;   characters like control codes
+           (get-lstring ctx ast)
+         (error "Translation of application ASTs for functions with decl-kind ~S is not currently supported." (z3-get-decl-kind ctx decl)))))))
+
+
 ;; Attempt to translate an AST into a Lisp value.
 (defun ast-to-value (ast ctx)
   (let* ((ast-kind (z3-get-ast-kind ctx ast))
          (sort (z3-get-sort ctx ast))
          (sort-kind (z3-get-sort-kind ctx sort)))
     (match ast-kind
-           (:app_ast
-            (let* ((decl (z3-get-app-decl ctx (z3-to-app ctx ast))))
-              (match (z3-get-decl-kind ctx decl)
-                     (:OP_TRUE t)
-                     (:OP_FALSE nil)
-                     (:OP_DT_CONSTRUCTOR
-                      (cond ((enum-sort? sort ctx) (get-enum-value sort decl ctx))
-                            ((tuple-sort? sort ctx)
-                             (list 'quote (cons (cons :type (sort-name sort ctx))
-                                                (loop for field in (get-tuple-fields sort (z3-to-app ctx ast) ctx)
-                                                      collect (cons (car field) (ast-to-value (cdr field) ctx))))))
-                            (t (error "We don't support custom datatypes like ~S yet." (sort-name sort ctx)))))
-                     ((or :OP_SEQ_CONCAT :OP_SEQ_UNIT :OP_SEQ_EMPTY)
-                      (seq-ast-to-value ast ctx))
-                     ;; TODO: do something better here. For example, this AST
-                     ;; may represent a string variable.
-                     (:OP_UNINTERPRETED
-                      (warn "Handling of OP_UNINTERPRETED is currently a work in progress.")
-                      (z3-ast-to-string ctx ast))
-                     (:OP_ADD
-                      (cons '+ (mapcar #'(lambda (arg) (ast-to-value arg ctx)) (app-ast-args-to-list ast ctx))))
-                     (:OP_ITE
-                      (cons 'if (mapcar #'(lambda (arg) (ast-to-value arg ctx)) (app-ast-args-to-list ast ctx))))
-                     (:OP_EQ
-                      (cons '= (mapcar #'(lambda (arg) (ast-to-value arg ctx)) (app-ast-args-to-list ast ctx))))
-                     (:OP_OR
-                      (cons 'or (mapcar #'(lambda (arg) (ast-to-value arg ctx)) (app-ast-args-to-list ast ctx))))
-                     ;; Algebraic number
-                     (:OP_AGNUM
-                      (make-algebraic-number ctx ast))
-                     (otherwise
-                      ;; TODO fix this ugly special-case
-                      (if (z3-is-string ctx ast)
-                          ;; TODO: do we want to use get-lstring or get-string here?
-                          ;; benefits to using get-lstring: interface
-                          ;;   can roundtrip strings, more accurate
-                          ;;   representation of model
-                          ;; downsides: more annoying to use in a
-                          ;;   REPL, unclear how different lisps handle
-                          ;;   printing strings with "unprintable"
-                          ;;   characters like control codes
-                          (get-lstring ctx ast)
-                        (error "Translation of application ASTs for functions with decl-kind ~S is not currently supported." (z3-get-decl-kind ctx decl)))))))
-           (:numeral_ast
-            (match sort-kind
-                   ((or :int_sort :finite_domain_sort :bv_sort) (values (parse-integer (z3-get-numeral-string ctx ast))))
-                   (:real_sort (/ (ast-to-value (z3-get-numerator ctx ast) ctx) (ast-to-value (z3-get-denominator ctx ast) ctx)))
-                   (otherwise (error "Translation of numeric values with sort kind ~S is not currently supported." sort-kind))))
-           (:var_ast
-            (cons :arg (z3-get-index-value ctx ast)))
-           (otherwise (error "Translation of ASTs of kind ~S are not currently supported.~%AST that triggered this: ~S" ast-kind (z3-ast-to-string ctx ast))))))
+      (:app_ast
+       (app-ast-to-value ast ctx))
+      (:numeral_ast
+       (match sort-kind
+         ((or :int_sort :finite_domain_sort :bv_sort) (values (parse-integer (z3-get-numeral-string ctx ast))))
+         (:real_sort (/ (ast-to-value (z3-get-numerator ctx ast) ctx) (ast-to-value (z3-get-denominator ctx ast) ctx)))
+         (otherwise (error "Translation of numeric values with sort kind ~S is not currently supported." sort-kind))))
+      (:var_ast
+       (cons :arg (z3-get-index-value ctx ast)))
+      (otherwise (error "Translation of ASTs of kind ~S are not currently supported.~%AST that triggered this: ~S" ast-kind (z3-ast-to-string ctx ast))))))
 
 
 ;; TODO these two functions are very similar - should factor common code into a macro or something.

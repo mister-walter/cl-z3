@@ -72,14 +72,17 @@ than 3.
 ## Functions
 
 Names in parentheses after a function call denote alternative names
-for the same function.
+for the same function. Square brackets around a parameter name
+indicate that the parameter can only be a constant value (it cannot be
+a Z3 variable or symbolic value, for example). Angle brackets around a
+parameter name indicate that the parameter may have a symbolic value.
 
 ### Propositional Logic
 - `(equal <x> <y>)` (`=`,`==`): true if `x` and `y` are equal under Z3's notion of equality
 - `(not <x>)`: Boolean negation
 - `(and <v1> ... <vn>)`: Boolean conjunction of `v1` through `vn`
 - `(or <v1> ... <vn>)`: Boolean disjunction of `v1` through `vn`
-- `implies` (`=>`): Boolean implication
+- `(implies <v1> <v2>)` (`=>`): Boolean implication
 - `(distinct <v1> ... <vn>)`: true if none of `v1` through `vn` are equal to each other
 - `(atleast <v1> ... <vn> <k>)` is true if `k` or more of `v1` through `vn` are true
 - `(atmost <v1> ... <vn> <k>)` is true if `k` or fewer of `v1` through `vn` are true
@@ -174,9 +177,9 @@ strings are essentially just a special case of sequences).
   not contained in `seq`
 
 ### Conversions
-- `(int2bv <val> <nbits>)`: Interprets the integer `val` as a bitvector
+- `(int2bv [nbits] <val>)`: Interprets the integer `val` as a bitvector
   of length `nbits`
-- `(bv2int <val> <signed?>)`: Interprets the bitvector `val` as an
+- `(bv2int <val> [signed?])`: Interprets the bitvector `val` as an
   integer, treating as signed if `signed?` is true.
 - `(str-to-int <x>)`: Converts string `x` into an integer. Returns -1 if
   `x` cannot be converted into an integer.

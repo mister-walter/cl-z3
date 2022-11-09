@@ -25,10 +25,10 @@
 (solver-push)
 (z3-assert
  (v (:bv 10) x (:bv 4))
- ;; the first number is the integer to convert to a bitvector, the
- ;; second number is the length of the bitvector to convert to.
- (and (= v (int2bv 27 10))
-      (= x (int2bv -4 4))))
+ ;; the second number is the integer to convert to a bitvector, the
+ ;; first number is the length of the bitvector to convert to.
+ (and (= v (int2bv 10 27))
+      (= x (int2bv 4 -4))))
 (check-sat)
 ;; note that Z3's bitvectors are sign agnostic - individual operators
 ;; may treat them as signed or unsigned values.
@@ -53,7 +53,7 @@
 (solver-push)
 (z3-assert
  (v (:bv 4))
- (= v (bvadd (int2bv 15 4) (int2bv -1 4))))
+ (= v (bvadd (int2bv 4 15) (int2bv 4 -1))))
 (check-sat)
 (solver-pop)
 
@@ -62,7 +62,7 @@
            (and (>= x 0)
                 (>= y 0)
                 (< (+ x y) 256)
-                (= z (int2bv (+ x y) 8))))
+                (= z (int2bv 8 (+ x y)))))
 (check-sat)
 (solver-pop)
 
@@ -73,8 +73,8 @@
  (and (>= x 0)
       (>= y 0)
       (< (+ x y) 256)
-      (= z (int2bv x 8))
-      (= w (int2bv y 8))
+      (= z (int2bv 8 x))
+      (= w (int2bv 8 y))
       (not (= (+ x y) (bv2int (bvadd z w) nil)))))
 (check-sat)
 (solver-pop)

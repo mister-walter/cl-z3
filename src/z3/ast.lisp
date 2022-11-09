@@ -287,24 +287,24 @@
          ;; Unary subtraction, binary is taken care of thru *builtin-ops*
          ((list (sym-name -) arg)
           (z3-mk-unary-minus context (convert-to-ast-fn context arg types fns)))
-         ((list (sym-name extract) x hi lo)
+         ((list (sym-name extract) hi lo x)
           (z3-mk-extract context
                          hi
                          lo
                          (convert-to-ast-fn context x types fns)))
-         ((list (sym-name signext) x len)
+         ((list (sym-name signext) len x)
           (z3-mk-sign-ext context
                           len
                           (convert-to-ast-fn context x types fns)))
-         ((list (sym-name zeroext) x len)
+         ((list (sym-name zeroext) len x)
           (z3-mk-zero-ext context
                           len
                           (convert-to-ast-fn context x types fns)))
-         ((list (sym-name repeat) x maxlen)
+         ((list (sym-name repeat) maxlen x)
           (z3-mk-repeat context
                         maxlen
                         (convert-to-ast-fn context x types fns)))
-         ((list (sym-name int2bv) x nbits)
+         ((list (sym-name int2bv) nbits x)
           (z3-mk-int2bv context
                         nbits
                         (convert-to-ast-fn context x types fns)))

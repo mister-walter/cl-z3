@@ -34,7 +34,7 @@
 ;; Bitvectors
 (z3-query
  (v (:bv 4))
- (= (bvadd v (int2bv -1 4)) (int2bv 7 4)))
+ (= (bvadd v (int2bv 4 -1)) (int2bv 4 7)))
 ;; Note that we interpret any bitvectors that Z3 produces in a model
 ;; as unsigned integers. This is a choice of our interface.
 

@@ -141,7 +141,51 @@ for the value of `y` return 4.
   respectively, the body is true under the assignments
 
 ### Bitvectors
-TODO
+Note that the functions below that take in 2 bitvectors require that
+those two bitvectors have the same sort (e.g. the same number of bits)
+unless otherwise specified.
+- `(bvnot <x>)`: bitwise negation of `x`
+- `(bvredand <x>)`: takes the conjunction of all bits in `x` and
+  returns a bitvector of length 1 with the result
+- `(bvredor <x>)`: takes the disjunction of all bits in `x` and
+  returns a bitvector of length 1 with the result
+- `(bvand <x> <y>)`: bitwise and
+- `(bvor <x> <y>)`: bitwise or
+- `(bvxor <x> <y>)`: bitwise xor
+- `(bvnand <x> <y>)`: bitwise nand
+- `(bvnor <x> <y>)`: bitwise nor
+- `(bvxnor <x> <y>)`: bitwise xnor
+- `(bvneg <x>)`: two's complement unary negation
+- `(bvadd <x> <y>)`: two's complement addition
+- `(bvsub <x> <y>)`: two's complement subtraction
+- `(bvmul <x> <y>)`: two's complement multiplication
+- `(bvudiv <x> <y>)`: unsigned division
+- `(bvsdiv <x> <y>)`: two's complement signed division
+- `(bvurem <x> <y>)`: unsigned remainder
+- `(bvsrem <x> <y>)`: two's complement signed remainder (sign follows
+  dividend)
+- `(bvult <x> <y>)`: unsigned less than
+- `(bvslt <x> <y>)`: two's complement signed less than
+- `(bvule <x> <y>)`: unsigned less than or equal to
+- `(bvsle <x> <y>)`: two's complement signed less than or equal to
+- `(bvuge <x> <y>)`: unsigned greater than or equal to
+- `(bvsge <x> <y>)`: two's complement signed greater than or equal to
+- `(bvugt <x> <y>)`: unsigned greater than
+- `(bvsgt <x> <y>)`: two's complement signed greater than
+- `(concat <x> <y>)`: concatenate two bitvectors. They can have
+  different sorts
+- `(extract [hi] [lo] <x>)`: extract the bits from position `hi` to
+  position `lo` in `x` to produce a new bitvector
+- `(sign-ext [len] <x>)`: sign-extend `x` to the signed equivalent
+  bitvector of size `m+i` where `m` is the bitvector size of `x`
+- `(zero-ext [len] <x>)`: zero-extend `x` to the unsigned equivalent
+  bitvector of size `m+i` where `m` is the bitvector size of `x`
+- `(repeat [len] <x>)`: repeat the bitvector `x` up to size `len`
+- `(bvshl <x> <y>)`: shift the bitvector `x` to the left by `y` bits
+- `(bvlshr <x> <y>)`: shift the bitvector `x` to the right by `y`
+  bits, with "logical shift" behavior (zero-extending)
+- `(bvashr <x> <y>)`: shift the bitvector `x` to the right by `y`
+  bits, with "arithmetic shift" behavior (sign-bit-copying)
 
 ### Sequences
 Most of these functions operate on both strings and sequences (since
@@ -190,19 +234,20 @@ strings are essentially just a special case of sequences).
 TODO
 
 ### Sets
-Note that the translation of set values reported by Z3 is not
-currently supported.
+The translation of set values reported by Z3 is currently
+experimental. Z3 represents sets as arrays with a range sort of
+`:bool`.
 
 - `(empty-set <sort>)`: create an empty set with element sort `sort`.
 - `(full-set <sort>)`: create a full set with element sort `sort`.
-- `(set-add <set> <elt>)`
-- `(set-del <set> <elt>)`
-- `(set-union <set1> <set2>)`
-- `(set-intersect <set1> <set2>)`
-- `(set-difference <set1> <set2)`
-- `(set-complement <set>)`
-- `(set-member <elt> <set>)`
-- `(set-subset <set1> <set2>)`
+- `(set-add <set> <elt>)`: add `elt` to the set `set`
+- `(set-del <set> <elt>)`: remove `elt` from the set `set`
+- `(set-union <set1> <set2>)`: take the union of the two sets
+- `(set-intersect <set1> <set2>)`: take the intersection of the two sets
+- `(set-difference <set1> <set2>)`: generate the set containing all elements from `set1` that are not in `set2`.
+- `(set-complement <set>)`: complement the set `set`
+- `(set-member <elt> <set>)`: returns true if `elt` is a member of set `set`
+- `(set-subset <set1> <set2>)`: true if `set1` is a subset of `set2`
 
 ### Arrays
 TODO

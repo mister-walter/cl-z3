@@ -17,8 +17,10 @@
  ;; the nil below indicates that we want to treat v as an unsigned
  ;; value when we convert it to an integer.
  (= (bv2int v nil) 20))
-;; Bitvectors are converted to CL bitvector objects.
 (check-sat)
+(get-model)
+;; Bitvectors are converted to integers when treating as an assignment
+(get-model-as-assignment)
 (solver-pop)
 
 ;; You can represent bitvector constants using int2bv
@@ -30,6 +32,8 @@
  (and (= v (int2bv 10 27))
       (= x (int2bv 4 -4))))
 (check-sat)
+(get-model)
+(get-model-as-assignment)
 ;; note that Z3's bitvectors are sign agnostic - individual operators
 ;; may treat them as signed or unsigned values.
 ;; We always interpret bitvectors as unsigned integers.
@@ -44,6 +48,7 @@
  (and (= v (bv 0 0 0 1 1))
       (= x (bv t nil nil))))
 (check-sat)
+(get-model-as-assignment)
 (solver-pop)
 
 ;; There are many functions that operate on bitvectors; see
@@ -55,6 +60,7 @@
  (v (:bv 4))
  (= v (bvadd (int2bv 4 15) (int2bv 4 -1))))
 (check-sat)
+(get-model-as-assignment)
 (solver-pop)
 
 (solver-push)
@@ -64,6 +70,7 @@
                 (< (+ x y) 256)
                 (= z (int2bv 8 (+ x y)))))
 (check-sat)
+(get-model-as-assignment)
 (solver-pop)
 
 ;; TODO why is this slow? Performance regression?

@@ -42,6 +42,7 @@
 (z3-assert (x :bool y :int)
            (and x (>= y 5)))
 (check-sat)
+(get-model)
 
 ;; We use solver-push and solver-pop here to show that they work, even
 ;; though the solver doesn't support incremental solving.
@@ -56,3 +57,4 @@
 
 ;; Should give us an assignment again.
 (check-sat)
+(get-model)

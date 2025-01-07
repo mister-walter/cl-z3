@@ -37,7 +37,10 @@
   :raw
   (progn (z3-solver-init-fn)
          (z3-assert-fn query types)
-         (z3-check-sat-fn)))
+         (let ((res (z3-check-sat-fn)))
+           (if (equal res :sat)
+               (z3-get-model-as-assignment-fn)
+             res))))
 
 (defmacro z3-query (query types)
   `(z3-query-bridge ',query ',types))
@@ -49,6 +52,10 @@
 (acl2::defun-bridge check-sat ()
   :program nil
   :raw (z3-check-sat-fn))
+
+(acl2::defun-bridge get-model-as-assignment ()
+  :program nil
+  :raw (z3-get-model-as-assignment-fn))
 
 (acl2::defun-bridge z3-push ()
   :program nil

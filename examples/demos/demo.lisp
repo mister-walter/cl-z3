@@ -12,21 +12,25 @@
       (> b -100) (< b 100)
       (> (+ x y z a b) 100)))
 (check-sat)
+(get-model-as-assignment)
 ;; That's a boring assignment... too many 0s! Let's ask that they're all distinct.
 (z3-assert
  (x :int y :int z :int a :int b :int)
  (distinct x y z a b))
 (check-sat)
+(get-model-as-assignment)
 ;; That's better. Maybe I want to check whether this is possible if a = 0.
 ;; I'll place a "checkpoint" here using z3-push
 (z3-push)
 (z3-assert (a :int) (= a 0))
 (check-sat)
+(get-model-as-assignment)
 ;; Cool, that works. I now want to remove that constraint. I can go back to
 ;; the checkpoint I just created with z3-pop
 (z3-pop)
 (z3-assert (a :int) (> a 50))
 (check-sat)
+(get-model-as-assignment)
 ;; Note that we get something back with a = 0 - the previous assignment is still valid
 
 ;; Note that z3-query is not provided by the Z3 FFI.
@@ -60,6 +64,7 @@
  (and (= (tuple-get :foo a r) 5)
       (tuple-get :foo b r)))
 (check-sat)
+(get-model-as-assignment)
 (z3-pop)
 
 ;; tuple-val is a constructor for a tuple
@@ -69,6 +74,7 @@
  (= (tuple-val :foo 123 nil)
     (tuple-val :foo a b)))
 (check-sat)
+(get-model-as-assignment)
 
 ;; Strings
 (z3-query

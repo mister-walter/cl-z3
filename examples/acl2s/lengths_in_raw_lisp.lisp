@@ -33,9 +33,10 @@
       (< b 100)
       (> (+ x y z a b) 490)))
 (check-sat)
+(get-model)
 
 ;; Just to double check, let's evaluate this in ACL2s
-(acl2s-compute `(let ,(check-sat)
+(acl2s-compute `(let ,(get-model-as-assignment)
                   (and (< x 100)
                        (< y 100)
                        (< z 100)

@@ -26,6 +26,8 @@
 ;; we represent sets as alists when converting to Lisp. Every set must
 ;; have a :default key in the alist, typically associated with nil.
 (check-sat)
+(get-model)
+(get-model-as-assignment)
 ;; Note that we also get an |array-ext| element in our output here.
 ;; This is an artifact of how Z3's theory of arrays works.
 ;; See the following link for more information:

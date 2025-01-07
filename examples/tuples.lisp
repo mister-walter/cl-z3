@@ -26,10 +26,12 @@
  (r :blah)
  (and (= (tuple-get :blah a r) 5)
       (tuple-get :blah b r)))
+(check-sat)
+(get-model)
 ;; Note that the value of the tuple returned here is quoted. This is
 ;; so that the value produced by check-sat can be used directly as let
 ;; bindings.
-(check-sat)
+(get-model-as-assignment)
 (solver-pop)
 
 ;; Here's a (contrived) example where we construct a tuple value and
@@ -40,6 +42,7 @@
  (= (tuple-val :blah 123 nil)
     (tuple-val :blah a b)))
 (check-sat)
+(get-model)
 (solver-pop)
 
 ;; To reiterate the first comment, if you call solver-init again after

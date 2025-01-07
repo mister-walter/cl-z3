@@ -15,6 +15,7 @@
  (v :string)
  (= v "Hello, World!"))
 (check-sat)
+(get-model)
 (solver-pop)
 
 ;; Strings are just a specialized sequence type - you can perform all
@@ -30,6 +31,8 @@
  (= (seq-length v) 20))
 ;; Sequences are converted to CL lists.
 (check-sat)
+(get-model)
+(get-model-as-assignment)
 (solver-pop)
 
 ;; For convenience, many of the string operations can be referred to using the names given in Z3's tutorial (https://rise4fun.com/Z3/tutorial/sequences)
@@ -39,6 +42,7 @@
  (x :string y :string)
  (= (str.++ x y) "Hello, World!"))
 (check-sat)
+(get-model)
 (solver-pop)
 
 ;; Note the use of seq-at instead of seq-nth
@@ -48,6 +52,7 @@
  (and (> (str.len x) 2)
       (= (str.at x 2) "a")))
 (check-sat)
+(get-model)
 (solver-pop)
 
 ;; Note that seq-at is underspecified if the index is out of bounds.
@@ -58,6 +63,7 @@
   (<= (str.len x) 3)
   (= (str.at x 4) y)))
 (check-sat)
+(get-model)
 (solver-pop)
 
 ;; Z3 also provides lexicographic comparison operators
@@ -71,6 +77,7 @@
   (str-lt x y)
   (str-lt y z)))
 (check-sat)
+(get-model)
 (solver-pop)
 
 ;; And you can convert between strings and integers
@@ -80,6 +87,7 @@
  (and (= x (int.to.str 5))
       (= y (str.to.int "3"))))
 (check-sat)
+(get-model)
 (solver-pop)
 
 ;; Here's an example taken almost verbatim from the Z3 sequences tutorial (https://rise4fun.com/Z3/tutorial/sequences).
@@ -89,4 +97,5 @@
                 (= (str.++ b c) "cdef")
                 (not (= b ""))))
 (check-sat)
+(get-model)
 (solver-pop)

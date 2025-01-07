@@ -15,12 +15,18 @@
 
 (z3-assert (x :bool y :int)
            (and x (>= y 5)))
-;; This returns a list of assignments suitable for use in a let binding if the assertion(s) are satisfiable
+;; If the assertion(s) can be determined to be satisfiable, returns :sat
 ;; Otherwise it returns :unknown or :unsat
 (check-sat)
+;; Returns the model object, if assertions were determined to be
+;; satisfiable.
+(get-model)
+;; This gets the model as a list of assignments suitable for use in a
+;; let binding
+(get-model-as-assignment)
 
 ;; As an example, let's check that the assertion expression really evaluates to true under the model Z3 found.
-(eval `(let ,(check-sat) (and x (>= y 5))))
+(eval `(let ,(get-model-as-assignment) (and x (>= y 5))))
 
 ;;;; SCOPES ;;;;
 ;; Say we want to see what happens if we add the assertion (not x).
@@ -33,7 +39,7 @@
 (check-sat)
 ;; This will exit the scope that we just created. At this point, the only assertion that remains is (and x (>= y 5)).
 (solver-pop)
-;; To confirm, note that this is the same assignment that Z3 gave when we called (check-sat) after our first (z3-assert ...) call.
+;; To confirm, we now get :SAT just like we did before.
 (check-sat)
 ;; Now we'll return to the top level scope, which currently contains no assertions or assumptions.
 (solver-pop)
@@ -42,7 +48,8 @@
 (solver-push)
 (z3-assert (x :bool y :int)
            (and (or x (not x)) (>= y 5)))
-;; Note that X doesn't appear in the assignment returned by check-sat!
 (check-sat)
-;; We may change this behavior in the future so that it's possible to evaluate the above assertion under the result of (check-sat).
+;; Note that X doesn't appear in the assignment returned by check-sat!
+(get-model)
+;; We may change this behavior in the future so that it's possible to evaluate the above assertion under the result of (get-model-as-assignment).
 (solver-pop)

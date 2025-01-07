@@ -8,6 +8,8 @@
 
 (in-package :z3-sudoku)
 
+(solver-init)
+
 (defun idx-to-cell-symbol (idx)
   (assert (and (>= idx 0) (<= idx 81)))
   (intern (concatenate 'string "C" (write-to-string idx))))
@@ -60,13 +62,18 @@
         collect `(= ,(idx-to-cell-symbol idx) ,entry)))
 
 (defun solve-grid (input-grid)
-  (solver-init)
+  (solver-push)
   (z3-assert-fn +cell-vars+ (cons 'and cell-range-constraints))
   (z3-assert-fn +cell-vars+ (cons 'and row-distinct-constraints))
   (z3-assert-fn +cell-vars+ (cons 'and col-distinct-constraints))
   (z3-assert-fn +cell-vars+ (cons 'and box-distinct-constraints))
   (z3-assert-fn +cell-vars+ (cons 'and (input-grid-constraints input-grid)))
-  (check-sat))
+  (let* ((sat-res (check-sat))
+         (res (if (equal sat-res :sat)
+                  (get-model-as-assignment)
+                sat-res)))
+    (progn (solver-pop)
+           res)))
 
 ;; Don't worry about the pretty-print definitions below, just some 
 ;; TODO: I'm sure there's a way to do this using just (format) and macros.
@@ -132,7 +139,7 @@
     _ _ _   _ _ _   _ _ _
     _ _ _   _ _ _   _ _ _))
 
-;; ~18s
+;; ~2s
 (pretty-print-sudoku-solution (time (solve-grid only-first-row-defined-grid)))
 
 (defconstant only-first-col-defined-grid
@@ -148,7 +155,7 @@
     8 _ _   _ _ _   _ _ _
     9 _ _   _ _ _   _ _ _))
 
-;; ~28s
+;; ~12s
 (pretty-print-sudoku-solution (time (solve-grid only-first-col-defined-grid)))
 
 (defconstant only-diag-defined-grid
@@ -164,7 +171,7 @@
     _ _ _   _ _ _   _ 8 _
     _ _ _   _ _ _   _ _ 9))
 
-;; ~15s
+;; ~3s
 (pretty-print-sudoku-solution (time (solve-grid only-diag-defined-grid)))
 
 (defconstant only-first-row-defined-reverse-grid
@@ -180,7 +187,7 @@
     _ _ _   _ _ _   _ _ _
     _ _ _   _ _ _   _ _ _))
 
-;; ~40s
+;; ~8s
 (pretty-print-sudoku-solution (time (solve-grid only-first-row-defined-reverse-grid)))
 
 (defconstant blank-sudoku-grid
@@ -196,6 +203,5 @@
     _ _ _   _ _ _   _ _ _
     _ _ _   _ _ _   _ _ _))
 
-;; slooow. This is difficult for Z3 because it may need to do a ton of backtracking
-;; Maybe would be faster if we represented cells as an enumerated type/finite domain rather than integers.
-;;(time (solve-grid only-first-col-defined-grid))
+;; On older versions of Z3, this was really slow. Seems to be much faster now.
+(pretty-print-sudoku-solution (time (solve-grid only-first-col-defined-grid)))

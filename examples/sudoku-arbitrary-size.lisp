@@ -69,7 +69,10 @@
   (z3-assert-fn (cell-vars n) (cons 'and (box-distinct-constraints n)))
   (let ((input-constraints (input-grid-constraints n input-grid)))
     (when input-constraints (z3-assert-fn (cell-vars n) (cons 'and input-constraints))))
-  (check-sat))
+  (let ((res (check-sat)))
+    (if (equal res :sat)
+        (get-model-as-assignment)
+      res)))
 
 (defun get-square-value (soln idx)
   (let ((v (assoc (idx-to-cell-symbol idx) soln :test #'equal)))
@@ -146,6 +149,7 @@
     _  _  11 _    _  15 _  16   _  7  1  _    12 _  _  4
     _  _  16 13   14 _  _  10   4  3  _  _    _  5  _  1))
 
+;; Should take on the order of 10s
 (pretty-print-sudoku-solution 4 (time (solve-grid 4 hexadoku-grid)))
 
 (defconstant hexadoku-grid2

@@ -12,7 +12,7 @@
            #:solver-push #:solver-pop #:print-solver #:solver-reset
            #:z3-assert #:z3-assert-fn
            #:z3-assert-soft #:optimize-minimize #:optimize-maximize
-           #:check-sat
+           #:check-sat #:get-model #:get-model-as-assignment
            #:convert-to-ast #:ast-to-value
            #:register-enum-sort #:register-tuple-sort
            #:z3-object-to-string

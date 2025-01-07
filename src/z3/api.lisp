@@ -194,22 +194,28 @@ penalty for violating this constraint."
    Will invoke the error handler if no model is available."
   (get-model-fn (or solver *default-solver*)))
 
+(defun get-model-as-assignment (&optional solver)
+  "If Z3 has determined that the global assertion stack is satisfiable,
+get a satisfying assignment. Returns a (possibly empty) list of
+bindings corresponding to the model that Z3 generated. Will invoke
+the error handler if no model is available."
+  (let* ((solver (or solver *default-solver*))
+         (ctx (get-context solver)))
+    (append (model-constants-to-assignment (get-model solver) ctx)
+            (model-funcs (get-model solver) ctx))))
+
 (defgeneric solver-check (solver)
   (:method ((solver solver)) (z3-solver-check (get-context solver) solver))
   (:method ((solver optimizer)) (z3-optimize-check (get-context solver) solver 0 (cffi:null-pointer))))
 
-(declaim (ftype (function (&optional (or solver optimizer)) (values (or (member :unsat :unknown) list) &optional)) check-sat))
+(declaim (ftype (function (&optional (or solver optimizer)) (values (member :sat :unsat :unknown) &optional)) check-sat))
 (defun check-sat (&optional solver)
   "Ask Z3 to check satisfiability of the global assertion stack.
-Returns either :UNSAT, :UNKNOWN, or a (possibly empty) list of
-bindings corresponding to the model that Z3 generated."
-  (let* ((slv (or solver *default-solver*))
-         (ctx (get-context slv)))
+Returns either :SAT, :UNSAT or :UNKNOWN."
+  (let ((slv (or solver *default-solver*)))
     (match (solver-check slv)
-           (:L_TRUE ;; assertions are satisfiable (a model may be generated)
-            (append (model-constants-to-assignment (get-model solver) ctx)
-                    (model-funcs (get-model solver) ctx)))
-           (:L_FALSE :UNSAT) ;; assertions are not satisfiable (a proof may be generated)
-           ;; TODO: in the unknown case we may want to get the model and see if the assignment satisfies the assertions
-           ;; if so we can return it.
-           (:L_UNDEF :UNKNOWN)))) ;; get_model may succeed but the model may not satisfy the assertions
+      (:L_TRUE :SAT) ;; assertions are satisfiable (a model may be generated)
+      (:L_FALSE :UNSAT) ;; assertions are not satisfiable (a proof may be generated)
+      ;; TODO: in the unknown case we may want to get the model and see if the assignment satisfies the assertions
+      ;; if so we can return it.
+      (:L_UNDEF :UNKNOWN)))) ;; get_model may succeed but the model may not satisfy the assertions

@@ -316,7 +316,9 @@
           (z3-mk-empty-set context (get-sort sort context)))
          ((list (sym-name full-set) sort)
           (z3-mk-full-set context (get-sort sort context)))
-         ((list (sym-name re-loop) r lo hi)
+         ((list (or (sym-name re-loop)
+                    (sym-name re.loop))
+                r lo hi)
           (assert (and (numberp lo) (>= lo 0)))
           (assert (and (numberp hi) (>= hi 0)))
           (z3-mk-re-loop context

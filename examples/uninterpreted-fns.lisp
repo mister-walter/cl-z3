@@ -20,6 +20,8 @@
            ;; operator, followed by the function name and any arguments.
            (and (= (_ f 0) 3)
                 (= (_ f 1) 8)))
+(check-sat)
+(get-model)
 ;; The model produced will contain an entry for the uninterpreted
 ;; function f. This entry consists of a list (:fn <type> <alist>),
 ;; where <type> is a list where the first element contains the sorts
@@ -29,7 +31,7 @@
 ;; be an entry in the alist whose car is :default, representing the
 ;; default value of the function when no other entry matches the
 ;; provided arguments.
-(check-sat)
+(get-model-as-assignment)
 (solver-pop)
 
 (solver-push)
@@ -37,6 +39,7 @@
 (z3-assert (x :int f (:fn (:int) :int))
            (= (_ f x) (+ x 1)))
 (check-sat)
+(get-model)
 (solver-pop)
 
 (solver-push)
@@ -50,6 +53,7 @@
                 (= (_ f 1) "hello")
                 (= (_ f 2) "world!")))
 (check-sat)
+(get-model)
 (solver-pop)
 
 (solver-push)
@@ -61,6 +65,7 @@
                 (= (_ f 1 1) "y")
                 (= (_ f 1 2) "e")))
 (check-sat)
+(get-model)
 (solver-pop)
 
 (solver-push)
@@ -84,4 +89,5 @@
 (z3-assert (g :int g (:fn (:int) :int))
            (= (_ g g) g))
 (check-sat)
+(get-model)
 (solver-push)

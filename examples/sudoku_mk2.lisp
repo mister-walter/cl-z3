@@ -71,7 +71,8 @@
   (z3-assert-fn +cell-vars+ (cons 'and box-distinct-constraints))
   ;; We append a t to this because Z3 requires that conjunctions
   (z3-assert-fn +cell-vars+ (append '(and t) (input-grid-constraints input-grid))) ;; fix
-  (let ((res (check-sat)))
+  (let* ((is-sat (check-sat))
+         (res (if (equal is-sat :sat) (get-model-as-assignment) is-sat)))
     (progn (solver-pop)
            res)))
 

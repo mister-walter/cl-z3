@@ -21,6 +21,8 @@
 (z3-assert (x :bool)
            (exists (y :bool) (== x y)))
 (check-sat)
+;; In fact, it assigns neither!
+(get-model)
 (solver-pop)
 
 ;; This is unsatisfiable.
@@ -39,6 +41,7 @@
                 (forall (y :int z :int) (== (* x (+ y z))
                                             (+ (* x y) (* x z))))))
 (check-sat)
+(get-model)
 (solver-pop)
 
 ;; Asserting that x is the multiplicative identity will result in
@@ -47,6 +50,7 @@
 (z3-assert (x :int)
            (forall (y :int) (== (* x y) y)))
 (check-sat)
+(get-model)
 (solver-pop)
 
 ;; One can also assert the existence of a multiplicative identity as follows:
@@ -54,6 +58,7 @@
 (z3-assert ()
            (exists (x :int) (forall (y :int) (== (* x y) y))))
 (check-sat)
+(get-model)
 (solver-pop)
 
 ;; Note that bound variables will shadow variables with the same name
@@ -63,4 +68,5 @@
            (and (== x 0)
                 (exists (x :int) (forall (y :int) (== (* x y) y)))))
 (check-sat)
+(get-model)
 (solver-pop)

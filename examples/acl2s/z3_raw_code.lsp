@@ -13,5 +13,8 @@
 (defun z3-check-sat ()
   (z3:check-sat))
 
+(defun z3-get-model-as-assignment ()
+  (z3:get-model-as-assignment))
+
 (defun z3-solver-init ()
   (z3:solver-init))

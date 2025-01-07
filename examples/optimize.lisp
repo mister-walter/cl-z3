@@ -17,6 +17,7 @@
 (z3-assert (x :bool y :int)
            (and x (>= y 5)))
 (check-sat)
+(get-model)
 (solver-pop)
 
 ;; But you can also add minimization and maximization objectives.
@@ -28,6 +29,7 @@
 (optimize-maximize (price :int nsold :int)
                    (- (* nsold (- price 50)) 2000))
 (check-sat)
+(get-model)
 (solver-pop)
 
 ;; You can also add soft constraints.
@@ -46,4 +48,5 @@
 (optimize-maximize (price :int nsold :int)
                    (- (* nsold (- price 50)) 2000))
 (check-sat)
+(get-model)
 (solver-pop)

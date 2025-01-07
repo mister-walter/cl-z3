@@ -18,7 +18,10 @@
   :raw
   (progn (z3-solver-init)
          (z3-assert-fn query types)
-         (z3-check-sat)))
+         (let ((res (z3-check-sat)))
+           (if (equal res :sat)
+               (z3-get-model-as-assignment)
+             res))))
 
 (defmacro z3-query (query types)
   `(z3-query-fn ',query ',types))

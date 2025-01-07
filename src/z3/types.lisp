@@ -86,7 +86,8 @@
 
 (defmethod initialize-instance :after ((obj model) &key)
   (with-slots (handle context) obj
-    (z3-model-inc-ref context handle)))
+    (z3-model-inc-ref context handle)
+    (tg:finalize obj (lambda () (z3-model-dec-ref context handle)))))
 
 (defclass solver-optimize (z3-object-with-handle)
   ((scopes :initform '(()) :accessor solver-scopes)))
@@ -113,7 +114,8 @@
 (defmethod initialize-instance :after ((obj solver) &key)
   (with-slots (handle context) obj
     (if handle
-        (z3-solver-inc-ref context handle)
+        (progn (z3-solver-inc-ref context handle)
+               (tg:finalize obj (lambda () (z3-solver-dec-ref context handle))))
       (warn "Not incrementing reference count of the solver object because its handle is set to nil."))))
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
@@ -134,7 +136,8 @@
 (defmethod initialize-instance :after ((obj optimizer) &key)
   (with-slots (handle context) obj
     (if handle
-        (z3-optimize-inc-ref context handle)
+        (progn (z3-optimize-inc-ref context handle)
+               (tg:finalize obj (lambda () (z3-optimize-dec-ref context handle))))
       (warn "Not incrementing reference count of the optimize object because its handle is set to nil."))))
 
 
@@ -151,7 +154,8 @@
 
 (defmethod initialize-instance :after ((obj params) &key)
   (with-slots (handle context) obj
-    (z3-params-inc-ref context handle)))
+    (z3-params-inc-ref context handle)
+    (tg:finalize obj (lambda () (z3-params-dec-ref context handle)))))
 
 
 (defclass param-descrs (z3-object-with-handle) ())
@@ -162,6 +166,11 @@
 (defmethod z3-object-to-string ((obj param-descrs))
   (with-slots (handle context) obj
     (z3-param-descrs-to-string context handle)))
+
+(defmethod initialize-instance :after ((obj param-descrs) &key)
+  (with-slots (handle context) obj
+    (z3-param-descrs-inc-ref context handle)
+    (tg:finalize obj (lambda () (format t "Finalizing some param descrs") (z3-param-descrs-dec-ref context handle)))))
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
@@ -176,7 +185,8 @@
 
 (defmethod initialize-instance :after ((obj statistics) &key)
   (with-slots (handle context) obj
-    (z3-stats-inc-ref context handle)))
+    (z3-stats-inc-ref context handle)
+    (tg:finalize obj (lambda () (z3-stats-dec-ref context handle)))))
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
@@ -191,7 +201,8 @@
 
 (defmethod initialize-instance :after ((obj tactic) &key)
   (with-slots (handle context) obj
-    (z3-tactic-inc-ref context handle)))
+    (z3-tactic-inc-ref context handle)
+    (tg:finalize obj (lambda () (z3-tactic-dec-ref context handle)))))
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
@@ -206,7 +217,8 @@
 
 (defmethod initialize-instance :after ((obj ast-vector) &key)
   (with-slots (handle context) obj
-    (z3-ast-vector-inc-ref context handle)))
+    (z3-ast-vector-inc-ref context handle)
+    (tg:finalize obj (lambda () (z3-ast-vector-dec-ref context handle)))))
 
 (defclass algebraic-number (ast) ())
 

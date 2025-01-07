@@ -169,6 +169,16 @@ Z3 will return the same pointer twice.
 
 ;; Parameter Descriptions
 
+(defcfun "Z3_param_descrs_inc_ref" :void
+  "Increment the reference counter of the given parameter description set."
+  (c context)
+  (p param-descrs))
+
+(defcfun "Z3_param_descrs_dec_ref" :void
+  "Decrement the reference counter of the given parameter description set."
+  (c context)
+  (p param-descrs))
+
 (defcfun "Z3_param_descrs_get_kind" param_kind
   "Return the kind associated with the given parameter name `n`."
   (c context)

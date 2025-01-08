@@ -69,9 +69,16 @@
 (defun get-solver-stats (&optional solver)
   (get-solver-stats-fn (or solver *default-solver*)))
 
+(defun set-params-fn (params solver)
+  (let* ((ctx (get-context solver))
+         (param-descrs (get-solver-param-descrs solver)))
+    (z3-params-validate ctx params param-descrs)
+    (when (equal (z3-get-error-code ctx) :OK)
+      (z3-solver-set-params ctx solver params))))
+
 (defmacro set-params (settings &optional solver)
   `(let ((slv (or ,solver *default-solver*)))
-     (z3-solver-set-params (get-context slv) slv (make-params ,settings))))
+     (set-params-fn (make-params ,settings) slv)))
 
 #|
 ;; This is an example of using the z3 bound functions to find a satisfying assignment

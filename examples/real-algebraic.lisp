@@ -16,6 +16,8 @@
  (and (not (= x 0))
       (= (* 20 x) 1)))
 (check-sat)
+(get-model)
+(get-model-as-assignment)
 (solver-pop)
 
 (solver-push)
@@ -23,4 +25,10 @@
  (x :real)
  (= (* x x) 2))
 (check-sat)
+(get-model)
+;; Algebraic numbers are turned into Lisp floats by default, potentially
+;; causing loss of precision. You can control this with the
+;; *ALGEBRAIC-NUMBER-CONVERT-MODE* parameter. See the docstring in
+;; (describe '*ALGEBRAIC-NUMBER-CONVERT-MODE*) for more information.
+(get-model-as-assignment)
 (solver-pop)

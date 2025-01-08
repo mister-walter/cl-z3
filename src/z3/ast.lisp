@@ -409,6 +409,27 @@ into lisp. Currently there are two modes: :string (the default) and
             (:list (coerce res-vec 'list))
             (otherwise (error "Unknown string representation mode ~S" *STRING-REP*))))))
 
+(defparameter *ALGEBRAIC-NUMBER-CONVERT-MODE* :float
+  "Controls how algebraic numbers are converted to Lisp values. Default is :float.
+:float will produce a floating-point approximation of the algebraic number.
+:decimal will produce a string corresponding to a floating-point approximation of the algebraic number.
+:root will produce a string corresponding to the polynomial root representation of the algebraic number.
+:agnum will leave the algebraic number as an algebraic-number type.
+Note that :float and :precision will first have Z3 produce a string representation of the number
+with less than or equal to *ALGEBRAIC-NUMBER-CONVERT-DECIMAL-PRECISION* decimal places. That
+string representation will then be turned into a floating point value. For very small or very large values,
+the default value may be insufficient, so in such cases one is advised to change the precision value.")
+
+(defparameter *ALGEBRAIC-NUMBER-CONVERT-DECIMAL-PRECISION* 15
+  "The number of decimal places to include when converting algebraic numbers to floats.")
+
+(defun algebraic-number-to-value (val)
+  (ecase *ALGEBRAIC-NUMBER-CONVERT-MODE*
+    (:float (algebraic-number-to-float val))
+    (:decimal (z3-get-numeral-decimal-string context handle *ALGEBRAIC-NUMBER-CONVERT-DECIMAL-PRECISION*))
+    (:root (z3-ast-to-string context handle))
+    (:agnum val)))
+
 (defun assert-app-decl-kind (ctx ast kind)
   (assert (equal (z3-get-ast-kind ctx ast) :app_ast))
   (let* ((decl (z3-get-app-decl ctx (z3-to-app ctx ast)))
@@ -448,7 +469,7 @@ into lisp. Currently there are two modes: :string (the default) and
        (cons 'or (mapcar #'(lambda (arg) (ast-to-value arg ctx)) (app-ast-args-to-list ast ctx))))
       ;; Algebraic number
       (:OP_AGNUM
-       (make-algebraic-number ctx ast))
+       (algebraic-number-to-value (make-algebraic-number ctx ast)))
       ;;(:OP_ARRAY_DEFAULT)
       ;;(:OP_SELECT)
       (otherwise

@@ -223,14 +223,14 @@
 (defclass algebraic-number (ast) ())
 
 (defparameter *ALGEBRAIC-NUMBER-PRINT-MODE* :decimal
-  "Controls how algebraic numbers are displayed. Default is :decimal.")
-(defparameter *ALGEBRAIC-NUMBER-DECIMAL-PRECISION* 4
-  "The number of decimal places to include when printing algebraic numbers in :decimal mode or converting algebraic numbers to floats.")
+  "Controls how algebraic numbers are displayed. Default is :decimal. The other option is :root.")
+(defparameter *ALGEBRAIC-NUMBER-PRINT-DECIMAL-PRECISION* 4
+  "The number of decimal places to include when printing algebraic numbers in :decimal mode.")
 
 (defmethod z3-object-to-string ((obj algebraic-number))
   (with-slots (handle context) obj
     (ecase *ALGEBRAIC-NUMBER-PRINT-MODE*
-      (:decimal (z3-get-numeral-decimal-string context handle *ALGEBRAIC-NUMBER-DECIMAL-PRECISION*))
+      (:decimal (z3-get-numeral-decimal-string context handle *ALGEBRAIC-NUMBER-PRINT-DECIMAL-PRECISION*))
       (:root (z3-ast-to-string context handle)))))
 
 (defun make-algebraic-number (context handle)
@@ -238,13 +238,16 @@
                  :context context
                  :handle handle))
 
-;; For now, we simply turn the algebraic number into a double. Ideally
-;; we would use z3-get-numeral-decimal-string because we could then
-;; control the precision more easily, but in that case we would also
-;; need to write a function to parse floats from strings.
+;; For now, we simply turn the algebraic number into a double. It would
+;; be more convenient to use z3-get-numeral-double, but this seems to
+;; produce an invalid argument error whenever the value wouldn't fit
+;; precisely in a double. This is fair behavior, but probably not what
+;; we want here (as the value may be irrational).
 (defmethod algebraic-number-to-float ((obj algebraic-number))
   (with-slots (handle context) obj
-      (z3-get-numeral-double context handle)))
+    (let* ((res (z3-get-numeral-decimal-string context handle *ALGEBRAIC-NUMBER-CONVERT-DECIMAL-PRECISION*))
+           (len (length res)))
+      (values (parse-float::parse-float res :end (- len 2))))))
 
 #|
 (defmethod algebraic-number-to-float ((obj algebraic-number) &key (precision *ALGEBRAIC-NUMBER-DECIMAL-PRECISION*))

@@ -20,4 +20,8 @@
            #:set-params
            #:*default-context* #:*default-solver*
            #:parse-smt2-file #:parse-smt2-string
-           #:ast-vector-to-list))
+           #:ast-vector-to-list
+           #:*ALGEBRAIC-NUMBER-PRINT-MODE*
+           #:*ALGEBRAIC-NUMBER-PRINT-DECIMAL-PRECISION*
+           #:*ALGEBRAIC-NUMBER-CONVERT-MODE*
+           #:*ALGEBRAIC-NUMBER-CONVERT-DECIMAL-PRECISION*))

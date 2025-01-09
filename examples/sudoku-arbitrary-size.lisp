@@ -11,7 +11,7 @@
 (defun cell-idx (n row col)
   (+ col (* row n n)))
 
-(defun idx-to-cell-symbol (idx)
+(defun idx-to-cell-var (idx)
   (intern (concatenate 'string "C" (write-to-string idx))))
 
 ;; We represent cell values as elements of an enumerated type
@@ -20,21 +20,21 @@
 
 (defun cell-vars (n)
   (loop for idx below (* n n n n)
-        append (list (idx-to-cell-symbol idx) :cell)))
+        append (list (idx-to-cell-var idx) :cell)))
 
 ;; The values in each row must be distinct
 (defun row-distinct-constraints (n)
   (loop for row below (* n n)
         collect (cons 'distinct
                       (loop for col below (* n n)
-                            collect (idx-to-cell-symbol (cell-idx n row col))))))
+                            collect (idx-to-cell-var (cell-idx n row col))))))
 
 ;; The values in each column must be distinct
 (defun col-distinct-constraints (n)
   (loop for col below (* n n)
         collect (cons 'distinct
                       (loop for row below (* n n)
-                            collect (idx-to-cell-symbol (cell-idx n row col))))))
+                            collect (idx-to-cell-var (cell-idx n row col))))))
 
 (defun box-cell-offsets (n)
   (loop for col below n
@@ -51,14 +51,14 @@
         collect (cons 'distinct
                       ;; These numbers are the offsets of each square in a box from the index of the box's top-left square
                       (loop for box-offset in (box-cell-offsets n)
-                            collect (idx-to-cell-symbol (+ box-start box-offset))))))
+                            collect (idx-to-cell-var (+ box-start box-offset))))))
 
 (defun input-grid-constraints (n grid)
   (assert (eq (length grid) (* n n n n)))
   (loop for entry in grid
         for idx below (* n n n n)
         when (not (equal entry '_))
-        collect `(= ,(idx-to-cell-symbol idx) ,(val-to-cell-value entry))))
+        collect `(= ,(idx-to-cell-var idx) ,(val-to-cell-value entry))))
 
 (defun solve-grid (n input-grid)
   ;; We need to do solver-init here because we want to wipe out the old sort definition for :cell
@@ -75,7 +75,7 @@
       res)))
 
 (defun get-square-value (soln idx)
-  (let ((v (assoc (idx-to-cell-symbol idx) soln :test #'equal)))
+  (let ((v (assoc (idx-to-cell-var idx) soln :test #'equal)))
     (if v (second v) nil)))
 
 (defun pretty-print-sudoku-solution (n soln)

@@ -16,7 +16,7 @@
 ;; Register a new enum type that represents a sudoku cell.
 (register-enum-sort :cell (1 2 3 4 5 6 7 8 9))
 
-(defun idx-to-cell-symbol (idx)
+(defun idx-to-cell-var (idx)
   (assert (and (>= idx 0) (<= idx 81)))
   (intern (concatenate 'string "C" (write-to-string idx))))
 
@@ -28,21 +28,21 @@
 ;; We'll encode the sudoku grid as 81 variables of type :cell
 (defconstant +cell-vars+
   (loop for idx below 81
-        append (list (idx-to-cell-symbol idx) :cell)))
+        append (list (idx-to-cell-var idx) :cell)))
 
 ;; The values in each row must be distinct
 (defconstant row-distinct-constraints
   (loop for row below 9
         collect (cons 'distinct
                       (loop for col below 9
-                            collect (idx-to-cell-symbol (+ (* 9 row) col))))))
+                            collect (idx-to-cell-var (+ (* 9 row) col))))))
 
 ;; The values in each column must be distinct
 (defconstant col-distinct-constraints
   (loop for col below 9
         collect (cons 'distinct
                       (loop for row below 9
-                            collect (idx-to-cell-symbol (+ (* 9 row) col))))))
+                            collect (idx-to-cell-var (+ (* 9 row) col))))))
 
 ;; The values in each 3x3 box must be distinct
 (defconstant box-distinct-constraints
@@ -51,7 +51,7 @@
         collect (cons 'distinct
                       ;; These numbers are the offsets of each square in a box from the index of the box's top-left square
                       (loop for box-offset in '(0 1 2 9 10 11 18 19 20)
-                            collect (idx-to-cell-symbol (+ box-start box-offset))))))
+                            collect (idx-to-cell-var (+ box-start box-offset))))))
 
 ;; This generates constraints based on a "starting grid".
 ;; This starting grid is simply a length-81 list representation of the 9x9 sudoku grid in row-major order.
@@ -62,35 +62,44 @@
   (loop for entry in grid
         for idx below 81
         when (not (equal entry '_))
-        collect `(= ,(idx-to-cell-symbol idx) ,(val-to-cell-value entry))))
+        collect `(= ,(idx-to-cell-var idx) ,(val-to-cell-value entry))))
+
+;; Set up the initial constraints on the grid
+(defun init ()
+  (z3-assert-fn +cell-vars+ (cons 'and row-distinct-constraints))
+  (z3-assert-fn +cell-vars+ (cons 'and col-distinct-constraints))
+  (z3-assert-fn +cell-vars+ (cons 'and box-distinct-constraints)))
 
 (defun solve-grid (input-grid)
   (solver-push)
-  (z3-assert-fn +cell-vars+ (cons 'and row-distinct-constraints))
-  (z3-assert-fn +cell-vars+ (cons 'and col-distinct-constraints))
-  (z3-assert-fn +cell-vars+ (cons 'and box-distinct-constraints))
-  ;; We append a t to this because Z3 requires that conjunctions
+  ;; We append a t to this because Z3 requires that conjunctions are
+  ;; nonempty (e.g. if input-grid contains only blank cells)
   (z3-assert-fn +cell-vars+ (append '(and t) (input-grid-constraints input-grid))) ;; fix
   (let* ((is-sat (check-sat))
          (res (if (equal is-sat :sat) (get-model-as-assignment) is-sat)))
     (progn (solver-pop)
            res)))
 
-;; Don't worry about the pretty-print definitions below, just some 
-;; TODO: I'm sure there's a way to do this using just (format) and macros.
-(defmacro pretty-print-sudoku-solution-helper (assignment)
-  `(let ,assignment
-     ,@(loop for row below 9
-             collect '(terpri)
-             append (loop for col below 9
-                          collect `(format t "~A " ,(idx-to-cell-symbol (+ col (* 9 row))))
-                          when (equal (mod col 3) 2)
-                          collect '(format t "  "))
-             when (equal (mod row 3) 2)
-             collect '(terpri))))
+;; Don't worry about the pretty-print definitions below, they just
+;; allow us to view a grid in a nice format.
+(defun pretty-print-grid-edge ()
+  (format t "+-------+-------+-------+"))
 
 (defun pretty-print-sudoku-solution (assignment)
-  (eval `(pretty-print-sudoku-solution-helper ,assignment)))
+  (loop for row below 9
+        do (progn (when (equal (mod row 3) 0)
+                    (terpri)
+                    (pretty-print-grid-edge))
+                  (terpri)
+                  (format t "| ")
+                  (loop for col below 9
+                        do (progn (format t "~A " (cadr (assoc (idx-to-cell-var (+ col (* 9 row))) assignment)))
+                                  (when (equal (mod col 3) 2)
+                                    (format t "| "))))))
+  (terpri)
+  (pretty-print-grid-edge))
+
+(init)
 
 ;; Formatted for readability.
 (defconstant a-hard-sudoku-grid

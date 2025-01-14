@@ -4,7 +4,7 @@
 (z3-init)
 
 (z3-assert
- (x :int y :int z :int a :int b :int)
+ (x y z a b :int)
  (and (> x -100) (< x 100)
       (> y -100) (< y 100)
       (> z -100) (< z 100)
@@ -13,22 +13,24 @@
       (> (+ x y z a b) 100)))
 (check-sat)
 (get-model-as-assignment)
-;; That's a boring assignment... too many 0s! Let's ask that they're all distinct.
+;; That's a boring assignment... too many 0s! Let's ask that they're
+;; all distinct.
+;; Note that we can elide the variable names and sorts now, as they
+;; are retained from the last z3-assert call!
 (z3-assert
- (x :int y :int z :int a :int b :int)
  (distinct x y z a b))
 (check-sat)
 (get-model-as-assignment)
 ;; That's better. Maybe I want to check whether this is possible if a = 0.
 ;; I'll place a "checkpoint" here using z3-push
 (z3-push)
-(z3-assert (a :int) (= a 0))
+(z3-assert (= a 0))
 (check-sat)
 (get-model-as-assignment)
 ;; Cool, that works. I now want to remove that constraint. I can go back to
 ;; the checkpoint I just created with z3-pop
 (z3-pop)
-(z3-assert (a :int) (> a 50))
+(z3-assert (> a 50))
 (check-sat)
 (get-model-as-assignment)
 ;; Note that we get something back with a = 0 - the previous assignment is still valid
@@ -91,18 +93,18 @@
 
 ;; Uninterpeted Functions
 (z3-query (f (:fn (:int) :int))
-          ;; Calling an unintepreted function is done using the _
-          ;; operator, followed by the function name and any arguments.
-          (and (= (_ f 0) 3)
-               (= (_ f 1) 8)))
+          ;; Unintepreted function are called just like interpreted
+          ;; functions.
+          (and (= (f 0) 3)
+               (= (f 1) 8)))
 
 (z3-query (f (:fn (:int) :string)
-            g (:fn (:string) (:bv 4))
-            h (:fn ((:bv 4)) :int))
-           (and (= (_ h (_ g (_ f 3))) 5)
-                (= (_ h (_ g (_ f 1))) 20)
-                (= (_ f 1) "hello")
-                (= (_ f 2) "world!")))
+           g (:fn (:string) (:bv 4))
+           h (:fn ((:bv 4)) :int))
+          (and (= (h (g (f 3))) 5)
+               (= (h (g (f 1))) 20)
+               (= (f 1) "hello")
+               (= (f 2) "world!")))
 ;; We can also get some statistics from Z3
 (z3-get-solver-stats)
 

@@ -29,3 +29,21 @@
          do (setf (cffi:mem-aref ,foreign-array ,element-type ,idx-var)
                   ,set-ith)))
 |#
+
+;; Useful for testing.
+(defmacro expect-error (&rest forms)
+  `(handler-case (progn ,@forms)
+     (error (c) (format t "~a~%" c))
+     (:no-error (_) (declare (ignore _)) (error "Expected an error but none occurred!"))))
+
+;; Useful for testing.
+(defun fresh-env-from-spec-fn (var-specs context)
+  (let* ((ctx (or context *default-context*))
+         (env (make-instance 'environment-stack))
+         (processed-specs (process-var-specs var-specs)))
+    (check-processed-var-specs processed-specs)
+    (setup-env processed-specs env ctx)
+    env))
+
+(defmacro fresh-env-from-spec (var-specs &optional context)
+  `(fresh-env-from-spec-fn ',var-specs ,context))

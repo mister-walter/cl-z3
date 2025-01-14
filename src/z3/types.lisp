@@ -89,8 +89,87 @@
     (z3-model-inc-ref context handle)
     (tg:finalize obj (lambda () (z3-model-dec-ref context handle)))))
 
+(defstruct environment-entry ()
+  (tbl (make-hash-table)))
+
+(defmethod print-object ((entry environment-entry) stream)
+  (print-unreadable-object (entry stream :type t)
+    (with-slots (tbl) entry
+      (loop for key being the hash-keys of tbl
+            using (hash-value value)
+            do (format stream "(~A: ~A)" key (car value))))))
+
+(defmethod env-entry-set (name ty (entry environment-entry))
+  (with-slots (tbl) entry
+    (setf (gethash name tbl) ty)))
+
+(defmethod env-entry-remove (name (entry environment-entry))
+  (with-slots (tbl) entry
+    (remhash name tbl)))
+
+;; Create a copy of this env-entry
+(defmethod env-entry-copy ((entry environment-entry))
+  (with-slots (tbl) entry
+    (let ((new-tbl (make-hash-table :size (hash-table-count tbl))))
+      (loop for key being the hash-keys of tbl
+            using (hash-value value)
+            do (setf (gethash key new-tbl) value))
+      (make-environment-entry :tbl new-tbl))))
+
+(defclass environment-stack ()
+  ((stack :initarg :stack :initform (list (make-environment-entry)) :accessor environment-stack-stack)))
+
+(defmethod print-object ((env environment-stack) stream)
+  (print-unreadable-object (env stream :type t)
+    (with-slots (stack) env
+      (loop for entry in stack
+            do (format stream "~%~A" entry)))))
+
+;; Make a copy of this environment, keeping only the top
+;; environment-entry but duplicating it.
+(defmethod env-flat-copy ((env environment-stack))
+  (with-slots (stack) env
+    (make-instance 'environment-stack
+                   :stack (list (env-entry-copy (car stack))))))
+
+(defmethod env-get (name (env environment-stack))
+  (gethash name (environment-entry-tbl (car (environment-stack-stack env)))))
+
+(defmethod env-set (name ty (env environment-stack))
+  (multiple-value-bind (existing-ty exists?)
+    (env-get name env)
+    (cond ((not exists?) (env-entry-set name ty (car (environment-stack-stack env))))
+          ((equal existing-ty ty) nil)
+          (t (error "Attempting to declare variable ~A with a different type than it is already declared with!" name)))))
+
+;; Remove a binding from the stack, potentially in any entry.
+(defmethod env-remove (name (env environment-stack))
+  (with-slots (stack) env
+    ;; Iterate through the stack starting from the beginning calling
+    ;; (env-entry-remove) on each entyr until either we've gone
+    ;; through the whole stack or an (env-entry-remove) call results
+    ;; in t, indicating that something was removed.
+    (loop for entry in stack
+          thereis (env-entry-remove name entry))))
+
+;; Remove a binding from only the top entry of the stack
+(defmethod env-remove-top (name (env environment-stack))
+  (remhash name (environment-entry-tbl (car (environment-stack-stack env)))))
+
+(defmethod env-push ((env environment-stack))
+  (let ((new-entry (make-environment-entry)))
+    ;; Inherit vars and fns from the previous stack entry
+    (loop for key being the hash-keys of (environment-entry-tbl (car (environment-stack-stack env)))
+          using (hash-value value)
+          do (setf (gethash key (environment-entry-tbl new-entry)) value))
+    (push new-entry (environment-stack-stack env))))
+
+(defmethod env-pop ((env environment-stack))
+  (pop (environment-stack-stack env)))
+
 (defclass solver-optimize (z3-object-with-handle)
-  ((scopes :initform '(()) :accessor solver-scopes)))
+  ((assertion-stack :initform '(()) :accessor solver-assertion-stack)
+   (env :initform (make-instance 'environment-stack) :accessor solver-env)))
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
 (defclass solver (solver-optimize)

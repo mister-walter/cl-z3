@@ -2,24 +2,37 @@
 
 (import 'z3-c-types::(Z3_ast))
 
-(defun make-fn-call (name args types fns ctx)
-  (let ((fn-entry (assoc name fns)))
-    (unless fn-entry (error "No function with name ~S is known" name))
-    (let* ((decl (second fn-entry))
-           (arg-sorts-debug (second (third fn-entry)))
-           (return-sort-debug (third (third fn-entry))))
-      (unless (equal (length arg-sorts-debug) (length args)) (error "Incorrect number of arguments given for function ~S of type ~S" name (third fn-entry)))
-      (with-foreign-array (array z3-c-types::Z3_ast args (convert-to-ast-fn ctx arg types fns))
+(defun env-has-fn? (name env)
+  (multiple-value-bind
+    (fn-entry exists?)
+    (env-get name env)
+    (and exists? (consp (car fn-entry)) (equal (caar fn-entry) :fn))))
+
+(defun make-fn-call (name args ctx env)
+  (multiple-value-bind
+    (fn-entry exists?)
+    (env-get name env)
+    (unless (and exists? (consp (car fn-entry)) (equal (caar fn-entry) :fn))
+      (error "No function with name ~S is known" name))
+    (let* ((decl (cdr fn-entry))
+           (arg-sorts-debug (second (car fn-entry)))
+           (return-sort-debug (third (car fn-entry))))
+      (unless (equal (length arg-sorts-debug) (length args)) (error "Incorrect number of arguments given for function ~S of type ~S" name (car fn-entry)))
+      (with-foreign-array (array z3-c-types::Z3_ast args (convert-to-ast-fn ctx arg env))
                           (z3-mk-app ctx decl (length args) array)))))
 
-(defun convert-to-ast-fn (context stmt &optional types fns)
+(defun convert-to-ast-fn (context stmt env)
   (match stmt
          (t (z3-mk-true context))
          (nil (z3-mk-false context))
          ((satisfies integerp) (z3-mk-numeral context (write-to-string stmt) (z3-mk-int-sort context)))
-         ((type symbol) (if (not (assoc stmt types))
-                            (error "You must provide types for all variables. You did not for the variable ~S." stmt)
-                          (z3-mk-const context (z3-mk-string-symbol context (symbol-name stmt)) (cdr (assoc stmt types)))))
+         ((type symbol)
+          (multiple-value-bind
+            (ty-entry exists?)
+            (env-get stmt env)
+            (if exists?
+                (z3-mk-const context (z3-mk-string-symbol context (symbol-name stmt)) (cdr ty-entry))
+              (error "You must provide types for all variables. You did not for the variable ~S." stmt))))
          ((type string) (z3-mk-string context stmt))
          ((list (sym-name unescaped-string) str)
           (assert (stringp str))
@@ -29,10 +42,10 @@
          ((list (sym-name enumval) name val)
           (enum-value-to-ast name val context))
          ((list* (sym-name tuple-val) tuple-name field-values)
-          (construct-tuple-fn tuple-name (mapcar (lambda (value) (convert-to-ast-fn context value types fns)) field-values) context types))
+          (construct-tuple-fn tuple-name (mapcar (lambda (value) (convert-to-ast-fn context value env)) field-values) context))
          ((list (sym-name tuple-get) tuple-name field-name value)
           (construct-tuple-field-accessor-fn tuple-name field-name
-                                             (convert-to-ast-fn context value types fns) context))
+                                             (convert-to-ast-fn context value env) context))
          ((list* (sym-name bv) args)
           (let ((args
                  (cond ((every #'(lambda (arg) (typep arg 'boolean)) args)
@@ -45,47 +58,54 @@
          ((list* (sym-name seq) args)
           (assert (plusp (length args)))
           (with-foreign-array (array z3-c-types::Z3_ast args
-                                     (z3-mk-seq-unit context (convert-to-ast-fn context arg types fns)))
+                                     (z3-mk-seq-unit context (convert-to-ast-fn context arg env)))
                               (z3-mk-seq-concat context (length args) array)))
          ((list (or (sym-name seq-empty) (sym-name seq.empty)) sort)
           (z3-mk-seq-empty context (get-sort (list :seq sort) context)))
          ((list (or (sym-name seq-unit) (sym-name seq.unit)) x)
-          (z3-mk-seq-unit context (convert-to-ast-fn context x types fns)))
+          (z3-mk-seq-unit context (convert-to-ast-fn context x env)))
          ((list (sym-name re-empty) sort)
           (z3-mk-re-empty context (get-sort sort context)))
          ((list (sym-name re-full) sort)
           (z3-mk-re-full context (get-sort sort context)))
          ((list* (sym-name set) sort args)
-          (mk-set (get-sort sort context) args context types fns))
+          (mk-set (get-sort sort context) args context env))
          ((list (sym-name forall) bound-vars body)
-          (mk-quantifier t bound-vars body context types fns))
+          (mk-quantifier t bound-vars body context env))
          ((list (sym-name exists) bound-vars body)
-          (mk-quantifier nil bound-vars body context types fns))
-         ((list* (sym-name _) name args)
-          (make-fn-call name args types fns context))
-         ((type list) (convert-funccall-to-ast context stmt types fns))
+          (mk-quantifier nil bound-vars body context env))
+         ((type list) (convert-funccall-to-ast context stmt env))
          (otherwise (error "Value ~S is of an unsupported type." stmt))))
 
 ;; Given a list of bound variables (e.g. a list consisting of
-;; variables, each followed by a type), return (values consts tys)
+;; variables, each followed by a type), return (values consts new-env)
 ;; where:
 ;; - consts is a list containing a Z3 constant for each bound variable
-;; - tys is an alist mapping each bound variable to its Z3 sort
-(defun process-bound-vars (bound-vars context)
-  (let ((consts nil)
-        (tys nil))
-    (loop for (var ty) on bound-vars by #'cddr while ty
-          do (let ((sort (get-sort ty context)))
-               (push (z3-mk-const context (z3-mk-string-symbol context (symbol-name var)) sort) consts)
-               (push (cons var sort) tys)))
-    (values consts tys)))
+;; - new-env the given environment env after pushing a new layer and adding a mapping for each bound variable to its Z3 sort
+(defun process-bound-vars (bound-vars context env)
+  (let ((new-env (env-flat-copy env))
+        (processed-var-specs (process-var-specs bound-vars)))
+    (check-processed-var-specs processed-var-specs)
+    ;; Remove any occurrences of bound-vars from the new copy of the
+    ;; environment
+    (loop for (name . nil) in processed-var-specs
+          do (env-remove-top name new-env))
+    ;; Now we can set up the environment as usual
+    (setup-env processed-var-specs new-env context)
+    ;; Finally we need to produce a const for each bound var. The
+    ;; environment already contains the appropriate sort, so we'll
+    ;; just pull the sort from there.
+    (let ((consts (loop for (name . nil) in processed-var-specs
+                        collect (let ((sort (cdr (env-get name new-env))))
+                                  (z3-mk-const context (z3-mk-string-symbol context (symbol-name name)) sort)))))
+    (values consts new-env))))
 
 ;; Make a quantifier, given its body and a list of bound variables.
-(defun mk-quantifier (is-forall bound-vars body context types fns)
+(defun mk-quantifier (is-forall bound-vars body context env)
   ;; create a constant for each bound variable
   (multiple-value-bind
-    (bound-var-consts bound-types)
-    (process-bound-vars bound-vars context)
+    (bound-var-consts bound-env)
+    (process-bound-vars bound-vars context env)
     ;; move the constants into a C array
     (with-foreign-array (bound-vars z3-c-types::Z3_ast bound-var-consts arg)
                         (z3-mk-quantifier-const context
@@ -95,22 +115,22 @@
                                                 bound-vars
                                                 0 ;; no patterns
                                                 (cffi:null-pointer)
-                                                ;; the body has access to the bound
-                                                ;; variables, so we throw them in with
-                                                ;; the existing known variables.
-                                                (convert-to-ast-fn context body (append bound-types types) fns)))))
+                                                ;; make sure we use bound-env, as it allows access
+                                                ;; to the variables quantified over.
+                                                (convert-to-ast-fn context body bound-env)))))
 
-(defun mk-set (sort values ctx types fns)
+(defun mk-set (sort values ctx env)
   (if (endp values)
-            (z3-mk-empty-set ctx sort)
-      (z3-mk-set-add ctx
-                     (mk-set sort (cdr values) ctx types fns)
-                     (convert-to-ast-fn ctx (car values) types fns))))
+      (z3-mk-empty-set ctx sort)
+    (z3-mk-set-add ctx
+                   (mk-set sort (cdr values) ctx env)
+                   (convert-to-ast-fn ctx (car values) env))))
 
-(defun convert-to-ast (stmt types fns ctx)
-  (make-instance 'ast
-                 :handle (convert-to-ast-fn ctx stmt types fns)
-                 :context ctx))
+(defun convert-to-ast (stmt &optional (env (make-instance 'environment-stack)) context)
+  (let ((ctx (or context *default-context*)))
+    (make-instance 'ast
+                   :handle (convert-to-ast-fn ctx stmt env)
+                   :context ctx)))
 
 ;; A partial list of built-in functions.
 ;; Each entry should have the following form:
@@ -123,7 +143,7 @@
 ;;   name.
 ;; - If :arity is provided, it should either be a positive integer
 ;;   describing the number of arguments this operator takes, or -
-;;   indicating that this operator has arbitrary arity.
+;;   indicating that this operator has arbitrary arity >=1.
 ;; - If :ctor is provided, it should be a symbol corresponding to the
 ;;   CFFI'ed Z3 function that constructs an application AST for this
 ;;   operator.
@@ -257,17 +277,17 @@
                       (intern (concatenate 'string "Z3-MK-" (symbol-name name)) :z3)))
          (arity (get-key :arity (cdr op))))
     (if (equal arity '-)
-        `(lambda (context types fns &rest args)
+        `(lambda (context env &rest args)
            (if (endp args)
                (error "The function ~S must be called with at least one argument." ',name)
              (with-foreign-array (array
                                   z3-c-types::Z3_ast
                                   args
-                                  (convert-to-ast-fn context arg types fns))
+                                  (convert-to-ast-fn context arg env))
                                  (,z3-name context (length args) array))))
       (let ((arg-names (loop for i below arity collect (gensym))))
-        `(lambda (context types fns ,@arg-names)
-           (,z3-name context . ,(mapcar (lambda (arg-name) `(convert-to-ast-fn context ,arg-name types fns)) arg-names)))))))
+        `(lambda (context env ,@arg-names)
+           (,z3-name context . ,(mapcar (lambda (arg-name) `(convert-to-ast-fn context ,arg-name env)) arg-names)))))))
 
 (defvar *ops-hash* (make-hash-table :test 'equal))
 (loop for op in *builtin-ops*
@@ -276,41 +296,41 @@
                do (setf (gethash (symbol-name name) *ops-hash*)
                         (eval `(mk-op-fn ,op)))))
 
-(defun convert-funccall-to-ast (context stmt types fns)
+(defun convert-funccall-to-ast (context stmt env)
   (match stmt
          ((list (or (sym-name =) (sym-name equal) (sym-name ==)) x y)
           (z3-mk-eq context
-                    (convert-to-ast-fn context x types fns)
-                    (convert-to-ast-fn context y types fns)))
+                    (convert-to-ast-fn context x env)
+                    (convert-to-ast-fn context y env)))
          ((list (sym-name !=) x y)
-          (convert-funccall-to-ast context `(not (equal ,x ,y)) types fns))
+          (convert-funccall-to-ast context `(not (equal ,x ,y)) env))
          ;; Unary subtraction, binary is taken care of thru *builtin-ops*
          ((list (sym-name -) arg)
-          (z3-mk-unary-minus context (convert-to-ast-fn context arg types fns)))
+          (z3-mk-unary-minus context (convert-to-ast-fn context arg env)))
          ((list (sym-name extract) hi lo x)
           (z3-mk-extract context
                          hi
                          lo
-                         (convert-to-ast-fn context x types fns)))
+                         (convert-to-ast-fn context x env)))
          ((list (sym-name signext) len x)
           (z3-mk-sign-ext context
                           len
-                          (convert-to-ast-fn context x types fns)))
+                          (convert-to-ast-fn context x env)))
          ((list (sym-name zeroext) len x)
           (z3-mk-zero-ext context
                           len
-                          (convert-to-ast-fn context x types fns)))
+                          (convert-to-ast-fn context x env)))
          ((list (sym-name repeat) maxlen x)
           (z3-mk-repeat context
                         maxlen
-                        (convert-to-ast-fn context x types fns)))
+                        (convert-to-ast-fn context x env)))
          ((list (sym-name int2bv) nbits x)
           (z3-mk-int2bv context
                         nbits
-                        (convert-to-ast-fn context x types fns)))
+                        (convert-to-ast-fn context x env)))
          ((list (sym-name bv2int) x signed?)
           (z3-mk-bv2int context
-                        (convert-to-ast-fn context x types fns)
+                        (convert-to-ast-fn context x env)
                         signed?))
          ((list (sym-name empty-set) sort)
           (z3-mk-empty-set context (get-sort sort context)))
@@ -322,7 +342,7 @@
           (assert (and (numberp lo) (>= lo 0)))
           (assert (and (numberp hi) (>= hi 0)))
           (z3-mk-re-loop context
-                         (convert-to-ast-fn context r types fns)
+                         (convert-to-ast-fn context r env)
                          lo hi))
          ;; pseudoboolean constraints
          ((list* (sym-name atmost) args)
@@ -330,21 +350,21 @@
           (let ((k (car (last args))))
             (unless (and (integerp k) (>= k 0))
               (error "atmost requires that the last argument is a positive integer"))
-            (with-foreign-array (array z3-c-types::Z3_ast (butlast args) (convert-to-ast-fn context arg types fns))
+            (with-foreign-array (array z3-c-types::Z3_ast (butlast args) (convert-to-ast-fn context arg env))
                                 (z3-mk-atmost context (1- (length args)) array k))))
          ((list* (sym-name atleast) args)
           (unless (consp (cdr args)) (error "atmost requires at least 2 arguments"))
           (let ((k (car (last args))))
             (unless (and (integerp k) (>= k 0))
               (error "atmost requires that the last argument is a positive integer"))
-            (with-foreign-array (array z3-c-types::Z3_ast (butlast args) (convert-to-ast-fn context arg types fns))
+            (with-foreign-array (array z3-c-types::Z3_ast (butlast args) (convert-to-ast-fn context arg env))
                                 (z3-mk-atleast context (1- (length args)) array k))))
          ((list* op args)
           (multiple-value-bind (op-fn exists?)
               (gethash (symbol-name op) *ops-hash*)
-            (if exists?
-                (apply op-fn context types fns args)
-              (trivia.skip:skip))))
+              (cond (exists? (apply op-fn context env args))
+                    ((env-has-fn? op env) (make-fn-call op args context env))
+                    (t (error "The expression ~S looks like a function call, but we don't know how to handle the function with name ~a. You may be trying to use an operator that we do not yet support, or you are trying to call an uninterpreted function with a name that we don't know. Please check the spelling of the operator name." stmt op)))))
          (otherwise (error "We currently do not support translation of the following expression into Z3.~%~S" stmt))))
 
 (defun app-ast-args-to-list (ast ctx)
@@ -526,7 +546,7 @@ the default value may be insufficient, so in such cases one is advised to change
 ;; have a gut feeling that Z3's file access will not work the same as
 ;; lisp's in all cases, and that may result in confusion...
 (defun parse-smt2-file (filename &key sorts decls context)
-  "Parse the file with the given filename  using the SMT-LIB2 parser.
+  "Parse the file with the given filename using the SMT-LIB2 parser.
    It returns an ast-vector comprising of the conjunction of assertions in the scope
    (up to push/pop) at the end of the file.
    Calls the error handler if the file does not exist or cannot be accessed."

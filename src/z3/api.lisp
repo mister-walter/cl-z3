@@ -67,11 +67,13 @@ declarations into a function declaration alist for internal use."
 (defgeneric solver-push-fn (solver)
   (:method ((solver solver))
            (let ((ctx (get-context solver)))
-             (push '() (solver-scopes solver))
+             (push '() (solver-assertion-stack solver))
+             (env-push (solver-env solver))
              (z3-solver-push ctx solver)))
   (:method ((solver optimizer))
            (let ((ctx (get-context solver)))
-             (push '() (solver-scopes solver))
+             (push '() (solver-assertion-stack solver))
+             (env-push (solver-env solver))
              (z3-optimize-push ctx solver))))
 
 (defun solver-push (&optional solver)
@@ -84,13 +86,16 @@ declarations into a function declaration alist for internal use."
              (unless (<= n (z3-solver-get-num-scopes ctx solver))
                (error "You can't pop ~S level(s) - the solver is currently at level ~S" n (z3-solver-get-num-scopes ctx solver)))
              (loop for i below n
-                   do (pop (solver-scopes solver)))
+                   do (progn
+                        (pop (solver-assertion-stack solver))
+                        (env-pop (solver-env solver))))
              (z3-solver-pop ctx solver n)))
   (:method ((solver optimizer) n)
            (let ((ctx (get-context solver)))
              (loop for i below n
                    do (progn
-                        (pop (solver-scopes solver))
+                        (pop (solver-assertion-stack solver))
+                        (env-pop (solver-env solver))
                         (z3-optimize-pop ctx solver))))))
 
 (defun solver-pop (&key (solver nil) (n 1))
@@ -102,80 +107,174 @@ any Z3 declarations or assertions that occurred between the relevant
 (defun solver-reset (&optional solver)
   (let* ((slv (or solver *default-solver*))
          (ctx (get-context slv)))
-    (setf (solver-scopes slv) '(()))
+    (setf (solver-assertion-stack slv) '(()))
+    (setf (solver-env slv) (make-instance 'environment-stack))
     (z3-solver-reset ctx slv)))
 
-;; TODO: note that the assertions that are printed out may have
-;; simplifications applied, and may not look much like the asserted
-;; expressions. We should track the stack of scopes on the side so
-;; that we can provide better output.
 (defun print-solver (&optional solver)
   (let* ((slv (or solver *default-solver*)))
     (terpri)
     (print-scopes slv)
-    ;;(format t "~%~a" (z3-object-to-string slv))
     nil))
 
 (defun print-scopes (solver)
   (let ((*print-case* :downcase))
-    (loop for scope in (solver-scopes solver)
+    (loop for scope in (solver-assertion-stack solver)
           do (loop for assertion in scope
                    do (format t "~S~%" assertion)))))
 
-(defun z3-assert-fn (var-decls stmt &optional solver)
-  ;; TODO we do nicer error handling here
-  (when (oddp (length var-decls)) (error "Each declared variable must have a type."))
-  (let* ((slv (or solver *default-solver*))
-         (ctx (get-context slv)))
-    (push `(assert ,var-decls ,stmt) (car (solver-scopes slv)))
-    (solver-assert
-     slv
-     (convert-to-ast stmt (make-var-decls var-decls ctx) (make-fn-decls var-decls ctx) ctx))))
+;; Take in a set of var-specs (akin to what definec and property
+;; allow) and translate into pairs of (var . ty)
+;; A list of var-specs is something like:
+;; `(x y :int z :bool w (:seq :int) p (:fn (:int) :string))`
+;; This means that both x and y have sort :int, z has sort :bool, w
+;; has sort (:seq :int), and p has the sort (:int) -> :string.
+(defun process-var-specs (var-specs)
+  (let ((res nil)
+        (acc nil))
+    (loop for elt in var-specs
+          do (cond ((and (or (keywordp elt) (consp elt))
+                         (consp acc))
+                    (setf res (append (mapcar #'(lambda (n) (cons n elt)) acc) res))
+                    (setf acc nil))
+                   ((or (keywordp elt) (consp elt))
+                    (error "Type ~a given without without any variables to apply it to!" elt))
+                   (t (push elt acc))))
+    (check-processed-var-specs res)
+    res))
 
-(defmacro z3-assert (var-decls stmt &optional solver)
+;; Check that no var occurs more than once in the given processed var
+;; specs.
+(defun check-processed-var-specs (processed-var-specs)
+  (let ((ht (make-hash-table)))
+    (loop for (var-name . nil) in processed-var-specs
+          do (multiple-value-bind (entry exists?)
+               (gethash var-name ht)
+               (when exists?
+                 (error "Variable ~a specified multiple times in the same assert form!" var-name))
+               (setf (gethash var-name ht) t)))
+    t))
+
+;; Convert a type specifier to the appropriate Z3 value: a function
+;; declaration (for function type specifiers) or a sort (for
+;; non-function type specifiers).
+(defun convert-type-spec (name ty context)
+  (if (and (consp ty) (equal (car ty) :fn))
+      (make-fn-decl name (second ty) (third ty) context)
+    (make-instance 'sort
+                   :handle (get-sort ty context)
+                   :context context)))
+
+(defun setup-env (processed-var-specs env ctx)
+  (loop for (name . ty) in processed-var-specs
+        when (multiple-value-bind
+               (existing-ty exists?)
+               (env-get name env)
+               (cond ((not exists?)
+                      (env-set name (cons ty (convert-type-spec name ty ctx)) env)
+                      name)
+                     ;; We allow a variable to be specified again so
+                     ;; long as the sort is exactly the same as
+                     ;; before.
+                     ((equal ty (car existing-ty)) nil)
+                     (t (error "Variable ~a was previously specified with a different sort: ~a!" name (car existing-ty)))))
+        collect it))
+
+(defun declare-const-fn (name sort &optional solver)
+  (let* ((slv (or solver *default-solver*))
+         (ctx (get-context slv))
+         (new-vars (setup-env `((,name . ,sort)) (solver-env slv) ctx)))
+    (unless new-vars
+      (warn "Variable ~a was already declared with sort ~a." name sort))
+    name))
+
+(defmacro declare-const (name sort)
+  `(declare-const-fn ',name ',sort))
+
+(defun declare-fun-fn (name param-sorts res-sort &optional solver)
+  (let* ((slv (or solver *default-solver*))
+         (ctx (get-context slv))
+         (new-vars (setup-env `((,name . (:fn ,param-sorts ,res-sort))) (solver-env slv) ctx)))
+    (unless new-vars
+      (warn "Variable ~a was already declared with sort ~a." name sort))
+    name))
+
+(defmacro declare-fun (name param-sorts res-sort)
+  (unless (listp param-sorts)
+    (error "The second argument of declare-fun must be a list of parameter sorts."))
+  `(declare-fun-fn ',name ',param-sorts ',res-sort))
+
+(defun z3-assert-fn (var-specs stmt &optional solver)
+  (let* ((slv (or solver *default-solver*))
+         (ctx (get-context slv))
+         (processed-var-specs (process-var-specs var-specs))
+         (added-vars (setup-env processed-var-specs (solver-env slv) ctx)))
+    ;; If an error occurs, revert the changes to the environment
+    (handler-case
+        (prog1
+            (solver-assert slv (convert-to-ast stmt (solver-env slv) ctx))
+          (push `(assert ,var-specs ,stmt) (car (solver-assertion-stack slv))))
+      (error (c) (loop for name in added-vars do (env-remove name (solver-env slv))) (signal c)))))
+
+(defmacro z3-assert (var-specs &optional (stmt nil stmt-provided?) solver)
   "Assert that the given statement holds in Z3. Any free variable
 occurring in the statement must be declared with its sort in
-`var-decls`."
-  `(z3-assert-fn ',var-decls ',stmt ,solver))
+`var-specs`, or have been declared in a previous z3-assert* that
+is still on the assertion stack. `var-specs` may be omitted in the
+case where no variables need to be declared."
+  (if stmt-provided?
+      `(z3-assert-fn ',var-specs ',stmt ,solver)
+    `(z3-assert-fn nil ',var-specs ,solver)))
 
-(defun z3-assert-soft-fn (var-decls stmt weight &optional solver)
-  (when (oddp (length var-decls)) (error "Each declared variable must have a type."))
+(defun z3-assert-soft-fn (var-specs stmt weight &optional solver)
   (let* ((slv (or solver *default-solver*))
-         (ctx (get-context slv)))
-    (push `(assert ,var-decls ,stmt) (car (solver-scopes slv)))
-    (solver-assert-soft
-     slv
-     (convert-to-ast stmt (make-var-decls var-decls ctx) (make-fn-decls var-decls ctx) ctx)
-     weight)))
+         (ctx (get-context slv))
+         (processed-var-specs (process-var-specs var-specs))
+         (added-vars (setup-env processed-var-specs (solver-env slv) ctx)))
+    ;; If an error occurs, revert the changes to the environment
+    (handler-case
+        (prog1
+            (solver-assert-soft slv (convert-to-ast stmt (solver-env slv) ctx) weight)
+          (push `(assert ,var-specs ,stmt) (car (solver-assertion-stack slv))))
+      (error (c) (loop for name in added-vars do (env-remove name (solver-env slv))) (error c)))))
 
-(defmacro z3-assert-soft (var-decls stmt weight &optional solver)
+(defmacro z3-assert-soft (var-specs stmt weight &optional solver)
   "Assert that the given statement holds in Z3. Any free variable
 occurring in the statement must be declared with its sort in
-`var-decls`. `weight` should be a positive number representing the
-penalty for violating this constraint."
-  `(z3-assert-soft-fn ',var-decls ',stmt ',weight ,solver))
+`var-specs`, or have been declared in a previous z3-assert* that
+is still on the assertion stack. `weight` should be a positive
+number representing the penalty for violating this constraint."
+  `(z3-assert-soft-fn ',var-specs ',stmt ',weight ,solver))
 
-(defun z3-optimize-minimize-fn (var-decls stmt &optional solver)
-  (when (oddp (length var-decls)) (error "Each declared variable must have a type."))
+(defun z3-optimize-minimize-fn (var-specs stmt &optional solver)
   (let* ((slv (or solver *default-solver*))
-         (ctx (get-context slv)))
-    (push `(minimize ,var-decls ,stmt) (car (solver-scopes slv)))
-    (z3-optimize-minimize (get-context slv) slv
-                          (convert-to-ast stmt (make-var-decls var-decls ctx) (make-fn-decls var-decls ctx) ctx))))
+         (ctx (get-context slv))
+         (processed-var-specs (process-var-specs var-specs))
+         (added-vars (setup-env processed-var-specs (solver-env slv) ctx)))
+    ;; If an error occurs, revert the changes to the environment
+    (handler-case
+        (prog1
+            (z3-optimize-minimize ctx slv (convert-to-ast stmt (solver-env slv) ctx))
+          (push `(minimize ,var-specs ,stmt) (car (solver-assertion-stack slv))))
+      (error (c) (loop for name in added-vars do (env-remove name (solver-env slv))) (error c)))))
 
-(defmacro optimize-minimize (var-decls stmt &optional solver)
-  `(z3-optimize-minimize-fn ',var-decls ',stmt ,solver))
+(defmacro optimize-minimize (var-specs stmt &optional solver)
+  `(z3-optimize-minimize-fn ',var-specs ',stmt ,solver))
 
-(defun z3-optimize-maximize-fn (var-decls stmt &optional solver)
-  (when (oddp (length var-decls)) (error "Each declared variable must have a type."))
+(defun z3-optimize-maximize-fn (var-specs stmt &optional solver)
   (let* ((slv (or solver *default-solver*))
-         (ctx (get-context slv)))
-    (push `(maximize ,var-decls ,stmt) (car (solver-scopes slv)))
-    (z3-optimize-maximize (get-context slv) slv
-                          (convert-to-ast stmt (make-var-decls var-decls ctx) (make-fn-decls var-decls ctx) ctx))))
+         (ctx (get-context slv))
+         (processed-var-specs (process-var-specs var-specs))
+         (added-vars (setup-env processed-var-specs (solver-env slv) ctx)))
+    ;; If an error occurs, revert the changes to the environment
+    (handler-case
+        (prog1
+            (z3-optimize-maximize ctx slv (convert-to-ast stmt (solver-env slv) ctx))
+          (push `(maximize ,var-specs ,stmt) (car (solver-assertion-stack slv))))
+      (error (c) (loop for name in added-vars do (env-remove name (solver-env slv))) (error c)))))
 
-(defmacro optimize-maximize (var-decls stmt &optional solver)
-  `(z3-optimize-maximize-fn ',var-decls ',stmt ,solver))
+(defmacro optimize-maximize (var-specs stmt &optional solver)
+  `(z3-optimize-maximize-fn ',var-specs ',stmt ,solver))
 
 (defgeneric get-model-fn (solver)
   (:method ((solver solver))
@@ -190,15 +289,24 @@ penalty for violating this constraint."
                             :context ctx))))
 
 (defun get-model (&optional solver)
-  "Get the model object for the last solver-check[-assumptions] call.
-   Will invoke the error handler if no model is available."
+  "Get the Z3 model object for the last check-sat call. If that call
+indicated that Z3 determined satisfiability, then the model will
+contain a satisfying assignment for the assertions in the global
+assertion stack.  If check-sat determined :UNKNOWN then a model may be
+available, but the provided assignment may not satisfy the assertions
+on the stack. Will invoke the error handler if no model is available."
+  ;; TODO: in the unknown case we may want to get the model and see if
+  ;; the assignment satisfies the assertions.
   (get-model-fn (or solver *default-solver*)))
 
 (defun get-model-as-assignment (&optional solver)
   "If Z3 has determined that the global assertion stack is satisfiable,
 get a satisfying assignment. Returns a (possibly empty) list of
-bindings corresponding to the model that Z3 generated. Will invoke
-the error handler if no model is available."
+bindings corresponding to the model that Z3 generated. Will invoke the
+error handler if no model is available. If check-sat determined
+:UNKNOWN then a model may be available, but the provided assignment
+may not satisfy the assertions on the stack. Will invoke the error
+handler if no model is available."
   (let* ((solver (or solver *default-solver*))
          (ctx (get-context solver)))
     (append (model-constants-to-assignment (get-model solver) ctx)
@@ -216,6 +324,4 @@ Returns either :SAT, :UNSAT or :UNKNOWN."
     (match (solver-check slv)
       (:L_TRUE :SAT) ;; assertions are satisfiable (a model may be generated)
       (:L_FALSE :UNSAT) ;; assertions are not satisfiable (a proof may be generated)
-      ;; TODO: in the unknown case we may want to get the model and see if the assignment satisfies the assertions
-      ;; if so we can return it.
       (:L_UNDEF :UNKNOWN)))) ;; get_model may succeed but the model may not satisfy the assertions

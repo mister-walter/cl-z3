@@ -10,6 +10,7 @@
            #:make-optimizer
            #:make-tactic
            #:solver-push #:solver-pop #:print-solver #:solver-reset
+           #:declare-const #:declare-fun
            #:z3-assert #:z3-assert-fn
            #:z3-assert-soft #:optimize-minimize #:optimize-maximize
            #:check-sat #:get-model #:get-model-as-assignment

@@ -69,5 +69,5 @@
   :program nil
   :raw (z3-assert-fn query types))
 
-(defmacro z3-assert (query types)
+(defmacro z3-assert (query &optional types)
   `(z3-assert-bridge ',query ',types))

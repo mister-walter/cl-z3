@@ -5,7 +5,7 @@
 ;; but a fair amount of work is needed here to convert back and forth between z3 values and defdata values.
 
 (defun make-var-decls (decls context)
-    "Translate a user-provided list of variable and function
+  "Translate a user-provided list of variable and function
 declarations into a variable sort alist for internal use."
   (loop for (var ty) on decls by #'cddr
         unless (and (consp ty) (equal (car ty) :fn))
@@ -38,25 +38,21 @@ declarations into a function declaration alist for internal use."
                                      :context context)))
 
 (cffi:defcallback error-handler :void ((ctx z3-c-types:context) (error-code z3-c-types:error_code))
-                  (restart-case
-                   (match error-code
-                          (:OK (error "Z3: error handler called with error code OK - should not occur."))
-                          (:SORT_ERROR (error "Z3: tried to build an AST that is not well-sorted"))
-                          (:IOB (error "Z3: index out of bounds"))
-                          (:INVALID_ARG (error "Z3: Invalid argument was provided"))
-                          (:NO_PARSER (error "Z3: parser output is not available"))
-                          (:INVALID_PATTERN (error "Z3: invalid pattern used to build a quantifier"))
-                          (:MEMOUT_FAIL (error "Z3: unable to allocate memory"))
-                          (:FILE_ACCESS_ERROR (error "Z3: unable to access file"))
-                          (:INTERNAL_FATAL (error "Z3: internal error occurred"))
-                          (:DEC_REF_ERROR (error "Z3: Tried to decrement the reference counter of an AST that was deleted or the reference counter was not initialized with Z3_inc_ref."))
-                          (:INVALID_USAGE (error "Z3: API call is invalid in the current state: ~a" (z3-get-error-msg ctx error-code)))
-                          (:PARSER_ERROR (error "Z3: An error occurred when parsing a string or file: ~a" (z3-get-error-msg ctx error-code)))
-                          (:EXCEPTION (error "Z3: An exception occurred: ~a" (z3-get-error-msg ctx error-code)))
-                          #| (let ((error-msg (z3-get-error-msg ctx error-code)))
-                             (format t "Z3 exception ~S" error-msg)))|#
-                          (otherwise (error "Z3: an unknown error occurred with code ~S" error-code)))
-                   (ignore-and-continue () :report "Ignore the error and return control to Z3." nil)))
+  (match error-code
+    (:OK (error "Z3: error handler called with error code OK - should not occur."))
+    (:SORT_ERROR (error "Z3: tried to build an AST that is not well-sorted"))
+    (:IOB (error "Z3: index out of bounds"))
+    (:INVALID_ARG (error "Z3: Invalid argument was provided"))
+    (:PARSER_ERROR (error "Z3: An error occurred when parsing a string or file: ~a" (z3-get-error-msg ctx error-code)))
+    (:NO_PARSER (error "Z3: parser output is not available"))
+    (:INVALID_PATTERN (error "Z3: invalid pattern used to build a quantifier"))
+    (:MEMOUT_FAIL (error "Z3: unable to allocate memory"))
+    (:FILE_ACCESS_ERROR (error "Z3: unable to access file"))
+    (:INTERNAL_FATAL (error "Z3: internal error occurred"))
+    (:INVALID_USAGE (error "Z3: API call is invalid in the current state: ~a" (z3-get-error-msg ctx error-code)))
+    (:DEC_REF_ERROR (error "Z3: Tried to decrement the reference counter of an AST that was deleted or the reference counter was not initialized with Z3_inc_ref."))
+    (:EXCEPTION (error "Z3: An exception occurred: ~a" (z3-get-error-msg ctx error-code)))
+    (otherwise (error "Z3: an unknown error occurred with code ~S" error-code))))
 
 (defun solver-init ()
   "Initialize the Z3 interface with a context and a solver."

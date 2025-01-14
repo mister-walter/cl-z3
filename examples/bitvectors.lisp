@@ -73,6 +73,7 @@
 (get-model-as-assignment)
 (solver-pop)
 
+#|
 ;; TODO why is this slow? Performance regression?
 (solver-push)
 (z3-assert
@@ -85,3 +86,4 @@
       (not (= (+ x y) (bv2int (bvadd z w) nil)))))
 (check-sat)
 (solver-pop)
+|#

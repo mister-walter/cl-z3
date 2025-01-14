@@ -4,11 +4,10 @@
 (ql:quickload :lisp-z3)
 
 (defpackage :z3-records
-  (:use :cl :z3))
+  (:use :cl :z3)
+  (:import-from :z3 :expect-error :tuple-get :tuple-val))
 
 (in-package :z3-records)
-
-(import 'z3::(tuple-get tuple-val))
 
 ;; You *must* do this BEFORE calling register-tuple-sort.
 ;; Additionally, you must redo any register-tuple-sort calls if you
@@ -50,5 +49,8 @@
 ;; without calling its corresponding register-tuple-sort again.
 
 (solver-init)
-;; This errors out, explaining that you need to re-register :blah.
-(z3-assert (r :blah) (= (tuple-get :blah a r) 5))
+;; The following z3-assert errors out, explaining that you need to
+;; re-register :blah.
+(expect-error
+ (z3-assert (r :blah)
+            (= (tuple-get :blah a r) 5)))

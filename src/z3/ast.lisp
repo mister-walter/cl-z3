@@ -160,9 +160,9 @@
     ;; note that we special-case unary - by adding a case for it in convert-funccall-to-ast.
     (* :ctor z3-mk-mul :arity -)
     (/ :ctor z3-mk-div :arity 2)
-    (mod :ctor z3-mk-mod :arity 2)
-    (rem :ctor z3-mk-rem :arity 2)
-    (power :ctor z3-mk-power :arity 2)
+    (mod :arity 2)
+    (rem :arity 2)
+    (power :arity 2)
     ((int2real int-to-real) :arity 1)
     ((real2int real-to-int) :arity 1)
     ;;(divides :arity 2)
@@ -264,7 +264,12 @@
     ((re-empty re.empty) :arity 1)
     ((re-full re.full) :arity 1)
     ;;; Special relations
-    ;; these are all special
+    ;; these are all special, and not supported
+    ;; linear order
+    ;; partial order
+    ;; piecewise linear order
+    ;; tree order
+    ;; transitive closure
     ))
 
 (defun get-key (k l)

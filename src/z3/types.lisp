@@ -362,9 +362,3 @@
     (let* ((res (z3-get-numeral-decimal-string context handle *ALGEBRAIC-NUMBER-CONVERT-DECIMAL-PRECISION*))
            (len (length res)))
       (values (parse-float::parse-float res :end (- len 2))))))
-
-#|
-(defmethod algebraic-number-to-float ((obj algebraic-number) &key (precision *ALGEBRAIC-NUMBER-DECIMAL-PRECISION*))
-  (with-slots (handle context)
-      (z3-get-numeral-decimal-string context handle precision)))
-|#

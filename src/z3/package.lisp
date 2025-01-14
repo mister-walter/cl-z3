@@ -1,3 +1,6 @@
+(defpackage #:z3-sort
+  (:documentation "A package for all Z3 sort names"))
+
 (defpackage #:z3
   (:documentation "The Lisp-Z3 interface frontend.")
   (:use #:cl #:z3-c)

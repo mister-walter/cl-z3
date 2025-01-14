@@ -1,5 +1,17 @@
 (in-package :z3)
 
+(defun func-entry-to-string (entry context)
+  (let ((s (make-string-output-stream)))
+    ;; TODO surely this can be rewritten using format
+    (write-string "(" s)
+    (loop for i below (z3-func-entry-get-num-args context entry)
+          do (progn
+               (unless (equal i 0) (write-string " " s))
+               (write-string (z3-ast-to-string context (z3-func-entry-get-arg context entry i)) s)))
+    (write-string ") -> " s)
+    (write-string (z3-ast-to-string context (z3-func-entry-get-value context entry)) s)
+    (get-output-stream-string s)))
+
 (defun model-constants-to-assignment (model ctx)
   "Retrieve constant interpretations from the given model."
   ;; This is a two step process:
@@ -51,3 +63,21 @@
                                            ;; TODO: it might be better to return the user-provided sort specifiers for this function. But this will work for now.
                                            (list (func-decl-domain decl ctx) (func-decl-range decl ctx))
                                            (func-interp-to-alist interp ctx)))))))
+
+(defmethod model-get-assignment (name (model model))
+  (with-slots (context) model
+    (let ((const-decl (loop for i below (z3-model-get-num-consts context model)
+                            for decl = (z3-model-get-const-decl context model i)
+                            if (string= (z3-get-symbol-string context (z3-get-decl-name context decl))
+                                        (symbol-name name))
+                            return decl)))
+      (if const-decl
+          (make-instance 'ast :handle (z3-model-get-const-interp context model const-decl) :context context)
+        (let ((func-decl (loop for i below (z3-model-get-num-funcs context model)
+                               for decl = (z3-model-get-func-decl context model i)
+                               if (string= (z3-get-symbol-string context (z3-get-decl-name context decl))
+                                           (symbol-name name))
+                               return decl)))
+          (if func-decl
+              (make-instance 'func-interp :handle (z3-model-get-func-interp context model func-decl) :context context)
+            (error "No assignment found for name ~a in the given model." name)))))))

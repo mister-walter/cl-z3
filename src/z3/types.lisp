@@ -64,6 +64,41 @@
     (z3-func-decl-to-string context handle)))
 
 
+(defclass func-entry (z3-object-with-handle) ())
+
+(defmethod translate-to-foreign ((v func-entry) (type z3-c-types::func-entry-type))
+  (slot-value v 'handle))
+
+;; This type doesn't have a built-in to-string function in Z3, so
+;; we had to write something ourselves.
+(defmethod z3-object-to-string ((obj func-entry))
+  (with-slots (handle context) obj
+    (func-entry-to-string handle context)))
+
+
+;; NOTE: we need to manually increment/decrement reference counter for this type
+(defclass func-interp (z3-object-with-handle) ())
+
+(defmethod translate-to-foreign ((v func-interp) (type z3-c-types::func-interp-type))
+  (slot-value v 'handle))
+
+;; This type doesn't have a built-in to-string function in Z3, so
+;; we'll need to write something ourselves.
+(defmethod z3-object-to-string ((obj func-interp))
+  (with-slots (handle context) obj
+    (let ((s (make-string-output-stream)))
+      (format s "{~%")
+      (loop for i below (z3-func-interp-get-num-entries context handle)
+            do (format s "  ~a,~%" (func-entry-to-string (z3-func-interp-get-entry context handle i) context)))
+      (format s "  else -> ~a~%}" (z3-ast-to-string context (z3-func-interp-get-else context handle)))
+      (get-output-stream-string s))))
+
+(defmethod initialize-instance :after ((obj func-interp) &key)
+  (with-slots (handle context) obj
+    (z3-func-interp-inc-ref context handle)
+    (tg:finalize obj (lambda () (z3-func-interp-dec-ref context handle)))))
+
+
 (defclass sort (z3-object-with-handle) ())
 
 (defmethod translate-to-foreign ((v sort) (type z3-c-types::sort-type))

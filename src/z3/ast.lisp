@@ -476,7 +476,15 @@ the default value may be insufficient, so in such cases one is advised to change
        (warn "Handling of OP_UNINTERPRETED is currently a work in progress.")
        (z3-ast-to-string ctx ast))
       ((or :OP_SEQ_CONCAT :OP_SEQ_UNIT :OP_SEQ_EMPTY)
-       (seq-ast-to-value ast ctx))
+       ;; Sometimes string literal values are represented using
+       ;; concatenation/sequence operations for some reason. An
+       ;; example of this is when the string is an argument in the
+       ;; function map for an uninterpreted function; see the example
+       ;; from examples/uninterpreted-fns.lisp using 3 functions, f g
+       ;; and h.
+       (if (z3-is-string-sort ctx (z3-get-sort ctx ast))
+           (coerce (seq-ast-to-value ast ctx) 'string)
+         (seq-ast-to-value ast ctx)))
       ((or :OP_STORE :OP_CONST_ARRAY :OP_ARRAY_MAP)
        (array-ast-to-value ast ctx))
       (:OP_ADD
@@ -492,6 +500,8 @@ the default value may be insufficient, so in such cases one is advised to change
        (algebraic-number-to-value (make-algebraic-number ctx ast)))
       ;;(:OP_ARRAY_DEFAULT)
       ;;(:OP_SELECT)
+      (:OP_CHAR_CONST
+       (code-char (z3-get-decl-int-parameter ctx decl 0)))
       (otherwise
        ;; TODO fix this ugly special-case
        (if (z3-is-string ctx ast)

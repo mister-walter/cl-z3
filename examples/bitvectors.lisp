@@ -13,7 +13,7 @@
 (solver-push)
 (z3-assert
  ;; A bitvector variable must be given a length.
- (v (:bv 5))
+ (v (_ :bitvec 5))
  ;; the nil below indicates that we want to treat v as an unsigned
  ;; value when we convert it to an integer.
  (= (bv2int v nil) 20))
@@ -26,7 +26,7 @@
 ;; You can represent bitvector constants using int2bv
 (solver-push)
 (z3-assert
- (v (:bv 10) x (:bv 4))
+ (v (_ :bitvec 10) x (_ :bitvec 4))
  ;; the second number is the integer to convert to a bitvector, the
  ;; first number is the length of the bitvector to convert to.
  (and (= v (int2bv 10 27))
@@ -44,7 +44,7 @@
 ;; Note that Z3 treats bitvectors as big-endian when converting back to a number.
 (solver-push)
 (z3-assert
- (v (:bv 5) x (:bv 3))
+ (v (_ :bitvec 5) x (_ :bitvec 3))
  (and (= v (bv 0 0 0 1 1))
       (= x (bv t nil nil))))
 (check-sat)
@@ -57,14 +57,14 @@
 ;; names that are usable in z3-assert.
 (solver-push)
 (z3-assert
- (v (:bv 4))
+ (v (_ :bitvec 4))
  (= v (bvadd (int2bv 4 15) (int2bv 4 -1))))
 (check-sat)
 (get-model-as-assignment)
 (solver-pop)
 
 (solver-push)
-(z3-assert (x :int y :int z (:bv 8))
+(z3-assert (x y :int z (_ :bitvec 8))
            (and (>= x 0)
                 (>= y 0)
                 (< (+ x y) 256)
@@ -77,7 +77,7 @@
 ;; TODO why is this slow? Performance regression?
 (solver-push)
 (z3-assert
- (x :int y :int z (:bv 8) w (:bv 8))
+ (x y :int z w (_ :bitvec 8))
  (and (>= x 0)
       (>= y 0)
       (< (+ x y) 256)

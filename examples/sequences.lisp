@@ -77,7 +77,7 @@
 ;; You can have sequences of more complicated types too
 (solver-push)
 (z3-assert
- (x (:seq (:bv 5)))
+ (x (:seq (_ :bitvec 5)))
  (= (seq-length x) 3))
 (check-sat)
 (get-model)

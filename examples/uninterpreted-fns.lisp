@@ -46,8 +46,8 @@
 ;; You can use multiple uninterpreted functions together and use their
 ;; results in calls to each other.
 (z3-assert (f (:fn (:int) :string)
-            g (:fn (:string) (:bv 4))
-            h (:fn ((:bv 4)) :int))
+            g (:fn (:string) (_ :bitvec 4))
+            h (:fn ((_ :bitvec 4)) :int))
            (and (= (h (g (f 3))) 5)
                 (= (h (g (f 1))) 20)
                 (= (f 1) "hello")

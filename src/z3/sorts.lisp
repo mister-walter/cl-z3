@@ -53,8 +53,13 @@ represented as an uninterpreted function.
 
 (defun register-sort (name sort-producer)
   "Register a sort.
+   The first argument is either a symbol or a list of symbols. If a single symbol, the name of the sort to register. If a list of symbols, this sort will be registered under each symbol.
    The second argument should be a function object that takes in a single argument (context) and produces a sort."
-  (setf (gethash (normalize-sort-name name) *sorts*) sort-producer)
+  (when (null name)
+    (error "At least one name must be provided to register-sort!"))
+  (let ((name-list (if (consp name) name (list name))))
+    (loop for name in name-list
+          do (setf (gethash (normalize-sort-name name) *sorts*) sort-producer)))
   name)
 
 ;; TODO: currently storing these in a separate hash table, but there's
@@ -65,8 +70,29 @@ represented as an uninterpreted function.
 
 (defun register-parametric-sort (name parametric-sort-producer)
   "Register a sort.
+   The first argument is either a symbol or a list of symbols. If a single symbol, the name of the parametric sort to register. If a list of symbols, this parameteric sort will be registered under each symbol.
    The second argument should be a function object that takes in two arguments (context, list of user-provided arguments) and produces a sort."
-  (setf (gethash (normalize-sort-name name) *parametric-sorts*) parametric-sort-producer)
+  (when (null name)
+    (error "At least one name must be provided to register-parametric-sort!"))
+  (let ((name-list (if (consp name) name (list name))))
+    (loop for name in name-list
+          do (setf (gethash (normalize-sort-name name) *parametric-sorts*) parametric-sort-producer)))
+  name)
+
+;; TODO unclear how important it is to make the distinction between
+;; indexed and parametric sorts, but it is needed to ensure compliance
+;; with SMT-LIB2.
+(defvar *indexed-sorts* (make-hash-table))
+
+(defun register-indexed-sort (name indexed-sort-producer)
+  "Register a sort.
+   The first argument is either a symbol or a list of symbols. If a single symbol, the name of the indexed sort to register. If a list of symbols, this indexed sort will be registered under each symbol.
+   The second argument should be a function object that takes in two arguments (context, list of user-provided arguments) and produces a sort."
+  (when (null name)
+    (error "At least one name must be provided to register-indexed-sort!"))
+  (let ((name-list (if (consp name) name (list name))))
+    (loop for name in name-list
+          do (setf (gethash (normalize-sort-name name) *indexed-sorts*) indexed-sort-producer)))
   name)
 
 ;; TODO: optimization - memoize calls within a context
@@ -74,21 +100,28 @@ represented as an uninterpreted function.
 ;; (but in that case all pointers that we have into Z3 are invalid so ¯\_(ツ)_/¯)
 (defun get-sort (name context)
   "Get the sort associated with a name"
-  (if (consp name)
-      (multiple-value-bind (para-fn para-exists?)
-          (gethash (normalize-sort-name (car name)) *parametric-sorts*)
-        (if para-exists?
-            (funcall para-fn context (cdr name))
-          (multiple-value-bind (fn exists?)
-              (gethash (normalize-sort-name name) *sorts*)
-            (if exists?
-                (funcall fn context)
-              (error "No known sort with name ~a" name)))))
-    (multiple-value-bind (fn exists?)
-              (gethash (normalize-sort-name name) *sorts*)
-            (if exists?
-                (funcall fn context)
-              (error "No known sort with name ~a" name)))))
+  (match name
+    ((type symbol)
+     (multiple-value-bind (fn exists?)
+         (gethash (normalize-sort-name name) *sorts*)
+       (if exists?
+           (funcall fn context)
+         (error "No known sort with name ~a" name))))
+    ;; Indexed identifier
+    ((list* (sym-name _) name args)
+     (multiple-value-bind (idxed-fn idxed-exists?)
+         (gethash (normalize-sort-name name) *indexed-sorts*)
+       (if idxed-exists?
+           (funcall idxed-fn context args)
+         (error "No known indexed sort with name ~a" name))))
+    ;; Parametric type application
+    ((list* name args)
+     (multiple-value-bind (para-fn para-exists?)
+         (gethash (normalize-sort-name name) *parametric-sorts*)
+       (if para-exists?
+           (funcall para-fn context args)
+         (error "No known parametric sort with name ~a" name))))
+    (otherwise (error "~S is not a valid sort specifier." name))))
 
 ;; Some built-in sorts
 (register-sort :int #'z3-mk-int-sort)
@@ -96,11 +129,11 @@ represented as an uninterpreted function.
 (register-sort :string #'z3-mk-string-sort)
 (register-sort :real #'z3-mk-real-sort)
 
-(register-parametric-sort :bv
-                          #'(lambda (ctx args)
-                              (cond ((not (equal (length args) 1)) (error "bv sort only takes a single argument."))
-                                    ((or (not (numberp (car args))) (minusp (car args))) (error "bv sort must have a positive integer size"))
-                                    (t (z3-mk-bv-sort ctx (car args))))))
+(register-indexed-sort :bitvec
+                       #'(lambda (ctx args)
+                           (cond ((not (equal (length args) 1)) (error "bitvec sort only takes a single argument."))
+                                 ((or (not (numberp (car args))) (minusp (car args))) (error "bitvec sort must have a positive integer size"))
+                                 (t (z3-mk-bv-sort ctx (car args))))))
 
 (register-parametric-sort :seq
                           #'(lambda (ctx args)

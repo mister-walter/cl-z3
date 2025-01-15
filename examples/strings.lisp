@@ -20,7 +20,7 @@
 
 ;; Strings are just a specialized sequence type - you can perform all
 ;; the normal sequence operations on them.
-;; Note that the string type is equivalent to (:seq (:bv 8)) - i.e. 8-bit bitvectors
+;; Note that the string type is equivalent to (:seq (_ :bitvec 8)) - i.e. 8-bit bitvectors
 ;; It's often easier to use seq-at instead of seq-nth. seq-at will
 ;; return a length-1 subsequence at the given offset, as opposed to
 ;; the element at that offset.

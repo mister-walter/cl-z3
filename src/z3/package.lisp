@@ -17,6 +17,7 @@
            #:z3-assert #:z3-assert-fn
            #:z3-assert-soft #:optimize-minimize #:optimize-maximize
            #:check-sat #:get-model #:get-model-as-assignment
+           #:eval-under-model
            #:convert-to-ast #:ast-to-value
            #:register-enum-sort #:register-tuple-sort
            #:z3-object-to-string

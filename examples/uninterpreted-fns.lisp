@@ -4,7 +4,8 @@
 (ql:quickload :lisp-z3)
 
 (defpackage :z3-uninterp-fns
-  (:use :cl :z3))
+  (:use :cl :z3)
+  (:import-from :z3 :expect-error))
 
 (in-package :z3-uninterp-fns)
 
@@ -85,8 +86,10 @@
 (solver-push)
 (z3-assert (f :int) (= f 0))
 ;; This will fail.
-(z3-assert (f (:fn (:int) :int)) (= (f 0) 4))
+(expect-error
+ (z3-assert (f (:fn (:int) :int)) (= (f 0) 4)))
 ;; This will also fail.
-(z3-assert (g :int g (:fn (:int) :int))
-           (= (g g) g))
+(expect-error
+ (z3-assert (g :int g (:fn (:int) :int))
+            (= (g g) g)))
 (solver-push)

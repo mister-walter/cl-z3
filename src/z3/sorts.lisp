@@ -162,42 +162,6 @@ represented as an uninterpreted function.
 
 
 
-;;;; Finite domain types
-
-;; WARNING/TODO: When a new context is created after register-finite-domain-sort has been called, the finite domain sorts will NOT exist in the new context.
-;; One must make the relevant register-finite-domain-sort calls again.
-;; I've tried to check for incorrect usage in a few places, but I'm sure I missed something.
-
-(defstruct finite-domain-sort-metadata
-  (sort)
-  (size))
-
-(defvar *finite-domain-sort-metadata* (make-hash-table))
-
-(defun register-finite-domain-sort-fn (name size ctx)
-  (let ((sort (z3-mk-finite-domain-sort ctx (z3-mk-string-symbol ctx (symbol-name name)) size)))
-    (setf (gethash (normalize-sort-name name) *finite-domain-sort-metadata*)
-          (make-finite-domain-sort-metadata
-           :sort sort
-           :size size))
-    (register-sort name (lambda (context)
-                          (if (not (equal context ctx))
-                            (error "Attempting to use finite domain type ~a outside of the context in which it is defined.~%You need to call the relevant (register-finite-domain-sort ...) form again in the current context." name)
-                            (finite-domain-sort-metadata-sort (gethash name *finite-domain-sort-metadata*)))))))
-
-(defmacro register-finite-domain-sort (name size &optional context)
-  `(let ((ctx (or ,context *default-context*)))
-     (register-finite-domain-sort-fn ',name ,size ctx)
-     ',name))
-
-(defun finite-domain-value-to-ast (name val context)
-  (multiple-value-bind (metadata exists?)
-      (gethash (normalize-sort-name name) *finite-domain-sort-metadata*)
-    (cond ((not exists?) (error "~S does not name a finite-domain sort." name))
-          ((not (and (>= val 0) (< val (finite-domain-sort-metadata-size metadata))))
-           (error "~S is not a valid member of the finite-domain sort ~a.~%A valid member of this sort is an integer x s.t. 0 <= x < ~A" val name (finite-domain-sort-metadata-size metadata)))
-          (t (z3-mk-unsigned-int64 context val (finite-domain-sort-metadata-sort metadata))))))
-
 ;;;; Enum types
 
 ;; WARNING/TODO: When a new context is created after register-enum-sort has been called, the enum sorts will NOT exist in the new context.

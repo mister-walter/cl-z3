@@ -18,7 +18,7 @@
            (arg-sorts-debug (second (car fn-entry)))
            (return-sort-debug (third (car fn-entry))))
       (unless (equal (length arg-sorts-debug) (length args)) (error "Incorrect number of arguments given for function ~S of type ~S" name (car fn-entry)))
-      (with-foreign-array (array z3-c-types::Z3_ast args (convert-to-ast-fn ctx arg env))
+      (with-foreign-array (array z3-c-types::Z3_ast args :elt-fn #'(lambda (arg) (convert-to-ast-fn ctx arg env)))
                           (z3-mk-app ctx decl (length args) array)))))
 
 (defun convert-to-ast-fn (context stmt env)
@@ -53,12 +53,12 @@
                        ((every #'(lambda (arg) (or (eql arg 0) (eql arg 1))) args)
                         (mapcar #'(lambda (arg) (= arg 1)) args))
                        (t (error "You must provide either a list of booleans or a list of (0,1)s to bv.")))))
-            (with-foreign-array (array :bool args arg)
+            (with-foreign-array (array :bool args)
                                 (z3-mk-bv-numeral context (length args) array))))
          ((list* (sym-name seq) args)
           (assert (plusp (length args)))
           (with-foreign-array (array z3-c-types::Z3_ast args
-                                     (z3-mk-seq-unit context (convert-to-ast-fn context arg env)))
+                                     :elt-fn #'(lambda (arg) (z3-mk-seq-unit context (convert-to-ast-fn context arg env))))
                               (z3-mk-seq-concat context (length args) array)))
          ((list (or (sym-name seq-empty) (sym-name seq.empty)) sort)
           (z3-mk-seq-empty context (get-sort (list :seq sort) context)))
@@ -107,7 +107,7 @@
     (bound-var-consts bound-env)
     (process-bound-vars bound-vars context env)
     ;; move the constants into a C array
-    (with-foreign-array (bound-vars z3-c-types::Z3_ast bound-var-consts arg)
+    (with-foreign-array (bound-vars z3-c-types::Z3_ast bound-var-consts)
                         (z3-mk-quantifier-const context
                                                 is-forall
                                                 0 ;; weight
@@ -288,7 +288,7 @@
              (with-foreign-array (array
                                   z3-c-types::Z3_ast
                                   args
-                                  (convert-to-ast-fn context arg env))
+                                  :elt-fn #'(lambda (arg) (convert-to-ast-fn context arg env)))
                                  (,z3-name context (length args) array))))
       (let ((arg-names (loop for i below arity collect (gensym))))
         `(lambda (context env ,@arg-names)
@@ -355,14 +355,14 @@
           (let ((k (car (last args))))
             (unless (and (integerp k) (>= k 0))
               (error "atmost requires that the last argument is a positive integer"))
-            (with-foreign-array (array z3-c-types::Z3_ast (butlast args) (convert-to-ast-fn context arg env))
+            (with-foreign-array (array z3-c-types::Z3_ast (butlast args) :elt-fn #'(lambda (arg) (convert-to-ast-fn context arg env)))
                                 (z3-mk-atmost context (1- (length args)) array k))))
          ((list* (sym-name atleast) args)
           (unless (consp (cdr args)) (error "atmost requires at least 2 arguments"))
           (let ((k (car (last args))))
             (unless (and (integerp k) (>= k 0))
               (error "atmost requires that the last argument is a positive integer"))
-            (with-foreign-array (array z3-c-types::Z3_ast (butlast args) (convert-to-ast-fn context arg env))
+            (with-foreign-array (array z3-c-types::Z3_ast (butlast args) :elt-fn #'(lambda (arg) (convert-to-ast-fn context arg env)))
                                 (z3-mk-atleast context (1- (length args)) array k))))
          ((list* op args)
           (multiple-value-bind (op-fn exists?)
@@ -548,10 +548,10 @@ the default value may be insufficient, so in such cases one is advised to change
   (let ((ctx (or context *default-context*)))
     (make-instance 'ast-vector
                    :handle
-                   (with-foreign-arrays ((sort-names z3-c-types::Z3_symbol sorts (z3-get-sort-name ctx arg))
-                                         (z3-sorts z3-c-types::Z3_sort sorts arg)
-                                         (decl-names z3-c-types::Z3_symbol decls (z3-get-decl-name ctx arg))
-                                         (z3-decls z3-c-types::Z3_func_decl decls arg))
+                   (with-foreign-arrays ((sort-names z3-c-types::Z3_symbol sorts :elt-fn #'(lambda (arg) (z3-get-sort-name ctx arg)))
+                                         (z3-sorts z3-c-types::Z3_sort sorts)
+                                         (decl-names z3-c-types::Z3_symbol decls :elt-fn #'(lambda (arg) (z3-get-decl-name ctx arg)))
+                                         (z3-decls z3-c-types::Z3_func_decl decls))
                                         (z3-parse-smtlib2-string ctx filename
                                                                (length sorts) sort-names z3-sorts
                                                                (length decls) decl-names z3-decls))
@@ -568,10 +568,10 @@ the default value may be insufficient, so in such cases one is advised to change
   (let ((ctx (or context *default-context*)))
     (make-instance 'ast-vector
                    :handle
-                   (with-foreign-arrays ((sort-names z3-c-types::Z3_symbol sorts (z3-get-sort-name ctx arg))
-                                         (z3-sorts z3-c-types::Z3_sort sorts arg)
-                                         (decl-names z3-c-types::Z3_symbol decls (z3-get-decl-name ctx arg))
-                                         (z3-decls z3-c-types::Z3_func_decl decls arg))
+                   (with-foreign-arrays ((sort-names z3-c-types::Z3_symbol sorts :elt-fn #'(lambda (arg) (z3-get-sort-name ctx arg)))
+                                         (z3-sorts z3-c-types::Z3_sort sorts)
+                                         (decl-names z3-c-types::Z3_symbol decls :elt-fn #'(lambda (arg) (z3-get-decl-name ctx arg)))
+                                         (z3-decls z3-c-types::Z3_func_decl decls))
                                         (z3-parse-smtlib2-file ctx filename
                                                                (length sorts) sort-names z3-sorts
                                                                (length decls) decl-names z3-decls))

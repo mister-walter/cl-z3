@@ -28,7 +28,7 @@ declarations into a function declaration alist for internal use."
 (declaim (ftype (function (symbol list (or symbol cons) context) (values func-decl &optional)) make-fn-decl))
 (defun make-fn-decl (name domain range context)
   "Given a name, a list of domain sort specifiers, and a range sort specifier, create an uninterpreted func-decl with that name and signature."
-  (with-foreign-array (domain-sorts-array z3-c-types::Z3_sort domain (get-sort arg context))
+  (with-foreign-array (domain-sorts-array z3-c-types::Z3_sort domain :elt-fn #'(lambda (arg) (get-sort arg context)))
                       (make-instance 'func-decl
                                      :handle (z3-mk-func-decl context
                                                               (z3-mk-string-symbol context (symbol-name name))

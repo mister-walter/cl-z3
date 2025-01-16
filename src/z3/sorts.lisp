@@ -309,7 +309,7 @@ represented as an uninterpreted function.
       exists?)))
 
 (defun get-tuple-fields (sort app context)
-  "Given a application corresponding to the construction of a tuple value, return the AST values of the fields of the"
+  "Given a application corresponding to the construction of a tuple value, return the AST values of the fields of the tuple."
   (let* ((sort-name (intern (sort-name sort context) :z3-sort)))
     (multiple-value-bind (metadata exists?)
         (gethash sort-name *tuple-sort-metadata*)
@@ -320,15 +320,6 @@ represented as an uninterpreted function.
             (t (loop for name in (tuple-sort-metadata-field-names metadata)
                      for i below (length (tuple-sort-metadata-field-names metadata))
                      collect (cons name (z3-get-app-arg context app i))))))))
-
-(defmacro with-foreign-array-from-list (name array-ty list &rest body)
-  `(let ((l ,list))
-     (cffi:with-foreign-object
-      (,name ',array-ty (length l))
-      (loop for elt in l
-            for i below (length l)
-            do (setf (cffi:mem-aref ,name ',array-ty i) elt))
-      ,@body)))
 
 (defun construct-tuple-fn (tuple-name values context)
   "Make an AST node that constructs a value of the given tuple with the given field values.
@@ -341,8 +332,8 @@ represented as an uninterpreted function.
           ((not (equal (length values) (length (tuple-sort-metadata-field-names metadata))))
            (error "Incorrect number of arguments provided to constructor for ~S: ~S provided, ~S required."
                   tuple-name (length values) (length (tuple-sort-metadata-field-names metadata))))
-          (t (with-foreign-array-from-list values-array z3-c-types::Z3_ast values
-                                           (z3-mk-app context (tuple-sort-metadata-constructor metadata) (length values) values-array))))))
+          (t (with-foreign-array (values-array z3-c-types::Z3_ast values)
+               (z3-mk-app context (tuple-sort-metadata-constructor metadata) (length values) values-array))))))
 
 ;; TODO why do we take in context?
 (defun get-tuple-field-accessor-decl-fn (tuple-name field-name context)
@@ -356,6 +347,5 @@ represented as an uninterpreted function.
 
 (defun construct-tuple-field-accessor-fn (tuple-name field-name tuple-value context)
   "Make an AST node that accesses the given field of the given tuple-value."
-  (with-foreign-array-from-list args-array z3-c-types::Z3_ast
-                                (list tuple-value)
-                                (z3-mk-app context (get-tuple-field-accessor-decl-fn tuple-name field-name context) 1 args-array)))
+  (with-foreign-array (args-array z3-c-types::Z3_ast (list tuple-value))
+    (z3-mk-app context (get-tuple-field-accessor-decl-fn tuple-name field-name context) 1 args-array)))

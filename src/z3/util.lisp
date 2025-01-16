@@ -1,13 +1,16 @@
 (in-package :z3)
 
-;; Create a C array over elements of the given type and with the given length
-(defmacro with-foreign-array ((array-var-name array-ty lisp-list ith-val &key (elt-var 'arg)) &body body)
+;; Create a C array from the given Common Lisp list.
+;; If provided, elt-fn is a function to apply to each element of the
+;; Common Lisp list before assigning the result to the appropriate
+;; element of the C array.
+(defmacro with-foreign-array ((array-var-name array-ty lisp-list &key (elt-fn '#'identity)) &body body)
   `(let ((array-len (length ,lisp-list)))
      (cffi:with-foreign-object
       (,array-var-name ',array-ty array-len)
-      (loop for ,elt-var in ,lisp-list
+      (loop for elt in ,lisp-list
             for i upto (1- array-len)
-            do (setf (cffi:mem-aref ,array-var-name ',array-ty i) ,ith-val))
+            do (setf (cffi:mem-aref ,array-var-name ',array-ty i) (funcall ,elt-fn elt)))
       ,@body)))
 
 (defmacro with-foreign-arrays (array-specs &body body)

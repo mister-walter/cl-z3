@@ -4,6 +4,8 @@
 (ql:quickload :lisp-z3)
 |#
 
+;; SPDX-FileCopyrightText: Copyright (c) 2020 Andrew T. Walter <me@atwalter.com>
+;; SPDX-License-Identifier: MIT
 (in-package :z3-c)
 
 (defmacro defcfun? (name &rest args)

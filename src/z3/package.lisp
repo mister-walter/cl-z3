@@ -1,3 +1,5 @@
+;; SPDX-FileCopyrightText: Copyright (c) 2020 Andrew T. Walter <me@atwalter.com>
+;; SPDX-License-Identifier: MIT
 (defpackage #:z3-sort
   (:documentation "A package for all Z3 sort names"))
 

@@ -1,3 +1,5 @@
+;; SPDX-FileCopyrightText: Copyright (c) 2020 Andrew T. Walter <me@atwalter.com>
+;; SPDX-License-Identifier: MIT
 (defpackage #:z3-c-types
   (:use #:cffi)
   (:import-from #:cl #:in-package)

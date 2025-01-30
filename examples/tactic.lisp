@@ -1,3 +1,5 @@
+;; SPDX-FileCopyrightText: Copyright (c) 2020 Andrew T. Walter <me@atwalter.com>
+;; SPDX-License-Identifier: MIT
 (load "try-load-quicklisp.lisp")
 (pushnew (truename "../") ql:*local-project-directories*)
 (ql:register-local-projects)

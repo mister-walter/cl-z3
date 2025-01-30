@@ -1,3 +1,5 @@
+;; SPDX-FileCopyrightText: Copyright (c) 2020 Andrew T. Walter <me@atwalter.com>
+;; SPDX-License-Identifier: MIT
 (in-package :z3)
 
 ;; We create these classes so that we can catch cases where the user

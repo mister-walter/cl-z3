@@ -1,3 +1,5 @@
+;; SPDX-FileCopyrightText: Copyright (c) 2020 Andrew T. Walter <me@atwalter.com>
+;; SPDX-License-Identifier: MIT
 (in-package "ACL2S")
 (include-book "tools/include-raw" :dir :system)
 (defttag :z3)

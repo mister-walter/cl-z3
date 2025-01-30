@@ -1,3 +1,5 @@
+;; SPDX-FileCopyrightText: Copyright (c) 2020 Andrew T. Walter <me@atwalter.com>
+;; SPDX-License-Identifier: MIT
 (in-package :z3)
 
 ;; This pattern allows one to match against a symbol by name only, ignoring symbol packages.

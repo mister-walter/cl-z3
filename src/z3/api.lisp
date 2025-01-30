@@ -188,12 +188,14 @@ any Z3 declarations or assertions that occurred between the relevant
   `(declare-const-fn ',name ',sort))
 
 (defun declare-fun-fn (name param-sorts res-sort &optional solver)
-  (let* ((slv (or solver *default-solver*))
-         (ctx (get-context slv))
-         (new-vars (setup-env `((,name . (:fn ,param-sorts ,res-sort))) (solver-env slv) ctx)))
-    (unless new-vars
-      (warn "Variable ~a was already declared with sort ~a." name sort))
-    name))
+  (let ((slv (or solver *default-solver*)))
+    (if (endp param-sorts)
+        (declare-const-fn name res-sort slv)
+      (let* ((ctx (get-context slv))
+             (new-vars (setup-env `((,name . (:fn ,param-sorts ,res-sort))) (solver-env slv) ctx)))
+        (unless new-vars
+          (warn "Variable ~a was already declared with sort ~a." name sort))
+        name))))
 
 (defmacro declare-fun (name param-sorts res-sort)
   (unless (listp param-sorts)
@@ -322,17 +324,17 @@ Returns either :SAT, :UNSAT or :UNKNOWN."
       (:L_FALSE :UNSAT) ;; assertions are not satisfiable (a proof may be generated)
       (:L_UNDEF :UNKNOWN)))) ;; get_model may succeed but the model may not satisfy the assertions
 
-(defun eval-under-model-fn (stmt model solver)
+(defun eval-under-model-fn (stmt model solver completion)
   (let* ((ctx (get-context solver))
          (ast (convert-to-ast stmt (solver-env solver) ctx)))
     (cffi:with-foreign-object (res-ptr 'z3-c-types::Z3_ast)
-      (let ((success? (z3-model-eval ctx model ast t res-ptr)))
+      (let ((success? (z3-model-eval ctx model ast completion res-ptr)))
         (if success?
             (ast-to-value (make-instance 'ast :handle (cffi:mem-ref res-ptr 'z3-c-types::Z3_ast) :context ctx) ctx)
             (error "Evaluating the given statement under the given model failed for some reason."))))))
 
-(defmacro eval-under-model (stmt &optional model solver)
+(defmacro eval-under-model (stmt &optional model solver (completion t))
   "Evaluate the given statement in the given model, under Z3 semantics.
 If no model is provided, will use the model produced by (get-model).
 If no solver is provided, will use *default-solver*."
-  `(eval-under-model-fn ',stmt (or ,model (get-model)) (or ,solver *default-solver*)))
+  `(eval-under-model-fn ',stmt (or ,model (get-model)) (or ,solver *default-solver*) ,completion))

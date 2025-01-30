@@ -16,12 +16,19 @@ These are symbols (or S-expressions) that fully specify a concrete Z3 sort.
 For example:
 - :int is the sort specifier for the unbounded integer sort produced
   by (z3-mk-int-sort ctx)
-- (:bv 5) is the sort specifier for 5-bit bitvector sort produced
-  by (z3-mk-bv-sort ctx 5)
+- (:seq :int) is the sort specifier for the sequence sort produced by
+  (z3-mk-seq-sort ctx (z3-mk-int-sort ctx))
+- (_ :bv 5) is the sort specifier for 5-bit bitvector sort produced by
+  (z3-mk-bv-sort ctx 5)
 
-Note that the :bv sort is a parametric sort - it takes in a single
-parameter, which corresponds to the length of the bitvector that the
-sort represents.
+Note that the :seq sort is a parametric sort - it takes in a single
+parameter, which corresponds to the sort of the elements that the
+sequence exists over.
+
+The :bv sort is an indexed sort - it takes in a single argument, which
+corresponds to the length of the bitvector that the sort
+represents. Indexed sorts must be denoted using the _ operator,
+followed by the name of the type and any arguments.
 
 Sort specifiers are (or contain) symbols in the keyword
 package. Internally we name sorts with symbols in the z3-sort

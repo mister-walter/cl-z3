@@ -1,5 +1,10 @@
 (in-package :z3-c-types)
 
+(define-foreign-type symbol-type ()
+  ()
+  (:actual-type Z3_symbol)
+  (:simple-parser sym))
+
 (define-foreign-type config-type ()
   ()
   (:actual-type Z3_config)
@@ -10,16 +15,6 @@
   (:actual-type Z3_context)
   (:simple-parser context))
 
-(define-foreign-type symbol-type ()
-  ()
-  (:actual-type Z3_symbol)
-  (:simple-parser sym))
-
-(define-foreign-type ast-type ()
-  ()
-  (:actual-type Z3_ast)
-  (:simple-parser ast))
-
 (define-foreign-type sort-type ()
   ()
   (:actual-type Z3_sort)
@@ -29,6 +24,11 @@
   ()
   (:actual-type Z3_func_decl)
   (:simple-parser func-decl))
+
+(define-foreign-type ast-type ()
+  ()
+  (:actual-type Z3_ast)
+  (:simple-parser ast))
 
 (define-foreign-type app-type ()
   ()
@@ -59,6 +59,11 @@
   ()
   (:actual-type Z3_param_descrs)
   (:simple-parser param-descrs))
+
+(define-foreign-type parser-context-type ()
+  ()
+  (:actual-type Z3_parser_context)
+  (:simple-parser parser-context))
 
 (define-foreign-type model-type ()
   ()

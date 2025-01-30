@@ -34,7 +34,15 @@
 
 (defmethod print-object ((obj z3-object-with-handle) stream)
   (print-unreadable-object (obj stream :type t)
-                           (format stream "~A" (z3-object-to-string obj))))
+    (let ((str-rep (z3-object-to-string obj)))
+      ;; Minor optimization: if the string representation of the
+      ;; object has only a single line, keep everything on a single
+      ;; line. Otherwise, print the object's representation starting
+      ;; on a new line.
+      ;; TODO: if multi-line, then indent each line appropriately.
+      (when (find #\Newline str-rep :test #'equal)
+        (terpri stream))
+      (format stream "~A" str-rep))))
 
 
 ;; The lifetimes of ast handles are determined by the scope level of solver-push and solver-pop

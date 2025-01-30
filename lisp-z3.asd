@@ -8,8 +8,7 @@
      (:cffi-grovel-file "z3-grovel")
      (:file "z3-c-types")
      (:file "z3-c")
-     (:file "z3-api")
-     ))
+     (:file "z3-api")))
 
 (defsystem "lisp-z3/z3"
   :depends-on ("lisp-z3/ffi" "trivia" "flexi-streams" "trivial-garbage" "parse-float")
@@ -30,14 +29,13 @@
    (:file "model")
    (:file "tactic")
    (:file "solver")
-   (:file "api")
-   ))
+   (:file "api")))
 
 (defsystem "lisp-z3"
+  :description "Common Lisp bindings for the Z3 SMT solver."
+  :author "Andrew T. Walter <me@atwalter.com>"
+  :license "MIT"
   :depends-on ("lisp-z3/z3")
-  :serial t
-  :components
-  ()
   :in-order-to ((test-op (test-op "lisp-z3/tests"))))
 
 (defsystem "lisp-z3/tests"

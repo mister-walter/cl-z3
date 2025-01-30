@@ -1,19 +1,34 @@
-#|
-(pushnew (truename "/home/drew/lisp-z3/") ql:*local-project-directories* )
-(ql:register-local-projects)
-(ql:quickload :lisp-z3/ffi)
-|#
-
 (in-package :z3-c)
 
 (define-foreign-library libz3
-  (:darwin (:or "libz3.4.8.dylib" "libz3.dylib"))
-  (:unix (:or "libz3.so.4.8" "libz3.so"))
+  (:darwin (:or "libz3.4.dylib" "libz3.dylib"))
+  (:unix (:or "libz3.so.4" "libz3.so"))
   (t (:default "libz3")))
 
-; Better to use environment variables; see z3-grovel.lisp
-; But on MacOs X this requires turning off some security settings (SIP)
+#|
 
-; (pushnew #P"/Users/pete/bin/lib/" *foreign-library-directories* :test #'equal)
+To help cffi find the Z3 library and header files, you may need to do
+the following:
+
+1) update your CPATH environment variable to include the directory
+where z3.h is included and
+
+2) update your LD_LIBRARY_PATH environment variable to include the
+directory where your libz3.dylib or libz3.so file is
+
+For example in my .bashrc file I have:
+
+export CPATH=$HOME/bin/include
+export LD_LIBRARY_PATH=$HOME/bin/lib
+
+Note that on recent version of macOS, the above may not work unless
+you disable SIP. If all else fails, you can directly modify the
+*foreign-library-directories* variable of cffi, by commenting out the
+below line and updating the path (the first argument) to point to the
+additional library path to search:
+
+|#
+
+;; (pushnew #P"/Users/pete/bin/lib/" *foreign-library-directories* :test #'equal)
 
 (use-foreign-library libz3)

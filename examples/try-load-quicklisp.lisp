@@ -6,11 +6,15 @@
 (defun error-load-failed ()
   (error "Tried to load Quicklisp from either the user-provided QUICKLISP_SETUP file or from the default Quicklisp setup location but this failed."))
 
+(defun portable-getenv (name)
+  #+sbcl (sb-unix::posix-getenv name)
+  #+ccl (ccl::getenv name))
+
 (let ((ql-load-attempted
       (cond
        ((member :quicklisp *features*) t)
-       ((sb-unix::posix-getenv "QUICKLISP_SETUP")
-        (load (sb-unix::posix-getenv "QUICKLISP_SETUP"))
+       ((portable-getenv "QUICKLISP_SETUP")
+        (load (portable-getenv "QUICKLISP_SETUP"))
         t)
        ((probe-file "~/quicklisp/setup.lisp")
         (load "~/quicklisp/setup.lisp")

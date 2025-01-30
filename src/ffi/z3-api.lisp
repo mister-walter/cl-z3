@@ -1,9 +1,3 @@
-#|
-(pushnew (truename "/home/drew/lisp-z3/") ql:*local-project-directories* )
-(ql:register-local-projects)
-(ql:quickload :lisp-z3)
-|#
-
 ;; SPDX-FileCopyrightText: Copyright (c) 2020 Andrew T. Walter <me@atwalter.com>
 ;; SPDX-License-Identifier: MIT
 (in-package :z3-c)
@@ -46,16 +40,6 @@ exists, and warns if it does not."
    Returns false if the parameter value does not exist."
   (param_id :string)
   (param_value :pointer))
-
-#|
-(defconstant +ptr-size+ (foreign-type-size :pointer))
-
-(with-foreign-pointer (ptr +ptr-size+)
-                      (let ((status (z3-global-param-get "timeout" ptr)))
-                        (if status
-                            (mem-ref ptr :string)
-                          (error "Unknown parameter"))))
-|#
 
 (defcfun "Z3_mk_config" config
   "Create a configuration object for the Z3 context object.

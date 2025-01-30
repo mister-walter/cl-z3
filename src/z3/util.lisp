@@ -26,15 +26,6 @@
   (loop for i below len
         collect (cffi:mem-aref arr ty i)))
 
-#|
-;; Write
-(defmacro write-to-foreign-array (foreign-array element-type length lisp-list set-ith &key (elt-var 'elt) (idx-var 'i))
-  `(loop for ,elt-var in ,lisp-list
-         for ,idx-var below ,length
-         do (setf (cffi:mem-aref ,foreign-array ,element-type ,idx-var)
-                  ,set-ith)))
-|#
-
 ;; Useful for testing.
 (defmacro expect-error (&rest forms)
   `(handler-case (progn ,@forms)

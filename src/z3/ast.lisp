@@ -2,7 +2,7 @@
 ;; SPDX-License-Identifier: MIT
 (in-package :z3)
 
-(import 'z3-c-types::(Z3_ast))
+(import 'z3-c-types::Z3_ast)
 
 (defun env-has-fn? (name env)
   (multiple-value-bind

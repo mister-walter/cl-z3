@@ -14,13 +14,16 @@
 (import 'acl2s-interface-extras::itest?-query)
 
 ;; When we ask ACL2s, we don't get any counterexamples...
-(itest?-query 'acl2s::(implies (and (intp x) (intp y) (intp z) (intp a) (intp b)
-                                    (< x 100)
-                                    (< y 100)
-                                    (< z 100)
-                                    (< a 100)
-                                    (< b 100))
-                               (not (> (+ x y z a b) 490))))
+(itest?-query
+ (let ((*package* (find-package 'acl2s)))
+   (read-from-string
+    "(implies (and (intp x) (intp y) (intp z) (intp a) (intp b)
+                         (< x 100)
+                         (< y 100)
+                         (< z 100)
+                         (< a 100)
+                         (< b 100))
+                (not (> (+ x y z a b) 490)))")))
 
 ;; What if we ask Z3?
 (solver-init)
@@ -43,4 +46,6 @@
                        (< a 100)
                        (< b 100)
                        (> (+ x y z a b) 490))))
+;; We get (NIL T), indicating that the above returns `T` and no error
+;; occurred during evaluation.
 

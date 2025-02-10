@@ -5,7 +5,7 @@
 
 (pushnew (truename "../../") ql:*local-project-directories*)
 (ql:register-local-projects)
-(ql:quickload :lisp-z3)
+(ql:quickload :cl-z3)
 
 ;; We need to define these fns in a package that ACL2 knows about so
 ;; that they can be referenced in defun-bridge.

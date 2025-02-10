@@ -1,4 +1,4 @@
-(in-package #:lisp-z3/tests)
+(in-package #:cl-z3/tests)
 
 (defmacro is-sat-assignment (expr)
   `(progn

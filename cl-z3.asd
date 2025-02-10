@@ -1,4 +1,4 @@
-(defsystem "lisp-z3/ffi"
+(defsystem "cl-z3/ffi"
     :defsystem-depends-on ("cffi-grovel")
     :depends-on ("cffi")
     :serial t
@@ -10,8 +10,8 @@
      (:file "z3-c")
      (:file "z3-api")))
 
-(defsystem "lisp-z3/z3"
-  :depends-on ("lisp-z3/ffi" "trivia" "flexi-streams" "trivial-garbage" "parse-float")
+(defsystem "cl-z3/z3"
+  :depends-on ("cl-z3/ffi" "trivia" "flexi-streams" "trivial-garbage" "parse-float")
   :serial t
   :pathname "src/z3"
   :components
@@ -31,17 +31,17 @@
    (:file "solver")
    (:file "api")))
 
-(defsystem "lisp-z3"
+(defsystem "cl-z3"
   :description "Common Lisp bindings for the Z3 SMT solver."
   :author "Andrew T. Walter <me@atwalter.com>"
   :license "MIT"
-  :depends-on ("lisp-z3/z3")
-  :in-order-to ((test-op (test-op "lisp-z3/tests"))))
+  :depends-on ("cl-z3/z3")
+  :in-order-to ((test-op (test-op "cl-z3/tests"))))
 
-(defsystem "lisp-z3/tests"
-    :depends-on ("lisp-z3" "parachute")
+(defsystem "cl-z3/tests"
+    :depends-on ("cl-z3" "parachute")
     :pathname "test/"
     :components
     ((:file "package")
      (:file "tests" :depends-on ("package")))
-    :perform (test-op (o c) (symbol-call :parachute :test :lisp-z3/tests)))
+    :perform (test-op (o c) (symbol-call :parachute :test :cl-z3/tests)))

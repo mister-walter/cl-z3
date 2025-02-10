@@ -4,7 +4,7 @@
 (load "../try-load-quicklisp.lisp")
 (pushnew (truename "../../") ql:*local-project-directories*)
 (ql:register-local-projects)
-(ql:quickload :lisp-z3)
+(ql:quickload :cl-z3)
 
 (defpackage :z3-lengths
   (:use :cl :z3 :acl2s :acl2s-interface))

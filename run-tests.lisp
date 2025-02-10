@@ -1,5 +1,5 @@
 (load "~/quicklisp/setup.lisp")
 (pushnew (truename "./") ql:*local-project-directories*)
 (ql:register-local-projects)
-(ql:quickload :lisp-z3/tests)
-(asdf:test-system :lisp-z3)
+(ql:quickload :cl-z3/tests)
+(asdf:test-system :cl-z3)

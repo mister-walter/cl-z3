@@ -28,18 +28,20 @@ software. One could also try just installing `gcc` or `clang`.
 After getting Z3 installed, you should be able to run it through the
 command line. To test this, execute `z3 --version` in your terminal
 and verify that it reports something along the lines of `Z3 version
-4.8.12 - 64 bit` (your version or architecture may be different,
+4.13.4 - 64 bit` (your version or architecture may be different,
 that's OK).
+
+
 
 ### Installing the interface
 The easiest way to install and use this library is to clone this
-repository inside of your Quicklisp local-projects directory, which
-typically is located at ~/quicklisp/local-projects. I will refer to
+repository inside of your Quicklisp `local-projects` directory, which
+typically is located at `~/quicklisp/local-projects`. I will refer to
 this directory as <ql-local-projects> below.
 
 To test that everything has been installed properly, start SBCL inside
-the <ql-local-projects>/lisp-z3/examples/ directory and run the
-commands inside of the <ql-local-projects>/lisp-z3/examples/basic.lisp
+the `<ql-local-projects>/cl-z3/examples/` directory and run the
+commands inside of the `<ql-local-projects>/cl-z3/examples/basic.lisp`
 file. If no errors occur, then you're all set.
 
 ## Usage
@@ -49,7 +51,7 @@ it from Lisp using the following code, assuming that Quicklisp is
 already loaded:
 ```lisp
 (ql:register-local-projects)
-(ql:quickload :lisp-z3)
+(ql:quickload :cl-z3)
 ```
 
 The examples should provide a fairly good overview of various features

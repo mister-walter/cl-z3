@@ -3,7 +3,7 @@
 (load "try-load-quicklisp.lisp")
 (pushnew (truename "../") ql:*local-project-directories*)
 (ql:register-local-projects)
-(ql:quickload :lisp-z3)
+(ql:quickload :cl-z3)
 
 (in-package :z3)
 (solver-init)

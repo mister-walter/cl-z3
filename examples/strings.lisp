@@ -47,7 +47,7 @@
 (get-model)
 (solver-pop)
 
-;; Note the use of seq-at instead of seq-nth
+;; Note the use of seq.at instead of seq.nth
 (solver-push)
 (z3-assert
  (x :string)

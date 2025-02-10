@@ -28,8 +28,14 @@
 ;; let binding
 (get-model-as-assignment)
 
-;; As an example, let's check that the assertion expression really evaluates to true under the model Z3 found.
+;; As an example, let's check that the assertion expression really
+;; evaluates to true under the model Z3 found.
 (eval `(let ,(get-model-as-assignment) (and x (>= y 5))))
+
+;; We can also use the eval-under-model function, which interprets the
+;; given expression as a Z3 AST, evaluates it under the current model,
+;; and translates the result into a Lisp value.
+(eval-under-model (and x (>= y 5)))
 
 
 ;;;; SCOPES ;;;;

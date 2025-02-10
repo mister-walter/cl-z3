@@ -17,8 +17,8 @@
     (unless (and exists? (consp (car fn-entry)) (equal (caar fn-entry) :fn))
       (error "No function with name ~S is known" name))
     (let* ((decl (cdr fn-entry))
-           (arg-sorts-debug (second (car fn-entry)))
-           (return-sort-debug (third (car fn-entry))))
+           (arg-sorts-debug (second (car fn-entry))))
+           ;;(return-sort-debug (third (car fn-entry))))
       (unless (equal (length arg-sorts-debug) (length args)) (error "Incorrect number of arguments given for function ~S of type ~S" name (car fn-entry)))
       (with-foreign-array (array z3-c-types::Z3_ast args :elt-fn #'(lambda (arg) (convert-to-ast-fn ctx arg env)))
                           (z3-mk-app ctx decl (length args) array)))))
@@ -39,8 +39,6 @@
          ((list (sym-name unescaped-string) str)
           (assert (stringp str))
           (z3-mk-lstring context (length str) str))
-         ((list (sym-name fd-val) name val)
-          (finite-domain-value-to-ast name val context))
          ((list (sym-name enumval) name val)
           (enum-value-to-ast name val context))
          ((list* (sym-name tuple-val) tuple-name field-values)
@@ -453,8 +451,12 @@ the default value may be insufficient, so in such cases one is advised to change
 (defun algebraic-number-to-value (val)
   (ecase *ALGEBRAIC-NUMBER-CONVERT-MODE*
     (:float (algebraic-number-to-float val))
-    (:decimal (z3-get-numeral-decimal-string context handle *ALGEBRAIC-NUMBER-CONVERT-DECIMAL-PRECISION*))
-    (:root (z3-ast-to-string context handle))
+    (:decimal
+     (with-slots (handle context) val
+       (z3-get-numeral-decimal-string context handle *ALGEBRAIC-NUMBER-CONVERT-DECIMAL-PRECISION*)))
+    (:root
+     (with-slots (handle context) val
+       (z3-ast-to-string context handle)))
     (:agnum val)))
 
 (defun assert-app-decl-kind (ctx ast kind)

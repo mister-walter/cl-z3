@@ -108,10 +108,9 @@ any Z3 declarations or assertions that occurred between the relevant
 
 (defgeneric solver-reset-fn (slv)
   (:method ((slv solver))
-    (let ((ctx (get-context slv)))
-      (setf (solver-assertion-stack slv) '(()))
-      (setf (solver-env slv) (make-instance 'environment-stack))
-      (z3-solver-reset (get-context slv) slv)))
+    (setf (solver-assertion-stack slv) '(()))
+    (setf (solver-env slv) (make-instance 'environment-stack))
+    (z3-solver-reset (get-context slv) slv))
   (:method ((slv optimizer))
     (error "Z3 does not provide C API support for resetting an optimizer.")))
 
@@ -154,6 +153,7 @@ any Z3 declarations or assertions that occurred between the relevant
     (loop for (var-name . nil) in processed-var-specs
           do (multiple-value-bind (entry exists?)
                (gethash var-name ht)
+               (declare (ignore entry))
                (when exists?
                  (error "Variable ~a specified multiple times in the same assert form!" var-name))
                (setf (gethash var-name ht) t)))
@@ -189,7 +189,7 @@ any Z3 declarations or assertions that occurred between the relevant
          (ctx (get-context slv))
          (new-vars (setup-env `((,name . ,sort)) (solver-env slv) ctx)))
     (unless new-vars
-      (warn "Variable ~a was already declared with sort ~a." name sort))
+      (warn "Variable ~a was already declared with sort ~a." name (env-get name (solver-env slv))))
     name))
 
 (defmacro declare-const (name sort)
@@ -202,7 +202,7 @@ any Z3 declarations or assertions that occurred between the relevant
       (let* ((ctx (get-context slv))
              (new-vars (setup-env `((,name . (:fn ,param-sorts ,res-sort))) (solver-env slv) ctx)))
         (unless new-vars
-          (warn "Variable ~a was already declared with sort ~a." name sort))
+          (warn "Variable ~a was already declared with sort ~a." name (env-get name (solver-env slv))))
         name))))
 
 (defmacro declare-fun (name param-sorts res-sort)
@@ -330,7 +330,8 @@ Returns either :SAT, :UNSAT or :UNKNOWN."
     (match (solver-check slv)
       (:L_TRUE :SAT) ;; assertions are satisfiable (a model may be generated)
       (:L_FALSE :UNSAT) ;; assertions are not satisfiable (a proof may be generated)
-      (:L_UNDEF :UNKNOWN)))) ;; get_model may succeed but the model may not satisfy the assertions
+      (:L_UNDEF :UNKNOWN) ;; get_model may succeed but the model may not satisfy the assertions
+      (otherwise (error "Unexpected result of solver-check: ~a" (solver-check slv))))))
 
 (defun eval-under-model-fn (stmt model solver completion)
   (let* ((ctx (get-context solver))

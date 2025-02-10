@@ -134,7 +134,7 @@
     (z3-model-inc-ref context handle)
     (tg:finalize obj (lambda () (z3-model-dec-ref context handle)))))
 
-(defstruct environment-entry ()
+(defstruct environment-entry
   (tbl (make-hash-table)))
 
 (defmethod print-object ((entry environment-entry) stream)

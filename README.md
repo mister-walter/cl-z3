@@ -1,7 +1,11 @@
 # Lisp-Z3 Interface
 
-This library provides an interface through which one can use the Z3
-SMT solver from inside of Common Lisp.
+This library provides an interface through which one can use the
+[Z3](https://github.com/Z3Prover/z3/) Satisfiability Modulo Theories
+(SMT) solver from inside of Common Lisp. In short, this interface
+allows one to leverage Z3's ability to solve constraints involving
+variables over numbers, strings, bitvectors, uninterpreted functions,
+and more, including optimization problems.
 
 ## Setup
 

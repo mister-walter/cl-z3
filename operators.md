@@ -3,10 +3,10 @@
 ## Sorts
 - `:bool`: Boolean
 - `:int`: arbitrary-precision integer
-- `(:bv <n>)`: a bitvector of length `n`
+- `(_ :bv <n>)`: a bitvector of length `n`
 - `(:seq <ty>)`: a sequence with elements of type `ty`
 - `(:set <ty>)`: a set with elements of type `ty`
-- `:string`: shorthand for `(:seq (:bv 8))` (a sequence of 8-bit values, e.g. ASCII characters)
+- `:string`: shorthand for `(:seq (_ :bv 8))` (a sequence of 8-bit values, e.g. ASCII characters)
 - `(:regex <seq-ty>)`: a regular expression over the sequence type `seq-ty`
 - `(:array <dom> <rng>)`: an array with domain `dom` and range `rng`
 - `(:fn (<dom1>, ..., <domn>) <rng>)`: a function with domain `dom1 x ... x domn` and range `rng`

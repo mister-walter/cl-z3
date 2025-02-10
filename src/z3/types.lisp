@@ -359,14 +359,3 @@
   (make-instance 'algebraic-number
                  :context context
                  :handle handle))
-
-;; For now, we simply turn the algebraic number into a double. It would
-;; be more convenient to use z3-get-numeral-double, but this seems to
-;; produce an invalid argument error whenever the value wouldn't fit
-;; precisely in a double. This is fair behavior, but probably not what
-;; we want here (as the value may be irrational).
-(defmethod algebraic-number-to-float ((obj algebraic-number))
-  (with-slots (handle context) obj
-    (let* ((res (z3-get-numeral-decimal-string context handle *ALGEBRAIC-NUMBER-CONVERT-DECIMAL-PRECISION*))
-           (len (length res)))
-      (values (parse-float::parse-float res :end (- len 2))))))

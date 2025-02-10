@@ -448,6 +448,17 @@ the default value may be insufficient, so in such cases one is advised to change
 (defparameter *ALGEBRAIC-NUMBER-CONVERT-DECIMAL-PRECISION* 15
   "The number of decimal places to include when converting algebraic numbers to floats.")
 
+;; For now, we simply turn the algebraic number into a double. It would
+;; be more convenient to use z3-get-numeral-double, but this seems to
+;; produce an invalid argument error whenever the value wouldn't fit
+;; precisely in a double. This is fair behavior, but probably not what
+;; we want here (as the value may be irrational).
+(defmethod algebraic-number-to-float ((obj algebraic-number))
+  (with-slots (handle context) obj
+    (let* ((res (z3-get-numeral-decimal-string context handle *ALGEBRAIC-NUMBER-CONVERT-DECIMAL-PRECISION*))
+           (len (length res)))
+      (values (parse-float::parse-float res :end (- len 2))))))
+
 (defun algebraic-number-to-value (val)
   (ecase *ALGEBRAIC-NUMBER-CONVERT-MODE*
     (:float (algebraic-number-to-float val))

@@ -104,11 +104,16 @@ any Z3 declarations or assertions that occurred between the relevant
   (solver-pop-fn (or solver *default-solver*) n))
 
 (defun solver-reset (&optional solver)
-  (let* ((slv (or solver *default-solver*))
-         (ctx (get-context slv)))
-    (setf (solver-assertion-stack slv) '(()))
-    (setf (solver-env slv) (make-instance 'environment-stack))
-    (z3-solver-reset ctx slv)))
+  (solver-reset-fn (or solver *default-solver*)))
+
+(defgeneric solver-reset-fn (slv)
+  (:method ((slv solver))
+    (let ((ctx (get-context slv)))
+      (setf (solver-assertion-stack slv) '(()))
+      (setf (solver-env slv) (make-instance 'environment-stack))
+      (z3-solver-reset (get-context slv) slv)))
+  (:method ((slv optimizer))
+    (error "Z3 does not provide C API support for resetting an optimizer.")))
 
 (defun print-solver (&optional solver)
   (let* ((slv (or solver *default-solver*)))

@@ -7,7 +7,7 @@
 
 (defpackage :z3-records
   (:use :cl :z3)
-  (:import-from :z3 :expect-error :tuple-get :tuple-val))
+  (:import-from :z3 :expect-error))
 
 (in-package :z3-records)
 

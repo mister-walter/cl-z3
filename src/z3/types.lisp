@@ -237,10 +237,9 @@
 ;; handle value.
 (defmethod initialize-instance :after ((obj solver) &key)
   (with-slots (handle context) obj
-    (if handle
-        (progn (z3-solver-inc-ref context handle)
-               (tg:finalize obj (lambda () (z3-solver-dec-ref context handle))))
-      (warn "Not incrementing reference count of the solver object because its handle is set to nil."))))
+    (when handle
+      (progn (z3-solver-inc-ref context handle)
+             (tg:finalize obj (lambda () (z3-solver-dec-ref context handle)))))))
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
 (defclass optimizer (solver-optimize)
@@ -259,10 +258,9 @@
 ;; handle value.
 (defmethod initialize-instance :after ((obj optimizer) &key)
   (with-slots (handle context) obj
-    (if handle
-        (progn (z3-optimize-inc-ref context handle)
-               (tg:finalize obj (lambda () (z3-optimize-dec-ref context handle))))
-      (warn "Not incrementing reference count of the optimize object because its handle is set to nil."))))
+    (when handle
+      (progn (z3-optimize-inc-ref context handle)
+             (tg:finalize obj (lambda () (z3-optimize-dec-ref context handle)))))))
 
 
 

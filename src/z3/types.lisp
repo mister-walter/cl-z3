@@ -4,14 +4,16 @@
 
 (defclass config ()
   ((handle :initarg :handle
-           :initform (z3-mk-config))))
+           :initform (z3-mk-config)))
+  (:documentation "A Z3 configuration object."))
 
 (defmethod translate-to-foreign ((v config) (type z3-c-types::Z3_config))
   (slot-value v 'handle))
 
 (defclass context ()
   ((handle :initarg :handle
-           :initform (z3-mk-context (z3-mk-config)))))
+           :initform (z3-mk-context (z3-mk-config))))
+  (:documentation "Manages all other Z3 objects, needed for pretty much all calls to the Z3 API."))
 
 (defmethod translate-to-foreign ((v context) (type z3-c-types::Z3_context))
   (slot-value v 'handle))
@@ -21,13 +23,14 @@
    (context :initarg :context)))
 
 (defgeneric get-context (v)
-  (:documentation "Get a context object from another value")
+  (:documentation "Get the Z3 context for the given Z3 object.")
   (:method (v)
            (error "get-context unsupported for values of type ~S" (type-of v)))
   (:method ((v z3-object-with-handle))
            (slot-value v 'context)))
 
 (defgeneric z3-object-to-string (obj)
+  (:documentation "Convert the given Z3 object into a string.")
   (:method ((v z3-object-with-handle))
            (error "You must provide an implementation of the z3-object-to-string generic method for the type ~A" (type-of v))))
 
@@ -49,7 +52,9 @@
 
 ;; The lifetimes of ast handles are determined by the scope level of solver-push and solver-pop
 ;; i.e. an ast handle will remain valid until there is a call to solver-pop that takes the current scope below the level where the object was created
-(defclass ast (z3-object-with-handle) ())
+(defclass ast (z3-object-with-handle)
+  ()
+  (:documentation "A Z3 AST node."))
 
 (defmethod translate-to-foreign ((v ast) (type z3-c-types::Z3_ast))
   (slot-value v 'handle))
@@ -64,7 +69,9 @@
     (z3-ast-to-string context handle)))
 
 
-(defclass func-decl (z3-object-with-handle) ())
+(defclass func-decl (z3-object-with-handle)
+  ()
+  (:documentation "A Z3 function declaration. Contains the function's name, parameter sorts, and return sort."))
 
 (defmethod translate-to-foreign ((v func-decl) (type z3-c-types::Z3_func_decl))
   (slot-value v 'handle))
@@ -74,7 +81,9 @@
     (z3-func-decl-to-string context handle)))
 
 
-(defclass func-entry (z3-object-with-handle) ())
+(defclass func-entry (z3-object-with-handle)
+  ()
+  (:documentation "An entry in a function interpretation. Maps a particular argument tuple to a value."))
 
 (defmethod translate-to-foreign ((v func-entry) (type z3-c-types::Z3_func_entry))
   (slot-value v 'handle))
@@ -87,7 +96,9 @@
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
-(defclass func-interp (z3-object-with-handle) ())
+(defclass func-interp (z3-object-with-handle)
+  ()
+  (:documentation "An interpretation for a function. Contains some `func-entry`s as well as an `else` value."))
 
 (defmethod translate-to-foreign ((v func-interp) (type z3-c-types::Z3_func_interp))
   (slot-value v 'handle))
@@ -109,7 +120,9 @@
     (tg:finalize obj (lambda () (z3-func-interp-dec-ref context handle)))))
 
 
-(defclass z3-sort (z3-object-with-handle) ())
+(defclass z3-sort (z3-object-with-handle)
+  ()
+  (:documentation "A Z3 sort."))
 
 (defmethod translate-to-foreign ((v z3-sort) (type z3-c-types::Z3_sort))
   (slot-value v 'handle))
@@ -120,7 +133,9 @@
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
-(defclass model (z3-object-with-handle) ())
+(defclass model (z3-object-with-handle)
+  ()
+  (:documentation "A Z3 model representing an assignment to constants and functions."))
 
 (defmethod translate-to-foreign ((v model) (type z3-c-types::Z3_model))
   (slot-value v 'handle))
@@ -218,7 +233,8 @@
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
 (defclass solver (solver-optimize)
-  ())
+  ()
+  (:documentation "A Z3 solver object."))
 
 (defmethod translate-to-foreign ((v solver) (type z3-c-types::Z3_solver))
   (slot-value v 'handle))
@@ -243,7 +259,8 @@
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
 (defclass optimizer (solver-optimize)
-  ())
+  ()
+  (:documentation "A Z3 object that can perform optimization, similar to a solver."))
 
 (defmethod translate-to-foreign ((v optimizer) (type z3-c-types::Z3_optimize))
   (slot-value v 'handle))
@@ -265,7 +282,9 @@
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
-(defclass params (z3-object-with-handle) ())
+(defclass params (z3-object-with-handle)
+  ()
+  (:documentation "A set of assignments to Z3 parameters (options/configuration), which may be used in a variety of contexts."))
 
 (defmethod translate-to-foreign ((v params) (type z3-c-types::Z3_params))
   (slot-value v 'handle))
@@ -280,7 +299,9 @@
     (tg:finalize obj (lambda () (z3-params-dec-ref context handle)))))
 
 
-(defclass param-descrs (z3-object-with-handle) ())
+(defclass param-descrs (z3-object-with-handle)
+  ()
+  (:documentation "Descriptions for the set of parameters that may be used in a particular context, including names, documentation, types, and more."))
 
 (defmethod translate-to-foreign ((v param-descrs) (type z3-c-types::Z3_param_descrs))
   (slot-value v 'handle))
@@ -296,7 +317,9 @@
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
-(defclass statistics (z3-object-with-handle) ())
+(defclass statistics (z3-object-with-handle)
+  ()
+  (:documentation "Statistics regarding a solver."))
 
 (defmethod translate-to-foreign ((v statistics) (type z3-c-types::Z3_stats))
   (slot-value v 'handle))
@@ -312,7 +335,9 @@
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
-(defclass tactic (z3-object-with-handle) ())
+(defclass tactic (z3-object-with-handle)
+  ()
+  (:documentation "A strategy for performing solving or proof. Can be used to build custom solving approaches."))
 
 (defmethod translate-to-foreign ((v tactic) (type z3-c-types::Z3_tactic))
   (slot-value v 'handle))
@@ -328,7 +353,9 @@
 
 
 ;; NOTE: we need to manually increment/decrement reference counter for this type
-(defclass ast-vector (z3-object-with-handle) ())
+(defclass ast-vector (z3-object-with-handle)
+  ()
+  (:documentation "A vector of AST nodes."))
 
 (defmethod translate-to-foreign ((v ast-vector) (type z3-c-types::Z3_ast_vector))
   (slot-value v 'handle))
@@ -342,7 +369,9 @@
     (z3-ast-vector-inc-ref context handle)
     (tg:finalize obj (lambda () (z3-ast-vector-dec-ref context handle)))))
 
-(defclass algebraic-number (ast) ())
+(defclass algebraic-number (ast)
+  ()
+  (:documentation "An AST node representing an algebraic number."))
 
 (defparameter *ALGEBRAIC-NUMBER-PRINT-MODE* :decimal
   "Controls how algebraic numbers are displayed. Default is :decimal. The other option is :root.")

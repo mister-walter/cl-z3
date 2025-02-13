@@ -3,24 +3,48 @@
 (in-package :z3)
 
 (defun make-simple-solver (&optional context)
+  "Create a new incremental solver that will not apply any
+logic-specific tactics or change its behavior based on whether it is
+used incrementally or not. See `z3-mk-simple-solver` for more
+information."
   (let ((ctx (or context (make-instance 'context))))
     (make-instance 'solver
                    :handle (z3-mk-simple-solver ctx)
                    :context ctx)))
 
 (defun make-composite-solver (&optional context)
+  "Create a new solver that internally consists of both a
+non-incremental and an incremental solver. Which solver is used
+depends on whether the composite solver is used in a incremental
+way (e.g. `solver-push` or `solver-pop` are used, or the set of
+assertions is modified after a call to `check-sat`). See `z3-mk-solver`
+for more information."
   (let ((ctx (or context (make-instance 'context))))
     (make-instance 'solver
                    :handle (z3-mk-solver ctx)
                    :context ctx)))
 
+(defun make-solver-for-logic (logic &optional context)
+  "Create a new solver that is optimized for the logic with the given
+name. Note that this will fail silently if the given logic isn't known
+by Z3, creating the same solver as `make-simple-solver` in that case.
+See `z3-mk-solver-for-logic` for more information."
+  (let ((ctx (or context *default-context*)))
+    (make-instance 'solver
+                   :handle (z3-mk-solver-for-logic ctx (z3-mk-string-symbol ctx logic))
+                   :context ctx)))
+
 (defun make-solver-from-tactic (tactic &optional context)
+  "Create a new solver that will operate using the given tactic. The
+solver will not be incremental. See `z3-mk-solver-from-tactic` for more
+information."
   (let ((ctx (or context *default-context*)))
     (make-instance 'solver
                    :handle (z3-mk-solver-from-tactic ctx tactic)
                    :context ctx)))
 
 (defun make-optimizer (&optional context)
+  "Create a solver that is capable of performing optimization."
   (let ((ctx (or context (make-instance 'context))))
     (make-instance 'optimizer
                    :handle (z3-mk-optimize ctx)
@@ -69,6 +93,7 @@
                            :context (get-context slv))))
 
 (defun get-solver-stats (&optional solver)
+  "Get statistics from the given solver."
   (get-solver-stats-fn (or solver *default-solver*)))
 
 (defun set-params-fn (params solver)
@@ -79,6 +104,10 @@
       (z3-solver-set-params ctx solver params))))
 
 (defmacro set-params (settings &optional solver)
+  "Set some parameters on the given solver.
+See the output of `get-solver-help` for contain information regarding
+the name, meaning, default value, and set of acceptable values for
+each available parameter."
   `(let ((slv (or ,solver *default-solver*)))
      (set-params-fn (make-params ,settings) slv)))
 

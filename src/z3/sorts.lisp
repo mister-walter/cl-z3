@@ -108,7 +108,7 @@ represented as an uninterpreted function.
 ;; i.e. (z3-mk-int-sort ctx) will always return the same value for the same value of ctx (AFAIK unless ctx is reset)
 ;; (but in that case all pointers that we have into Z3 are invalid so ¯\_(ツ)_/¯)
 (defun get-sort (name context)
-  "Get the sort associated with a name"
+  "Get the sort associated with the given name."
   (match name
     ((type symbol)
      (multiple-value-bind (fn exists?)
@@ -208,6 +208,7 @@ represented as an uninterpreted function.
                           (enum-sort-metadata-sort (gethash (normalize-sort-name name) *enum-sort-metadata*))))))
 
 (defmacro register-enum-sort (name elements &optional context)
+  "Register an enum sort with the given name and elements in the given context."
   `(let ((ctx (or ,context *default-context*)))
      (register-enum-sort-fn ',name ',elements ctx)
      ',name))
@@ -272,7 +273,7 @@ represented as an uninterpreted function.
 (defvar *tuple-sort-metadata* (make-hash-table))
 
 (defun register-tuple-sort-fn (name fields ctx)
-  "Register an enum sort with the given name and elements in the given context."
+  "Register a tuple sort with the given name and fields in the given context."
   ;; fields should be an alist of symbol->sortlike
   (let ((n-fields (length fields)))
     (cffi:with-foreign-objects
@@ -305,6 +306,7 @@ represented as an uninterpreted function.
                           (tuple-sort-metadata-sort (gethash (normalize-sort-name name) *tuple-sort-metadata*))))))
 
 (defmacro register-tuple-sort (name fields &optional context)
+  "Register a tuple sort with the given name and fields in the given context."
   `(let ((ctx (or ,context *default-context*)))
      (register-tuple-sort-fn ',name ',fields ctx)
      ',name))

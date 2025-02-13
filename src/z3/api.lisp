@@ -30,7 +30,9 @@ declarations into a function declaration alist for internal use."
 ;; the model translation code.
 (declaim (ftype (function (symbol list (or symbol cons) context) (values func-decl &optional)) make-fn-decl))
 (defun make-fn-decl (name domain range context)
-  "Given a name, a list of domain sort specifiers, and a range sort specifier, create an uninterpreted func-decl with that name and signature."
+  "Given a name, a list of domain sort specifiers, and a range sort
+specifier, create an uninterpreted func-decl with that name and
+signature."
   (with-foreign-array (domain-sorts-array z3-c-types::Z3_sort domain :elt-fn #'(lambda (arg) (get-sort arg context)))
                       (make-instance 'func-decl
                                      :handle (z3-mk-func-decl context
@@ -104,6 +106,7 @@ any Z3 declarations or assertions that occurred between the relevant
   (solver-pop-fn (or solver *default-solver*) n))
 
 (defun solver-reset (&optional solver)
+  "Reset the solver, removing any assertions and emptying the stack."
   (solver-reset-fn (or solver *default-solver*)))
 
 (defgeneric solver-reset-fn (slv)
@@ -193,6 +196,7 @@ any Z3 declarations or assertions that occurred between the relevant
     name))
 
 (defmacro declare-const (name sort)
+  "Declare a Z3 constant with the given name and sort."
   `(declare-const-fn ',name ',sort))
 
 (defun declare-fun-fn (name param-sorts res-sort &optional solver)
@@ -206,6 +210,8 @@ any Z3 declarations or assertions that occurred between the relevant
         name))))
 
 (defmacro declare-fun (name param-sorts res-sort)
+  "Declare a Z3 function taking in parameters of the given sorts and
+returning values of the given sort."
   (unless (listp param-sorts)
     (error "The second argument of declare-fun must be a list of parameter sorts."))
   `(declare-fun-fn ',name ',param-sorts ',res-sort))
@@ -225,9 +231,10 @@ any Z3 declarations or assertions that occurred between the relevant
 (defmacro z3-assert (var-specs &optional (stmt nil stmt-provided?) solver)
   "Assert that the given statement holds in Z3. Any free variable
 occurring in the statement must be declared with its sort in
-`var-specs`, or have been declared in a previous z3-assert* that
-is still on the assertion stack. `var-specs` may be omitted in the
-case where no variables need to be declared."
+`var-specs`, or have been declared in a previous `z3-assert*`,
+`declare-const`, or `declare-fun` that is still on the assertion
+stack.`var-specs` may be omitted in the case where no variables need
+to be declared."
   (if stmt-provided?
       `(z3-assert-fn ',var-specs ',stmt ,solver)
     `(z3-assert-fn nil ',var-specs ,solver)))
@@ -247,9 +254,10 @@ case where no variables need to be declared."
 (defmacro z3-assert-soft (var-specs stmt weight &optional solver)
   "Assert that the given statement holds in Z3. Any free variable
 occurring in the statement must be declared with its sort in
-`var-specs`, or have been declared in a previous z3-assert* that
-is still on the assertion stack. `weight` should be a positive
-number representing the penalty for violating this constraint."
+`var-specs`, or have been declared in a previous `z3-assert*`,
+`declare-const`, or `declare-fun` that is still on the assertion stack.
+`weight` should be a positive number representing the penalty for
+violating this constraint."
   `(z3-assert-soft-fn ',var-specs ',stmt ',weight ,solver))
 
 (defun z3-optimize-minimize-fn (var-specs stmt &optional solver)
@@ -265,6 +273,7 @@ number representing the penalty for violating this constraint."
       (error (c) (loop for name in added-vars do (env-remove name (solver-env slv))) (error c)))))
 
 (defmacro optimize-minimize (var-specs stmt &optional solver)
+  "Add an objective function to be minimized."
   `(z3-optimize-minimize-fn ',var-specs ',stmt ,solver))
 
 (defun z3-optimize-maximize-fn (var-specs stmt &optional solver)
@@ -280,6 +289,7 @@ number representing the penalty for violating this constraint."
       (error (c) (loop for name in added-vars do (env-remove name (solver-env slv))) (error c)))))
 
 (defmacro optimize-maximize (var-specs stmt &optional solver)
+  "Add an objective function to be maximized."
   `(z3-optimize-maximize-fn ',var-specs ',stmt ,solver))
 
 (defgeneric get-model-fn (solver)
@@ -295,12 +305,13 @@ number representing the penalty for violating this constraint."
                             :context ctx))))
 
 (defun get-model (&optional solver)
-  "Get the Z3 model object for the last check-sat call. If that call
+  "Get the Z3 model object for the last `check-sat` call. If that call
 indicated that Z3 determined satisfiability, then the model will
 contain a satisfying assignment for the assertions in the global
-assertion stack.  If check-sat determined :UNKNOWN then a model may be
-available, but the provided assignment may not satisfy the assertions
-on the stack. Will invoke the error handler if no model is available."
+assertion stack.  If `check-sat` determined `:UNKNOWN` then a model
+may be available, but the provided assignment may not satisfy the
+assertions on the stack. Will invoke the error handler if no model is
+available."
   ;; TODO: in the unknown case we may want to get the model and see if
   ;; the assignment satisfies the assertions.
   (get-model-fn (or solver *default-solver*)))
@@ -310,7 +321,7 @@ on the stack. Will invoke the error handler if no model is available."
 get a satisfying assignment. Returns a (possibly empty) list of
 bindings corresponding to the model that Z3 generated. Will invoke the
 error handler if no model is available. If check-sat determined
-:UNKNOWN then a model may be available, but the provided assignment
+`:UNKNOWN` then a model may be available, but the provided assignment
 may not satisfy the assertions on the stack. Will invoke the error
 handler if no model is available."
   (let* ((solver (or solver *default-solver*))
@@ -325,7 +336,7 @@ handler if no model is available."
 (declaim (ftype (function (&optional (or solver optimizer)) (values (member :sat :unsat :unknown) &optional)) check-sat))
 (defun check-sat (&optional solver)
   "Ask Z3 to check satisfiability of the global assertion stack.
-Returns either :SAT, :UNSAT or :UNKNOWN."
+Returns either `:SAT`, `:UNSAT` or `:UNKNOWN`."
   (let ((slv (or solver *default-solver*)))
     (match (solver-check slv)
       (:L_TRUE :SAT) ;; assertions are satisfiable (a model may be generated)
@@ -344,6 +355,6 @@ Returns either :SAT, :UNSAT or :UNKNOWN."
 
 (defmacro eval-under-model (stmt &optional model solver (completion t))
   "Evaluate the given statement in the given model, under Z3 semantics.
-If no model is provided, will use the model produced by (get-model).
-If no solver is provided, will use *default-solver*."
+If no model is provided, will use the model produced by `get-model`.
+If no solver is provided, will use `*default-solver*`."
   `(eval-under-model-fn ',stmt (or ,model (get-model)) (or ,solver *default-solver*) ,completion))

@@ -1,546 +1,777 @@
 ;; SPDX-FileCopyrightText: Copyright (c) 2020 Andrew T. Walter <me@atwalter.com>
 ;; SPDX-License-Identifier: MIT
+
 (defpackage #:z3-c-types
+  (:documentation "Low-level Z3 types")
   (:use #:cffi)
   (:import-from #:cl #:in-package)
-  (:shadow #:sort #:optimize)
   (:export
+   #:Z3_symbol
    #:Z3_config
    #:Z3_context
-   #:Z3_symbol
-   #:Z3_ast
    #:Z3_sort
    #:Z3_func_decl
+   #:Z3_ast
    #:Z3_app
    #:Z3_pattern
+   #:Z3_model
    #:Z3_constructor
    #:Z3_constructor_list
    #:Z3_params
    #:Z3_param_descrs
-   #:Z3_model
+   #:Z3_goal
+   #:Z3_tactic
+   #:Z3_probe
+   #:Z3_stats
+   #:Z3_solver
+   #:Z3_solver_callback
+   #:Z3_ast_vector
+   #:Z3_ast_map
+   #:Z3_apply_result
    #:Z3_func_interp
    #:Z3_func_entry
    #:Z3_fixedpoint
    #:Z3_optimize
-   #:Z3_ast_vector
-   #:Z3_ast_map
-   #:Z3_goal
-   #:Z3_tactic
-   #:Z3_probe
-   #:Z3_apply_results
-   #:Z3_solver
-   #:Z3_solver_callback
-   #:Z3_stats
-   ;; Enums
-   #:lbool
-   #:symbol_kind
-   #:parameter_kind
-   #:sort_kind
-   #:ast_kind
-   #:decl_kind
-   #:param_kind
-   #:ast_print_mode
-   #:error_code
-   #:goal_prec
-   ;; Foreign types
-   #:config
-   #:context
-   #:sym
-   #:ast
-   #:sort
-   #:func-decl
-   #:app
-   #:pattern
-   #:constructor
-   #:constructor-list
-   #:params
-   #:param-descrs
-   #:model
-   #:func-interp
-   #:func-entry
-   #:fixedpoint
-   #:optimize
-   #:ast-vector
-   #:ast-map
-   #:goal
-   #:tactic
-   #:probe
-   #:apply-results
-   #:solver
-   #:solver-callback
-   #:stats
-   ))
+   #:Z3_rcf_num
+   #:Z3_lbool
+   #:Z3_symbol_kind
+   #:Z3_parameter_kind
+   #:Z3_sort_kind
+   #:Z3_ast_kind
+   #:Z3_decl_kind
+   #:Z3_param_kind
+   #:Z3_ast_print_mode
+   #:Z3_error_code
+   #:Z3_goal_prec
+))
 
 (defpackage #:z3-c
-  (:shadowing-import-from #:z3-c-types #:sort #:optimize)
+  (:documentation "Bound low-level Z3 C API functions.")
   (:use #:cl #:cffi #:z3-c-types)
-  (:export ;; automatically generated using gen-exports.lisp
-#:Z3-GLOBAL-PARAM-SET
-#:Z3-GLOBAL-PARAM-RESET-ALL
-#:Z3-GLOBAL-PARAM-GET
-#:Z3-MK-CONFIG
-#:Z3-DEL-CONFIG
-#:Z3-SET-PARAM-VALUE
-#:Z3-MK-CONTEXT
-#:Z3-DEL-CONTEXT
-#:Z3-UPDATE-PARAM-VALUE
-#:Z3-INTERRUPT
-#:Z3-MK-PARAMS
-#:Z3-PARAMS-INC-REF
-#:Z3-PARAMS-DEC-REF
-#:Z3-PARAMS-SET-BOOL
-#:Z3-PARAMS-SET-UINT
-#:Z3-PARAMS-SET-DOUBLE
-#:Z3-PARAMS-SET-SYMBOL
-#:Z3-PARAMS-TO-STRING
-#:Z3-PARAMS-VALIDATE
-#:Z3-PARAM-DESCRS-INC-REF
-#:Z3-PARAM-DESCRS-DEC-REF
-#:Z3-PARAM-DESCRS-GET-KIND
-#:Z3-PARAM-DESCRS-SIZE
-#:Z3-PARAM-DESCRS-GET-NAME
-#:Z3-PARAM-DESCRS-GET-DOCUMENTATION
-#:Z3-PARAM-DESCRS-TO-STRING
-#:Z3-MK-INT-SYMBOL
-#:Z3-MK-STRING-SYMBOL
-#:Z3-MK-UNINTERPRETED-SORT
-#:Z3-MK-BOOL-SORT
-#:Z3-MK-INT-SORT
-#:Z3-MK-REAL-SORT
-#:Z3-MK-BV-SORT
-#:Z3-MK-FINITE-DOMAIN-SORT
-#:Z3-MK-ARRAY-SORT
-#:Z3-MK-ARRAY-SORT-N
-#:Z3-MK-TUPLE-SORT
-#:Z3-MK-ENUMERATION-SORT
-#:Z3-MK-LIST-SORT
-#:Z3-MK-CONSTRUCTOR
-#:Z3-DEL-CONSTRUCTOR
-#:Z3-MK-DATATYPE
-#:Z3-MK-CONSTRUCTOR-LIST
-#:Z3-DEL-CONSTRUCTOR-LIST
-#:Z3-MK-DATATYPES
-#:Z3-QUERY-CONSTRUCTOR
-#:Z3-MK-FUNC-DECL
-#:Z3-MK-APP
-#:Z3-MK-CONST
-#:Z3-MK-FRESH-FUNC-DECL
-#:Z3-MK-FRESH-CONST
-#:Z3-ADD-REC-DEF
-#:Z3-MK-TRUE
-#:Z3-MK-FALSE
-#:Z3-MK-EQ
-#:Z3-MK-DISTINCT
-#:Z3-MK-NOT
-#:Z3-MK-ITE
-#:Z3-MK-IFF
-#:Z3-MK-IMPLIES
-#:Z3-MK-XOR
-#:Z3-MK-AND
-#:Z3-MK-OR
-#:Z3-MK-ADD
-#:Z3-MK-MUL
-#:Z3-MK-SUB
-#:Z3-MK-UNARY-MINUS
-#:Z3-MK-DIV
-#:Z3-MK-MOD
-#:Z3-MK-REM
-#:Z3-MK-POWER
-#:Z3-MK-LT
-#:Z3-MK-LE
-#:Z3-MK-GT
-#:Z3-MK-GE
-#:Z3-MK-DIVIDES
-#:Z3-MK-INT2REAL
-#:Z3-MK-REAL2INT
-#:Z3-MK-IS-INT
-#:Z3-MK-BVNOT
-#:Z3-MK-BVREDAND
-#:Z3-MK-BVREDOR
-#:Z3-MK-BVAND
-#:Z3-MK-BVOR
-#:Z3-MK-BVXOR
-#:Z3-MK-BVNAND
-#:Z3-MK-BVNOR
-#:Z3-MK-BVXNOR
-#:Z3-MK-BVNEG
-#:Z3-MK-BVADD
-#:Z3-MK-BVSUB
-#:Z3-MK-BVMUL
-#:Z3-MK-BVUDIV
-#:Z3-MK-BVSDIV
-#:Z3-MK-BVUREM
-#:Z3-MK-BVSMOD
-#:Z3-MK-BVULT
-#:Z3-MK-BVSLT
-#:Z3-MK-BVULE
-#:Z3-MK-BVSLE
-#:Z3-MK-BVUGE
-#:Z3-MK-BVSGE
-#:Z3-MK-BVUGT
-#:Z3-MK-BVSGT
-#:Z3-MK-CONCAT
-#:Z3-MK-EXTRACT
-#:Z3-MK-SIGN-EXT
-#:Z3-MK-ZERO-EXT
-#:Z3-MK-REPEAT
-#:Z3-MK-BVSHL
-#:Z3-MK-BVLSHR
-#:Z3-MK-BVASHR
-#:Z3-MK-ROTATE-LEFT
-#:Z3-MK-ROTATE-RIGHT
-#:Z3-MK-EXT-ROTATE-LEFT
-#:Z3-MK-EXT-ROTATE-RIGHT
-#:Z3-MK-INT2BV
-#:Z3-MK-BV2INT
-#:Z3-MK-BVADD-NO-OVERFLOW
-#:Z3-MK-BVADD-NO-UNDERFLOW
-#:Z3-MK-BVSUB-NO-OVERFLOW
-#:Z3-MK-BVSUB-NO-UNDERFLOW
-#:Z3-MK-BVSDIV-NO-OVERFLOW
-#:Z3-MK-BVNEG-NO-OVERFLOW
-#:Z3-MK-BVMUL-NO-OVERFLOW
-#:Z3-MK-BVMUL-NO-UNDERFLOW
-#:Z3-MK-SELECT
-#:Z3-MK-SELECT-N
-#:Z3-MK-STORE
-#:Z3-MK-STORE-N
-#:Z3-MK-CONST-ARRAY
-#:Z3-MK-MAP
-#:Z3-MK-ARRAY-DEFAULT
-#:Z3-MK-AS-ARRAY
-#:Z3-MK-SET-SORT
-#:Z3-MK-EMPTY-SET
-#:Z3-MK-FULL-SET
-#:Z3-MK-SET-ADD
-#:Z3-MK-SET-DEL
-#:Z3-MK-SET-UNION
-#:Z3-MK-SET-INTERSECT
-#:Z3-MK-SET-DIFFERENCE
-#:Z3-MK-SET-COMPLEMENT
-#:Z3-MK-SET-MEMBER
-#:Z3-MK-SET-SUBSET
-#:Z3-MK-ARRAY-EXT
-#:Z3-MK-NUMERAL
-#:Z3-MK-REAL
-#:Z3-MK-INT
-#:Z3-MK-UNSIGNED-INT
-#:Z3-MK-INT64
-#:Z3-MK-UNSIGNED-INT64
-#:Z3-MK-BV-NUMERAL
-#:Z3-MK-SEQ-SORT
-#:Z3-IS-SEQ-SORT
-#:Z3-GET-SEQ-SORT-BASIS
-#:Z3-MK-RE-SORT
-#:Z3-IS-RE-SORT
-#:Z3-GET-RE-SORT-BASIS
-#:Z3-MK-STRING-SORT
-#:Z3-IS-STRING-SORT
-#:Z3-MK-STRING
-#:Z3-MK-LSTRING
-#:Z3-IS-STRING
-#:Z3-GET-STRING
-#:Z3-GET-LSTRING
-#:Z3-MK-SEQ-EMPTY
-#:Z3-MK-SEQ-UNIT
-#:Z3-MK-SEQ-CONCAT
-#:Z3-MK-SEQ-PREFIX
-#:Z3-MK-SEQ-SUFFIX
-#:Z3-MK-SEQ-CONTAINS
-#:Z3-MK-STR-LT
-#:Z3-MK-STR-LE
-#:Z3-MK-SEQ-EXTRACT
-#:Z3-MK-SEQ-REPLACE
-#:Z3-MK-SEQ-AT
-#:Z3-MK-SEQ-NTH
-#:Z3-MK-SEQ-LENGTH
-#:Z3-MK-SEQ-INDEX
-#:Z3-MK-SEQ-LAST-INDEX
-#:Z3-MK-STR-TO-INT
-#:Z3-MK-INT-TO-STR
-#:Z3-MK-UBV-TO-STR
-#:Z3-MK-SBV-TO-STR
-#:Z3-MK-SEQ-TO-RE
-#:Z3-MK-SEQ-IN-RE
-#:Z3-MK-RE-PLUS
-#:Z3-MK-RE-STAR
-#:Z3-MK-RE-OPTION
-#:Z3-MK-RE-UNION
-#:Z3-MK-RE-CONCAT
-#:Z3-MK-RE-RANGE
-#:Z3-MK-RE-LOOP
-#:Z3-MK-RE-INTERSECT
-#:Z3-MK-RE-COMPLEMENT
-#:Z3-MK-RE-EMPTY
-#:Z3-MK-RE-FULL
-#:Z3-MK-LINEAR-ORDER
-#:Z3-MK-PARTIAL-ORDER
-#:Z3-MK-PIECEWISE-LINEAR-ORDER
-#:Z3-MK-TREE-ORDER
-#:Z3-MK-TRANSITIVE-CLOSURE
-#:Z3-MK-PATTERN
-#:Z3-MK-BOUND
-#:Z3-MK-FORALL
-#:Z3-MK-EXISTS
-#:Z3-MK-QUANTIFIER
-#:Z3-MK-QUANTIFIER-EX
-#:Z3-MK-FORALL-CONST
-#:Z3-MK-EXISTS-CONST
-#:Z3-MK-QUANTIFIER-CONST
-#:Z3-MK-QUANTIFIER-CONST-EX
-#:Z3-MK-LAMBDA
-#:Z3-MK-LAMBDA-CONST
-#:Z3-GET-SYMBOL-KIND
-#:Z3-GET-SYMBOL-INT
-#:Z3-GET-SYMBOL-STRING
-#:Z3-GET-SORT-NAME
-#:Z3-GET-SORT-ID
-#:Z3-SORT-TO-AST
-#:Z3-IS-EQ-SORT
-#:Z3-GET-SORT-KIND
-#:Z3-GET-BV-SORT-SIZE
-#:Z3-GET-FINITE-DOMAIN-SORT-SIZE
-#:Z3-GET-ARRAY-SORT-DOMAIN
-#:Z3-GET-ARRAY-SORT-RANGE
-#:Z3-GET-TUPLE-SORT-MK-DECL
-#:Z3-GET-TUPLE-SORT-NUM-FIELDS
-#:Z3-GET-TUPLE-SORT-FIELD-DECL
-#:Z3-GET-DATATYPE-SORT-NUM-CONSTRUCTORS
-#:Z3-GET-DATATYPE-SORT-CONSTRUCTOR
-#:Z3-GET-DATATYPE-SORT-RECOGNIZER
-#:Z3-GET-DATATYPE-SORT-CONSTRUCTOR-ACCESSOR
-#:Z3-GET-DATATYPE-UPDATE-FIELD
-#:Z3-GET-RELATION-ARITY
-#:Z3-GET-RELATION-COLUMN
-#:Z3-MK-ATMOST
-#:Z3-MK-ATLEAST
-#:Z3-MK-PBLE
-#:Z3-MK-PBGE
-#:Z3-MK-PBEQ
-#:Z3-FUNC-DECL-TO-AST
-#:Z3-IS-EQ-FUNC-DECL
-#:Z3-GET-FUNC-DECL-ID
-#:Z3-GET-DECL-NAME
-#:Z3-GET-DECL-KIND
-#:Z3-GET-DOMAIN-SIZE
-#:Z3-GET-DOMAIN
-#:Z3-GET-RANGE
-#:Z3-GET-DECL-NUM-PARAMETERS
-#:Z3-GET-DECL-PARAMETER-KIND
-#:Z3-GET-DECL-INT-PARAMETER
-#:Z3-GET-DECL-DOUBLE-PARAMETER
-#:Z3-GET-DECL-SYMBOL-PARAMETER
-#:Z3-GET-DECL-SORT-PARAMETER
-#:Z3-GET-DECL-AST-PARAMETER
-#:Z3-GET-DECL-FUNC-DECL-PARAMETER
-#:Z3-GET-DECL-RATIONAL-PARAMETER
-#:Z3-APP-TO-AST
-#:Z3-GET-APP-DECL
-#:Z3-GET-APP-NUM-ARGS
-#:Z3-GET-APP-ARG
-#:Z3-IS-EQ-AST
-#:Z3-GET-AST-ID
-#:Z3-GET-AST-HASH
-#:Z3-GET-SORT
-#:Z3-IS-WELL-SORTED
-#:Z3-GET-BOOL-VALUE
-#:Z3-GET-AST-KIND
-#:Z3-IS-APP
-#:Z3-IS-NUMERAL-AST
-#:Z3-IS-ALGEBRAIC-NUMBER
-#:Z3-TO-APP
-#:Z3-TO-FUNC-DECL
-#:Z3-GET-NUMERAL-STRING
-#:Z3-GET-NUMERAL-DECIMAL-STRING
-#:Z3-GET-NUMERAL-DOUBLE
-#:Z3-GET-NUMERATOR
-#:Z3-GET-DENOMINATOR
-#:Z3-GET-NUMERAL-SMALL
-#:Z3-GET-NUMERAL-INT
-#:Z3-GET-NUMERAL-UINT
-#:Z3-GET-NUMERAL-UINT64
-#:Z3-GET-NUMERAL-INT64
-#:Z3-GET-NUMERAL-RATIONAL-INT64
-#:Z3-GET-ALGEBRAIC-NUMBER-LOWER
-#:Z3-GET-ALGEBRAIC-NUMBER-UPPER
-#:Z3-PATTERN-TO-AST
-#:Z3-GET-PATTERN-NUM-TERMS
-#:Z3-GET-PATTERN
-#:Z3-GET-INDEX-VALUE
-#:Z3-IS-QUANTIFIER-FORALL
-#:Z3-IS-QUANTIFIER-EXISTS
-#:Z3-IS-LAMBDA
-#:Z3-GET-QUANTIFIER-WEIGHT
-#:Z3-GET-QUANTIFIER-NUM-PATTERNS
-#:Z3-GET-QUANTIFIER-PATTERN-AST
-#:Z3-GET-QUANTIFIER-NUM-NO-PATTERNS
-#:Z3-GET-QUANTIFIER-NO-PATTERN-AST
-#:Z3-GET-QUANTIFIER-NUM-BOUND
-#:Z3-GET-QUANTIFIER-BOUND-NAME
-#:Z3-GET-QUANTIFIER-BOUND-SORT
-#:Z3-GET-QUANTIFIER-BODY
-#:Z3-SIMPLIFY
-#:Z3-SIMPLIFY-EX
-#:Z3-SIMPLIFY-GET-HELP
-#:Z3-SIMPLIFY-GET-PARAM-DESCRS
-#:Z3-UPDATE-TERM
-#:Z3-SUBSTITUTE
-#:Z3-SUBSTITUTE-VARS
-#:Z3-TRANSLATE
-#:Z3-MK-MODEL
-#:Z3-MODEL-INC-REF
-#:Z3-MODEL-DEC-REF
-#:Z3-MODEL-EVAL
-#:Z3-MODEL-GET-CONST-INTERP
-#:Z3-MODEL-HAS-INTERP
-#:Z3-MODEL-GET-FUNC-INTERP
-#:Z3-MODEL-GET-NUM-CONSTS
-#:Z3-MODEL-GET-CONST-DECL
-#:Z3-MODEL-GET-NUM-FUNCS
-#:Z3-MODEL-GET-FUNC-DECL
-#:Z3-MODEL-GET-NUM-SORTS
-#:Z3-MODEL-GET-SORT
-#:Z3-MODEL-GET-SORT-UNIVERSE
-#:Z3-MODEL-TRANSLATE
-#:Z3-IS-AS-ARRAY
-#:Z3-GET-AS-ARRAY-FUNC-DECL
-#:Z3-ADD-FUNC-INTERP
-#:Z3-ADD-CONST-INTERP
-#:Z3-FUNC-INTERP-INC-REF
-#:Z3-FUNC-INTERP-DEC-REF
-#:Z3-FUNC-INTERP-GET-NUM-ENTRIES
-#:Z3-FUNC-INTERP-GET-ENTRY
-#:Z3-FUNC-INTERP-GET-ELSE
-#:Z3-FUNC-INTERP-SET-ELSE
-#:Z3-FUNC-INTERP-GET-ARITY
-#:Z3-FUNC-INTERP-ADD-ENTRY
-#:Z3-FUNC-ENTRY-INC-REF
-#:Z3-FUNC-ENTRY-DEC-REF
-#:Z3-FUNC-ENTRY-GET-VALUE
-#:Z3-FUNC-ENTRY-GET-NUM-ARGS
-#:Z3-FUNC-ENTRY-GET-ARG
-#:Z3-OPEN-LOG
-#:Z3-APPEND-LOG
-#:Z3-CLOSE-LOG
-#:Z3-TOGGLE-WARNING-MESSAGES
-#:Z3-SET-AST-PRINT-MODE
-#:Z3-AST-TO-STRING
-#:Z3-PATTERN-TO-STRING
-#:Z3-SORT-TO-STRING
-#:Z3-FUNC-DECL-TO-STRING
-#:Z3-MODEL-TO-STRING
-#:Z3-BENCHMARK-TO-SMTLIB-STRING
-#:Z3-PARSE-SMTLIB2-STRING
-#:Z3-PARSE-SMTLIB2-FILE
-#:Z3-EVAL-SMTLIB2-STRING
-#:Z3-GET-ERROR-CODE
-#:Z3-SET-ERROR-HANDLER
-#:Z3-SET-ERROR
-#:Z3-GET-ERROR-MSG
-#:Z3-GET-VERSION
-#:Z3-GET-FULL-VERSION
-#:Z3-ENABLE-TRACE
-#:Z3-DISABLE-TRACE
-#:Z3-RESET-MEMORY
-#:Z3-FINALIZE-MEMORY
-#:Z3-MK-GOAL
-#:Z3-GOAL-INC-REF
-#:Z3-GOAL-DEC-REF
-#:Z3-GOAL-PRECISION
-#:Z3-GOAL-ASSERT
-#:Z3-GOAL-INCONSISTENT
-#:Z3-GOAL-DEPTH
-#:Z3-GOAL-RESET
-#:Z3-GOAL-SIZE
-#:Z3-GOAL-FORMULA
-#:Z3-GOAL-NUM-EXPRS
-#:Z3-GOAL-IS-DECIDED-SAT
-#:Z3-GOAL-IS-DECIDED-UNSAT
-#:Z3-GOAL-TRANSLATE
-#:Z3-GOAL-CONVERT-MODEL
-#:Z3-GOAL-TO-STRING
-#:Z3-GOAL-TO-DIMACS-STRING
-#:Z3-MK-TACTIC
-#:Z3-TACTIC-INC-REF
-#:Z3-TACTIC-DEC-REF
-#:Z3-TACTIC-AND-THEN
-#:Z3-TACTIC-OR-ELSE
-#:Z3-TACTIC-PAR-OR
-#:Z3-TACTIC-PAR-AND-THEN
-#:Z3-TACTIC-TRY-FOR
-#:Z3-TACTIC-USING-PARAMS
-#:Z3-TACTIC-GET-HELP
-#:Z3-MK-SOLVER
-#:Z3-MK-SIMPLE-SOLVER
-#:Z3-MK-SOLVER-FOR-LOGIC
-#:Z3-MK-SOLVER-FROM-TACTIC
-#:Z3-SOLVER-TRANSLATE
-#:Z3-SOLVER-IMPORT-MODEL-CONVERTER
-#:Z3-SOLVER-GET-HELP
-#:Z3-SOLVER-GET-PARAM-DESCRS
-#:Z3-SOLVER-SET-PARAMS
-#:Z3-SOLVER-INC-REF
-#:Z3-SOLVER-DEC-REF
-#:Z3-SOLVER-INTERRUPT
-#:Z3-SOLVER-PUSH
-#:Z3-SOLVER-POP
-#:Z3-SOLVER-RESET
-#:Z3-SOLVER-GET-NUM-SCOPES
-#:Z3-SOLVER-ASSERT
-#:Z3-SOLVER-ASSERT-AND-TRACK
-#:Z3-SOLVER-FROM-FILE
-#:Z3-SOLVER-FROM-STRING
-#:Z3-SOLVER-GET-ASSERTIONS
-#:Z3-SOLVER-GET-UNITS
-#:Z3-SOLVER-GET-TRAIL
-#:Z3-SOLVER-GET-NON-UNITS
-#:Z3-SOLVER-GET-LEVELS
-#:Z3-SOLVER-PROPAGATE-INIT
-#:Z3-SOLVER-PROPAGATE-FIXED
-#:Z3-SOLVER-PROPAGATE-FINAL
-#:Z3-SOLVER-PROPAGATE-EQ
-#:Z3-SOLVER-PROPAGATE-DISEQ
-#:Z3-SOLVER-PROPAGATE-REGISTER
-#:Z3-SOLVER-PROPAGATE-CONSEQUENCE
-#:Z3-SOLVER-CHECK
-#:Z3-SOLVER-CHECK-ASSUMPTIONS
-#:Z3-GET-IMPLIED-EQUALITIES
-#:Z3-SOLVER-GET-CONSEQUENCES
-#:Z3-SOLVER-CUBE
-#:Z3-SOLVER-GET-MODEL
-#:Z3-SOLVER-GET-PROOF
-#:Z3-SOLVER-GET-UNSAT-CORE
-#:Z3-SOLVER-GET-REASON-UNKNOWN
-#:Z3-SOLVER-GET-STATISTICS
-#:Z3-SOLVER-TO-STRING
-#:Z3-SOLVER-TO-DIMACS-STRING
-#:Z3-STATS-TO-STRING
-#:Z3-STATS-INC-REF
-#:Z3-STATS-DEC-REF
-#:Z3-MK-OPTIMIZE
-#:Z3-OPTIMIZE-INC-REF
-#:Z3-OPTIMIZE-DEC-REF
-#:Z3-OPTIMIZE-ASSERT
-#:Z3-OPTIMIZE-ASSERT-SOFT
-#:Z3-OPTIMIZE-MAXIMIZE
-#:Z3-OPTIMIZE-MINIMIZE
-#:Z3-OPTIMIZE-PUSH
-#:Z3-OPTIMIZE-POP
-#:Z3-OPTIMIZE-CHECK
-#:Z3-OPTIMIZE-GET-REASON-UNKNOWN
-#:Z3-OPTIMIZE-GET-MODEL
-#:Z3-OPTIMIZE-GET-LOWER
-#:Z3-OPTIMIZE-GET-UPPER
-#:Z3-OPTIMIZE-TO-STRING
-#:Z3-OPTIMIZE-GET-STATISTICS
-#:Z3-MK-AST-VECTOR
-#:Z3-AST-VECTOR-INC-REF
-#:Z3-AST-VECTOR-DEC-REF
-#:Z3-AST-VECTOR-SIZE
-#:Z3-AST-VECTOR-GET
-#:Z3-AST-VECTOR-SET
-#:Z3-AST-VECTOR-RESIZE
-#:Z3-AST-VECTOR-PUSH
-#:Z3-AST-VECTOR-TRANSLATE
-#:Z3-AST-VECTOR-TO-STRING
+  (:export
+   #:Z3-global-param-set
+   #:Z3-global-param-reset-all
+   #:Z3-global-param-get
+   #:Z3-mk-config
+   #:Z3-del-config
+   #:Z3-set-param-value
+   #:Z3-mk-context
+   #:Z3-mk-context-rc
+   #:Z3-del-context
+   #:Z3-inc-ref
+   #:Z3-dec-ref
+   #:Z3-update-param-value
+   #:Z3-interrupt
+   #:Z3-mk-params
+   #:Z3-params-inc-ref
+   #:Z3-params-dec-ref
+   #:Z3-params-set-bool
+   #:Z3-params-set-uint
+   #:Z3-params-set-double
+   #:Z3-params-set-symbol
+   #:Z3-params-to-string
+   #:Z3-params-validate
+   #:Z3-param-descrs-inc-ref
+   #:Z3-param-descrs-dec-ref
+   #:Z3-param-descrs-get-kind
+   #:Z3-param-descrs-size
+   #:Z3-param-descrs-get-name
+   #:Z3-param-descrs-get-documentation
+   #:Z3-param-descrs-to-string
+   #:Z3-mk-int-symbol
+   #:Z3-mk-string-symbol
+   #:Z3-mk-uninterpreted-sort
+   #:Z3-mk-bool-sort
+   #:Z3-mk-int-sort
+   #:Z3-mk-real-sort
+   #:Z3-mk-bv-sort
+   #:Z3-mk-finite-domain-sort
+   #:Z3-mk-array-sort
+   #:Z3-mk-array-sort-n
+   #:Z3-mk-tuple-sort
+   #:Z3-mk-enumeration-sort
+   #:Z3-mk-list-sort
+   #:Z3-mk-constructor
+   #:Z3-del-constructor
+   #:Z3-mk-datatype
+   #:Z3-mk-constructor-list
+   #:Z3-del-constructor-list
+   #:Z3-mk-datatypes
+   #:Z3-query-constructor
+   #:Z3-mk-func-decl
+   #:Z3-mk-app
+   #:Z3-mk-const
+   #:Z3-mk-fresh-func-decl
+   #:Z3-mk-fresh-const
+   #:Z3-mk-rec-func-decl
+   #:Z3-add-rec-def
+   #:Z3-mk-true
+   #:Z3-mk-false
+   #:Z3-mk-eq
+   #:Z3-mk-distinct
+   #:Z3-mk-not
+   #:Z3-mk-ite
+   #:Z3-mk-iff
+   #:Z3-mk-implies
+   #:Z3-mk-xor
+   #:Z3-mk-and
+   #:Z3-mk-or
+   #:Z3-mk-add
+   #:Z3-mk-mul
+   #:Z3-mk-sub
+   #:Z3-mk-unary-minus
+   #:Z3-mk-div
+   #:Z3-mk-mod
+   #:Z3-mk-rem
+   #:Z3-mk-power
+   #:Z3-mk-lt
+   #:Z3-mk-le
+   #:Z3-mk-gt
+   #:Z3-mk-ge
+   #:Z3-mk-divides
+   #:Z3-mk-int2real
+   #:Z3-mk-real2int
+   #:Z3-mk-is-int
+   #:Z3-mk-bvnot
+   #:Z3-mk-bvredand
+   #:Z3-mk-bvredor
+   #:Z3-mk-bvand
+   #:Z3-mk-bvor
+   #:Z3-mk-bvxor
+   #:Z3-mk-bvnand
+   #:Z3-mk-bvnor
+   #:Z3-mk-bvxnor
+   #:Z3-mk-bvneg
+   #:Z3-mk-bvadd
+   #:Z3-mk-bvsub
+   #:Z3-mk-bvmul
+   #:Z3-mk-bvudiv
+   #:Z3-mk-bvsdiv
+   #:Z3-mk-bvurem
+   #:Z3-mk-bvsrem
+   #:Z3-mk-bvsmod
+   #:Z3-mk-bvult
+   #:Z3-mk-bvslt
+   #:Z3-mk-bvule
+   #:Z3-mk-bvsle
+   #:Z3-mk-bvuge
+   #:Z3-mk-bvsge
+   #:Z3-mk-bvugt
+   #:Z3-mk-bvsgt
+   #:Z3-mk-concat
+   #:Z3-mk-extract
+   #:Z3-mk-sign-ext
+   #:Z3-mk-zero-ext
+   #:Z3-mk-repeat
+   #:Z3-mk-bvshl
+   #:Z3-mk-bvlshr
+   #:Z3-mk-bvashr
+   #:Z3-mk-rotate-left
+   #:Z3-mk-rotate-right
+   #:Z3-mk-ext-rotate-left
+   #:Z3-mk-ext-rotate-right
+   #:Z3-mk-int2bv
+   #:Z3-mk-bv2int
+   #:Z3-mk-bvadd-no-overflow
+   #:Z3-mk-bvadd-no-underflow
+   #:Z3-mk-bvsub-no-overflow
+   #:Z3-mk-bvsub-no-underflow
+   #:Z3-mk-bvsdiv-no-overflow
+   #:Z3-mk-bvneg-no-overflow
+   #:Z3-mk-bvmul-no-overflow
+   #:Z3-mk-bvmul-no-underflow
+   #:Z3-mk-select
+   #:Z3-mk-select-n
+   #:Z3-mk-store
+   #:Z3-mk-store-n
+   #:Z3-mk-const-array
+   #:Z3-mk-map
+   #:Z3-mk-array-default
+   #:Z3-mk-as-array
+   #:Z3-mk-set-has-size
+   #:Z3-mk-set-sort
+   #:Z3-mk-empty-set
+   #:Z3-mk-full-set
+   #:Z3-mk-set-add
+   #:Z3-mk-set-del
+   #:Z3-mk-set-union
+   #:Z3-mk-set-intersect
+   #:Z3-mk-set-difference
+   #:Z3-mk-set-complement
+   #:Z3-mk-set-member
+   #:Z3-mk-set-subset
+   #:Z3-mk-array-ext
+   #:Z3-mk-numeral
+   #:Z3-mk-real
+   #:Z3-mk-int
+   #:Z3-mk-unsigned-int
+   #:Z3-mk-int64
+   #:Z3-mk-unsigned-int64
+   #:Z3-mk-bv-numeral
+   #:Z3-mk-seq-sort
+   #:Z3-is-seq-sort
+   #:Z3-get-seq-sort-basis
+   #:Z3-mk-re-sort
+   #:Z3-is-re-sort
+   #:Z3-get-re-sort-basis
+   #:Z3-mk-string-sort
+   #:Z3-mk-char-sort
+   #:Z3-is-string-sort
+   #:Z3-is-char-sort
+   #:Z3-mk-string
+   #:Z3-mk-lstring
+   #:Z3-mk-u32string
+   #:Z3-is-string
+   #:Z3-get-string
+   #:Z3-get-lstring
+   #:Z3-get-string-length
+   #:Z3-get-string-contents
+   #:Z3-mk-seq-empty
+   #:Z3-mk-seq-unit
+   #:Z3-mk-seq-concat
+   #:Z3-mk-seq-prefix
+   #:Z3-mk-seq-suffix
+   #:Z3-mk-seq-contains
+   #:Z3-mk-str-lt
+   #:Z3-mk-str-le
+   #:Z3-mk-seq-extract
+   #:Z3-mk-seq-replace
+   #:Z3-mk-seq-at
+   #:Z3-mk-seq-nth
+   #:Z3-mk-seq-length
+   #:Z3-mk-seq-index
+   #:Z3-mk-seq-last-index
+   #:Z3-mk-str-to-int
+   #:Z3-mk-int-to-str
+   #:Z3-mk-string-to-code
+   #:Z3-mk-string-from-code
+   #:Z3-mk-ubv-to-str
+   #:Z3-mk-sbv-to-str
+   #:Z3-mk-seq-to-re
+   #:Z3-mk-seq-in-re
+   #:Z3-mk-re-plus
+   #:Z3-mk-re-star
+   #:Z3-mk-re-option
+   #:Z3-mk-re-union
+   #:Z3-mk-re-concat
+   #:Z3-mk-re-range
+   #:Z3-mk-re-allchar
+   #:Z3-mk-re-loop
+   #:Z3-mk-re-power
+   #:Z3-mk-re-intersect
+   #:Z3-mk-re-complement
+   #:Z3-mk-re-diff
+   #:Z3-mk-re-empty
+   #:Z3-mk-re-full
+   #:Z3-mk-char
+   #:Z3-mk-char-le
+   #:Z3-mk-char-to-int
+   #:Z3-mk-char-to-bv
+   #:Z3-mk-char-from-bv
+   #:Z3-mk-char-is-digit
+   #:Z3-mk-linear-order
+   #:Z3-mk-partial-order
+   #:Z3-mk-piecewise-linear-order
+   #:Z3-mk-tree-order
+   #:Z3-mk-transitive-closure
+   #:Z3-mk-pattern
+   #:Z3-mk-bound
+   #:Z3-mk-forall
+   #:Z3-mk-exists
+   #:Z3-mk-quantifier
+   #:Z3-mk-quantifier-ex
+   #:Z3-mk-forall-const
+   #:Z3-mk-exists-const
+   #:Z3-mk-quantifier-const
+   #:Z3-mk-quantifier-const-ex
+   #:Z3-mk-lambda
+   #:Z3-mk-lambda-const
+   #:Z3-get-symbol-kind
+   #:Z3-get-symbol-int
+   #:Z3-get-symbol-string
+   #:Z3-get-sort-name
+   #:Z3-get-sort-id
+   #:Z3-sort-to-ast
+   #:Z3-is-eq-sort
+   #:Z3-get-sort-kind
+   #:Z3-get-bv-sort-size
+   #:Z3-get-finite-domain-sort-size
+   #:Z3-get-array-sort-domain
+   #:Z3-get-array-sort-domain-n
+   #:Z3-get-array-sort-range
+   #:Z3-get-tuple-sort-mk-decl
+   #:Z3-get-tuple-sort-num-fields
+   #:Z3-get-tuple-sort-field-decl
+   #:Z3-get-datatype-sort-num-constructors
+   #:Z3-get-datatype-sort-constructor
+   #:Z3-get-datatype-sort-recognizer
+   #:Z3-get-datatype-sort-constructor-accessor
+   #:Z3-datatype-update-field
+   #:Z3-get-relation-arity
+   #:Z3-get-relation-column
+   #:Z3-mk-atmost
+   #:Z3-mk-atleast
+   #:Z3-mk-pble
+   #:Z3-mk-pbge
+   #:Z3-mk-pbeq
+   #:Z3-func-decl-to-ast
+   #:Z3-is-eq-func-decl
+   #:Z3-get-func-decl-id
+   #:Z3-get-decl-name
+   #:Z3-get-decl-kind
+   #:Z3-get-domain-size
+   #:Z3-get-arity
+   #:Z3-get-domain
+   #:Z3-get-range
+   #:Z3-get-decl-num-parameters
+   #:Z3-get-decl-parameter-kind
+   #:Z3-get-decl-int-parameter
+   #:Z3-get-decl-double-parameter
+   #:Z3-get-decl-symbol-parameter
+   #:Z3-get-decl-sort-parameter
+   #:Z3-get-decl-ast-parameter
+   #:Z3-get-decl-func-decl-parameter
+   #:Z3-get-decl-rational-parameter
+   #:Z3-app-to-ast
+   #:Z3-get-app-decl
+   #:Z3-get-app-num-args
+   #:Z3-get-app-arg
+   #:Z3-is-eq-ast
+   #:Z3-get-ast-id
+   #:Z3-get-ast-hash
+   #:Z3-get-sort
+   #:Z3-is-well-sorted
+   #:Z3-get-bool-value
+   #:Z3-get-ast-kind
+   #:Z3-is-app
+   #:Z3-is-numeral-ast
+   #:Z3-is-algebraic-number
+   #:Z3-to-app
+   #:Z3-to-func-decl
+   #:Z3-get-numeral-string
+   #:Z3-get-numeral-binary-string
+   #:Z3-get-numeral-decimal-string
+   #:Z3-get-numeral-double
+   #:Z3-get-numerator
+   #:Z3-get-denominator
+   #:Z3-get-numeral-small
+   #:Z3-get-numeral-int
+   #:Z3-get-numeral-uint
+   #:Z3-get-numeral-uint64
+   #:Z3-get-numeral-int64
+   #:Z3-get-numeral-rational-int64
+   #:Z3-get-algebraic-number-lower
+   #:Z3-get-algebraic-number-upper
+   #:Z3-pattern-to-ast
+   #:Z3-get-pattern-num-terms
+   #:Z3-get-pattern
+   #:Z3-get-index-value
+   #:Z3-is-quantifier-forall
+   #:Z3-is-quantifier-exists
+   #:Z3-is-lambda
+   #:Z3-get-quantifier-weight
+   #:Z3-get-quantifier-num-patterns
+   #:Z3-get-quantifier-pattern-ast
+   #:Z3-get-quantifier-num-no-patterns
+   #:Z3-get-quantifier-no-pattern-ast
+   #:Z3-get-quantifier-num-bound
+   #:Z3-get-quantifier-bound-name
+   #:Z3-get-quantifier-bound-sort
+   #:Z3-get-quantifier-body
+   #:Z3-simplify
+   #:Z3-simplify-ex
+   #:Z3-simplify-get-help
+   #:Z3-simplify-get-param-descrs
+   #:Z3-update-term
+   #:Z3-substitute
+   #:Z3-substitute-vars
+   #:Z3-translate
+   #:Z3-mk-model
+   #:Z3-model-inc-ref
+   #:Z3-model-dec-ref
+   #:Z3-model-eval
+   #:Z3-model-get-const-interp
+   #:Z3-model-has-interp
+   #:Z3-model-get-func-interp
+   #:Z3-model-get-num-consts
+   #:Z3-model-get-const-decl
+   #:Z3-model-get-num-funcs
+   #:Z3-model-get-func-decl
+   #:Z3-model-get-num-sorts
+   #:Z3-model-get-sort
+   #:Z3-model-get-sort-universe
+   #:Z3-model-translate
+   #:Z3-is-as-array
+   #:Z3-get-as-array-func-decl
+   #:Z3-add-func-interp
+   #:Z3-add-const-interp
+   #:Z3-func-interp-inc-ref
+   #:Z3-func-interp-dec-ref
+   #:Z3-func-interp-get-num-entries
+   #:Z3-func-interp-get-entry
+   #:Z3-func-interp-get-else
+   #:Z3-func-interp-set-else
+   #:Z3-func-interp-get-arity
+   #:Z3-func-interp-add-entry
+   #:Z3-func-entry-inc-ref
+   #:Z3-func-entry-dec-ref
+   #:Z3-func-entry-get-value
+   #:Z3-func-entry-get-num-args
+   #:Z3-func-entry-get-arg
+   #:Z3-open-log
+   #:Z3-append-log
+   #:Z3-close-log
+   #:Z3-toggle-warning-messages
+   #:Z3-set-ast-print-mode
+   #:Z3-ast-to-string
+   #:Z3-pattern-to-string
+   #:Z3-sort-to-string
+   #:Z3-func-decl-to-string
+   #:Z3-model-to-string
+   #:Z3-benchmark-to-smtlib-string
+   #:Z3-parse-smtlib2-string
+   #:Z3-parse-smtlib2-file
+   #:Z3-eval-smtlib2-string
+   #:Z3-get-error-code
+   #:Z3-set-error-handler
+   #:Z3-set-error
+   #:Z3-get-error-msg
+   #:Z3-get-version
+   #:Z3-get-full-version
+   #:Z3-enable-trace
+   #:Z3-disable-trace
+   #:Z3-reset-memory
+   #:Z3-finalize-memory
+   #:Z3-mk-goal
+   #:Z3-goal-inc-ref
+   #:Z3-goal-dec-ref
+   #:Z3-goal-precision
+   #:Z3-goal-assert
+   #:Z3-goal-inconsistent
+   #:Z3-goal-depth
+   #:Z3-goal-reset
+   #:Z3-goal-size
+   #:Z3-goal-formula
+   #:Z3-goal-num-exprs
+   #:Z3-goal-is-decided-sat
+   #:Z3-goal-is-decided-unsat
+   #:Z3-goal-translate
+   #:Z3-goal-convert-model
+   #:Z3-goal-to-string
+   #:Z3-goal-to-dimacs-string
+   #:Z3-mk-tactic
+   #:Z3-tactic-inc-ref
+   #:Z3-tactic-dec-ref
+   #:Z3-mk-probe
+   #:Z3-probe-inc-ref
+   #:Z3-probe-dec-ref
+   #:Z3-tactic-and-then
+   #:Z3-tactic-or-else
+   #:Z3-tactic-par-or
+   #:Z3-tactic-par-and-then
+   #:Z3-tactic-try-for
+   #:Z3-tactic-when
+   #:Z3-tactic-cond
+   #:Z3-tactic-repeat
+   #:Z3-tactic-skip
+   #:Z3-tactic-fail
+   #:Z3-tactic-fail-if
+   #:Z3-tactic-fail-if-not-decided
+   #:Z3-tactic-using-params
+   #:Z3-probe-const
+   #:Z3-probe-lt
+   #:Z3-probe-gt
+   #:Z3-probe-le
+   #:Z3-probe-ge
+   #:Z3-probe-eq
+   #:Z3-probe-and
+   #:Z3-probe-or
+   #:Z3-probe-not
+   #:Z3-get-num-tactics
+   #:Z3-get-tactic-name
+   #:Z3-get-num-probes
+   #:Z3-get-probe-name
+   #:Z3-tactic-get-help
+   #:Z3-tactic-get-param-descrs
+   #:Z3-tactic-get-descr
+   #:Z3-probe-get-descr
+   #:Z3-probe-apply
+   #:Z3-tactic-apply
+   #:Z3-tactic-apply-ex
+   #:Z3-apply-result-inc-ref
+   #:Z3-apply-result-dec-ref
+   #:Z3-apply-result-to-string
+   #:Z3-apply-result-get-num-subgoals
+   #:Z3-apply-result-get-subgoal
+   #:Z3-mk-solver
+   #:Z3-mk-simple-solver
+   #:Z3-mk-solver-for-logic
+   #:Z3-mk-solver-from-tactic
+   #:Z3-solver-translate
+   #:Z3-solver-import-model-converter
+   #:Z3-solver-get-help
+   #:Z3-solver-get-param-descrs
+   #:Z3-solver-set-params
+   #:Z3-solver-inc-ref
+   #:Z3-solver-dec-ref
+   #:Z3-solver-interrupt
+   #:Z3-solver-push
+   #:Z3-solver-pop
+   #:Z3-solver-reset
+   #:Z3-solver-get-num-scopes
+   #:Z3-solver-assert
+   #:Z3-solver-assert-and-track
+   #:Z3-solver-from-file
+   #:Z3-solver-from-string
+   #:Z3-solver-get-assertions
+   #:Z3-solver-get-units
+   #:Z3-solver-get-trail
+   #:Z3-solver-get-non-units
+   #:Z3-solver-get-levels
+   #:Z3-solver-propagate-init
+   #:Z3-solver-propagate-fixed
+   #:Z3-solver-propagate-final
+   #:Z3-solver-propagate-eq
+   #:Z3-solver-propagate-diseq
+   #:Z3-solver-propagate-created
+   #:Z3-solver-propagate-declare
+   #:Z3-solver-propagate-register
+   #:Z3-solver-propagate-register-cb
+   #:Z3-solver-propagate-consequence
+   #:Z3-solver-check
+   #:Z3-solver-check-assumptions
+   #:Z3-get-implied-equalities
+   #:Z3-solver-get-consequences
+   #:Z3-solver-cube
+   #:Z3-solver-get-model
+   #:Z3-solver-get-proof
+   #:Z3-solver-get-unsat-core
+   #:Z3-solver-get-reason-unknown
+   #:Z3-solver-get-statistics
+   #:Z3-solver-to-string
+   #:Z3-solver-to-dimacs-string
+   #:Z3-stats-to-string
+   #:Z3-stats-inc-ref
+   #:Z3-stats-dec-ref
+   #:Z3-stats-size
+   #:Z3-stats-get-key
+   #:Z3-stats-is-uint
+   #:Z3-stats-is-double
+   #:Z3-stats-get-uint-value
+   #:Z3-stats-get-double-value
+   #:Z3-get-estimated-alloc-size
+   #:Z3-mk-ast-vector
+   #:Z3-ast-vector-inc-ref
+   #:Z3-ast-vector-dec-ref
+   #:Z3-ast-vector-size
+   #:Z3-ast-vector-get
+   #:Z3-ast-vector-set
+   #:Z3-ast-vector-resize
+   #:Z3-ast-vector-push
+   #:Z3-ast-vector-translate
+   #:Z3-ast-vector-to-string
+   #:Z3-mk-ast-map
+   #:Z3-ast-map-inc-ref
+   #:Z3-ast-map-dec-ref
+   #:Z3-ast-map-contains
+   #:Z3-ast-map-find
+   #:Z3-ast-map-insert
+   #:Z3-ast-map-erase
+   #:Z3-ast-map-reset
+   #:Z3-ast-map-size
+   #:Z3-ast-map-keys
+   #:Z3-ast-map-to-string
+   #:Z3-algebraic-is-value
+   #:Z3-algebraic-is-pos
+   #:Z3-algebraic-is-neg
+   #:Z3-algebraic-is-zero
+   #:Z3-algebraic-sign
+   #:Z3-algebraic-add
+   #:Z3-algebraic-sub
+   #:Z3-algebraic-mul
+   #:Z3-algebraic-div
+   #:Z3-algebraic-root
+   #:Z3-algebraic-power
+   #:Z3-algebraic-lt
+   #:Z3-algebraic-gt
+   #:Z3-algebraic-le
+   #:Z3-algebraic-ge
+   #:Z3-algebraic-eq
+   #:Z3-algebraic-neq
+   #:Z3-algebraic-roots
+   #:Z3-algebraic-eval
+   #:Z3-algebraic-get-poly
+   #:Z3-algebraic-get-i
+   #:Z3-polynomial-subresultants
+   #:Z3-rcf-del
+   #:Z3-rcf-mk-rational
+   #:Z3-rcf-mk-small-int
+   #:Z3-rcf-mk-pi
+   #:Z3-rcf-mk-e
+   #:Z3-rcf-mk-infinitesimal
+   #:Z3-rcf-mk-roots
+   #:Z3-rcf-add
+   #:Z3-rcf-sub
+   #:Z3-rcf-mul
+   #:Z3-rcf-div
+   #:Z3-rcf-neg
+   #:Z3-rcf-inv
+   #:Z3-rcf-power
+   #:Z3-rcf-lt
+   #:Z3-rcf-gt
+   #:Z3-rcf-le
+   #:Z3-rcf-ge
+   #:Z3-rcf-eq
+   #:Z3-rcf-neq
+   #:Z3-rcf-num-to-string
+   #:Z3-rcf-num-to-decimal-string
+   #:Z3-rcf-get-numerator-denominator
+   #:Z3-mk-fixedpoint
+   #:Z3-fixedpoint-inc-ref
+   #:Z3-fixedpoint-dec-ref
+   #:Z3-fixedpoint-add-rule
+   #:Z3-fixedpoint-add-fact
+   #:Z3-fixedpoint-assert
+   #:Z3-fixedpoint-query
+   #:Z3-fixedpoint-query-relations
+   #:Z3-fixedpoint-get-answer
+   #:Z3-fixedpoint-get-reason-unknown
+   #:Z3-fixedpoint-update-rule
+   #:Z3-fixedpoint-get-num-levels
+   #:Z3-fixedpoint-get-cover-delta
+   #:Z3-fixedpoint-add-cover
+   #:Z3-fixedpoint-get-statistics
+   #:Z3-fixedpoint-register-relation
+   #:Z3-fixedpoint-set-predicate-representation
+   #:Z3-fixedpoint-get-rules
+   #:Z3-fixedpoint-get-assertions
+   #:Z3-fixedpoint-set-params
+   #:Z3-fixedpoint-get-help
+   #:Z3-fixedpoint-get-param-descrs
+   #:Z3-fixedpoint-to-string
+   #:Z3-fixedpoint-from-string
+   #:Z3-fixedpoint-from-file
+   #:Z3-fixedpoint-init
+   #:Z3-fixedpoint-set-reduce-assign-callback
+   #:Z3-fixedpoint-set-reduce-app-callback
+   #:Z3-fixedpoint-add-callback
+   #:Z3-fixedpoint-add-constraint
+   #:Z3-mk-optimize
+   #:Z3-optimize-inc-ref
+   #:Z3-optimize-dec-ref
+   #:Z3-optimize-assert
+   #:Z3-optimize-assert-and-track
+   #:Z3-optimize-assert-soft
+   #:Z3-optimize-maximize
+   #:Z3-optimize-minimize
+   #:Z3-optimize-push
+   #:Z3-optimize-pop
+   #:Z3-optimize-check
+   #:Z3-optimize-get-reason-unknown
+   #:Z3-optimize-get-model
+   #:Z3-optimize-get-unsat-core
+   #:Z3-optimize-set-params
+   #:Z3-optimize-get-param-descrs
+   #:Z3-optimize-get-lower
+   #:Z3-optimize-get-upper
+   #:Z3-optimize-get-lower-as-vector
+   #:Z3-optimize-get-upper-as-vector
+   #:Z3-optimize-to-string
+   #:Z3-optimize-from-string
+   #:Z3-optimize-from-file
+   #:Z3-optimize-get-help
+   #:Z3-optimize-get-statistics
+   #:Z3-optimize-get-assertions
+   #:Z3-optimize-get-objectives
+   #:Z3-optimize-register-model-eh
+   #:Z3-mk-fpa-rounding-mode-sort
+   #:Z3-mk-fpa-round-nearest-ties-to-even
+   #:Z3-mk-fpa-rne
+   #:Z3-mk-fpa-round-nearest-ties-to-away
+   #:Z3-mk-fpa-rna
+   #:Z3-mk-fpa-round-toward-positive
+   #:Z3-mk-fpa-rtp
+   #:Z3-mk-fpa-round-toward-negative
+   #:Z3-mk-fpa-rtn
+   #:Z3-mk-fpa-round-toward-zero
+   #:Z3-mk-fpa-rtz
+   #:Z3-mk-fpa-sort
+   #:Z3-mk-fpa-sort-half
+   #:Z3-mk-fpa-sort-16
+   #:Z3-mk-fpa-sort-single
+   #:Z3-mk-fpa-sort-32
+   #:Z3-mk-fpa-sort-double
+   #:Z3-mk-fpa-sort-64
+   #:Z3-mk-fpa-sort-quadruple
+   #:Z3-mk-fpa-sort-128
+   #:Z3-mk-fpa-nan
+   #:Z3-mk-fpa-inf
+   #:Z3-mk-fpa-zero
+   #:Z3-mk-fpa-fp
+   #:Z3-mk-fpa-numeral-float
+   #:Z3-mk-fpa-numeral-double
+   #:Z3-mk-fpa-numeral-int
+   #:Z3-mk-fpa-numeral-int-uint
+   #:Z3-mk-fpa-numeral-int64-uint64
+   #:Z3-mk-fpa-abs
+   #:Z3-mk-fpa-neg
+   #:Z3-mk-fpa-add
+   #:Z3-mk-fpa-sub
+   #:Z3-mk-fpa-mul
+   #:Z3-mk-fpa-div
+   #:Z3-mk-fpa-fma
+   #:Z3-mk-fpa-sqrt
+   #:Z3-mk-fpa-rem
+   #:Z3-mk-fpa-round-to-integral
+   #:Z3-mk-fpa-min
+   #:Z3-mk-fpa-max
+   #:Z3-mk-fpa-leq
+   #:Z3-mk-fpa-lt
+   #:Z3-mk-fpa-geq
+   #:Z3-mk-fpa-gt
+   #:Z3-mk-fpa-eq
+   #:Z3-mk-fpa-is-normal
+   #:Z3-mk-fpa-is-subnormal
+   #:Z3-mk-fpa-is-zero
+   #:Z3-mk-fpa-is-infinite
+   #:Z3-mk-fpa-is-nan
+   #:Z3-mk-fpa-is-negative
+   #:Z3-mk-fpa-is-positive
+   #:Z3-mk-fpa-to-fp-bv
+   #:Z3-mk-fpa-to-fp-float
+   #:Z3-mk-fpa-to-fp-real
+   #:Z3-mk-fpa-to-fp-signed
+   #:Z3-mk-fpa-to-fp-unsigned
+   #:Z3-mk-fpa-to-ubv
+   #:Z3-mk-fpa-to-sbv
+   #:Z3-mk-fpa-to-real
+   #:Z3-fpa-get-ebits
+   #:Z3-fpa-get-sbits
+   #:Z3-fpa-is-numeral-nan
+   #:Z3-fpa-is-numeral-inf
+   #:Z3-fpa-is-numeral-zero
+   #:Z3-fpa-is-numeral-normal
+   #:Z3-fpa-is-numeral-subnormal
+   #:Z3-fpa-is-numeral-positive
+   #:Z3-fpa-is-numeral-negative
+   #:Z3-fpa-get-numeral-sign-bv
+   #:Z3-fpa-get-numeral-significand-bv
+   #:Z3-fpa-get-numeral-sign
+   #:Z3-fpa-get-numeral-significand-string
+   #:Z3-fpa-get-numeral-significand-uint64
+   #:Z3-fpa-get-numeral-exponent-string
+   #:Z3-fpa-get-numeral-exponent-int64
+   #:Z3-fpa-get-numeral-exponent-bv
+   #:Z3-mk-fpa-to-ieee-bv
+   #:Z3-mk-fpa-to-fp-int-real
+   #:Z3-fixedpoint-query-from-lvl
+   #:Z3-fixedpoint-get-ground-sat-answer
+   #:Z3-fixedpoint-get-rules-along-trace
+   #:Z3-fixedpoint-get-rule-names-along-trace
+   #:Z3-fixedpoint-add-invariant
+   #:Z3-fixedpoint-get-reachable
+   #:Z3-qe-model-project
+   #:Z3-qe-model-project-skolem
+   #:Z3-model-extrapolate
+   #:Z3-qe-lite
 ))

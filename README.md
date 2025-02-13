@@ -10,9 +10,9 @@ and more, including optimization problems.
 ## Setup
 
 ### Prerequisites
-- A Common Lisp implementation (tested on SBCL, may work on other Lisps)
+- A Common Lisp implementation (tested on SBCL and Clozure CL)
 - Quicklisp
-- Z3 (see below)
+- Z3, version 4.8.15 or greater (see below)
 
 ### Installing Z3
 To use this library, you first need to install Z3 onto your
@@ -24,18 +24,19 @@ prebuilt Z3 packages as well.
 Depending on your operating system, you may also need to install
 a "z3-dev" package. On Ubuntu, this package is called `libz3-dev`.
 
+To use the library as-is, you will need to have version 4.8.15 of Z3
+or greater. The library has been tested on Z3 versions up to 4.13.4. A
+version of Z3 before 4.8.15 may be usable with this package, but you
+will need to regenerate the FFI files; see `scripts/update-ffi.sh` for
+more information about how to do this. A version of Z3 later than
+4.13.4 will likely load correctly (barring the removal of any
+functions or types) but it may exhibit issues at runtime when
+values that it doesn't expect are encountered.
+
 You will also need a working C compiler to use the interface. On
 Ubuntu, the `build-essential` package should include everything you
 need, though it is fairly large and contains some unneeded
 software. One could also try just installing `gcc` or `clang`.
-
-After getting Z3 installed, you should be able to run it through the
-command line. To test this, execute `z3 --version` in your terminal
-and verify that it reports something along the lines of `Z3 version
-4.13.4 - 64 bit` (your version or architecture may be different,
-that's OK).
-
-
 
 ### Installing the interface
 The easiest way to install and use this library is to clone this

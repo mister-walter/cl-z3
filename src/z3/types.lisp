@@ -6,14 +6,14 @@
   ((handle :initarg :handle
            :initform (z3-mk-config))))
 
-(defmethod translate-to-foreign ((v config) (type z3-c-types::config-type))
+(defmethod translate-to-foreign ((v config) (type z3-c-types::Z3_config))
   (slot-value v 'handle))
 
 (defclass context ()
   ((handle :initarg :handle
            :initform (z3-mk-context (z3-mk-config)))))
 
-(defmethod translate-to-foreign ((v context) (type z3-c-types::context-type))
+(defmethod translate-to-foreign ((v context) (type z3-c-types::Z3_context))
   (slot-value v 'handle))
 
 (defclass z3-object-with-handle ()
@@ -51,10 +51,10 @@
 ;; i.e. an ast handle will remain valid until there is a call to solver-pop that takes the current scope below the level where the object was created
 (defclass ast (z3-object-with-handle) ())
 
-(defmethod translate-to-foreign ((v ast) (type z3-c-types::ast-type))
+(defmethod translate-to-foreign ((v ast) (type z3-c-types::Z3_ast))
   (slot-value v 'handle))
 
-(defmethod translate-to-foreign ((v ast) (type z3-c-types::app-type))
+(defmethod translate-to-foreign ((v ast) (type z3-c-types::Z3_app))
   (unless (z3-is-app (get-context v) v)
     (error "Tried to convert non-app AST ~a into an app value." v))
   (slot-value v 'handle))
@@ -66,7 +66,7 @@
 
 (defclass func-decl (z3-object-with-handle) ())
 
-(defmethod translate-to-foreign ((v func-decl) (type z3-c-types::func-decl-type))
+(defmethod translate-to-foreign ((v func-decl) (type z3-c-types::Z3_func_decl))
   (slot-value v 'handle))
 
 (defmethod z3-object-to-string ((obj func-decl))
@@ -76,7 +76,7 @@
 
 (defclass func-entry (z3-object-with-handle) ())
 
-(defmethod translate-to-foreign ((v func-entry) (type z3-c-types::func-entry-type))
+(defmethod translate-to-foreign ((v func-entry) (type z3-c-types::Z3_func_entry))
   (slot-value v 'handle))
 
 ;; This type doesn't have a built-in to-string function in Z3, so
@@ -89,7 +89,7 @@
 ;; NOTE: we need to manually increment/decrement reference counter for this type
 (defclass func-interp (z3-object-with-handle) ())
 
-(defmethod translate-to-foreign ((v func-interp) (type z3-c-types::func-interp-type))
+(defmethod translate-to-foreign ((v func-interp) (type z3-c-types::Z3_func_interp))
   (slot-value v 'handle))
 
 ;; This type doesn't have a built-in to-string function in Z3, so
@@ -111,7 +111,7 @@
 
 (defclass z3-sort (z3-object-with-handle) ())
 
-(defmethod translate-to-foreign ((v z3-sort) (type z3-c-types::sort-type))
+(defmethod translate-to-foreign ((v z3-sort) (type z3-c-types::Z3_sort))
   (slot-value v 'handle))
 
 (defmethod z3-object-to-string ((obj z3-sort))
@@ -122,7 +122,7 @@
 ;; NOTE: we need to manually increment/decrement reference counter for this type
 (defclass model (z3-object-with-handle) ())
 
-(defmethod translate-to-foreign ((v model) (type z3-c-types::model-type))
+(defmethod translate-to-foreign ((v model) (type z3-c-types::Z3_model))
   (slot-value v 'handle))
 
 (defmethod z3-object-to-string ((obj model))
@@ -220,7 +220,7 @@
 (defclass solver (solver-optimize)
   ())
 
-(defmethod translate-to-foreign ((v solver) (type z3-c-types::solver-type))
+(defmethod translate-to-foreign ((v solver) (type z3-c-types::Z3_solver))
   (slot-value v 'handle))
 
 (defmethod z3-object-to-string ((obj solver))
@@ -245,7 +245,7 @@
 (defclass optimizer (solver-optimize)
   ())
 
-(defmethod translate-to-foreign ((v optimizer) (type z3-c-types::optimize-type))
+(defmethod translate-to-foreign ((v optimizer) (type z3-c-types::Z3_optimize))
   (slot-value v 'handle))
 
 (defmethod z3-object-to-string ((obj optimizer))
@@ -267,7 +267,7 @@
 ;; NOTE: we need to manually increment/decrement reference counter for this type
 (defclass params (z3-object-with-handle) ())
 
-(defmethod translate-to-foreign ((v params) (type z3-c-types::params-type))
+(defmethod translate-to-foreign ((v params) (type z3-c-types::Z3_params))
   (slot-value v 'handle))
 
 (defmethod z3-object-to-string ((obj params))
@@ -282,7 +282,7 @@
 
 (defclass param-descrs (z3-object-with-handle) ())
 
-(defmethod translate-to-foreign ((v param-descrs) (type z3-c-types::param-descrs-type))
+(defmethod translate-to-foreign ((v param-descrs) (type z3-c-types::Z3_param_descrs))
   (slot-value v 'handle))
 
 (defmethod z3-object-to-string ((obj param-descrs))
@@ -298,7 +298,7 @@
 ;; NOTE: we need to manually increment/decrement reference counter for this type
 (defclass statistics (z3-object-with-handle) ())
 
-(defmethod translate-to-foreign ((v statistics) (type z3-c-types::stats-type))
+(defmethod translate-to-foreign ((v statistics) (type z3-c-types::Z3_stats))
   (slot-value v 'handle))
 
 (defmethod z3-object-to-string ((obj statistics))
@@ -314,7 +314,7 @@
 ;; NOTE: we need to manually increment/decrement reference counter for this type
 (defclass tactic (z3-object-with-handle) ())
 
-(defmethod translate-to-foreign ((v tactic) (type z3-c-types::tactic-type))
+(defmethod translate-to-foreign ((v tactic) (type z3-c-types::Z3_tactic))
   (slot-value v 'handle))
 
 (defmethod z3-object-to-string ((obj tactic))
@@ -330,7 +330,7 @@
 ;; NOTE: we need to manually increment/decrement reference counter for this type
 (defclass ast-vector (z3-object-with-handle) ())
 
-(defmethod translate-to-foreign ((v ast-vector) (type z3-c-types::ast-vector-type))
+(defmethod translate-to-foreign ((v ast-vector) (type z3-c-types::Z3_ast_vector))
   (slot-value v 'handle))
 
 (defmethod z3-object-to-string ((obj ast-vector))

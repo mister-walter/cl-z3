@@ -40,7 +40,7 @@ declarations into a function declaration alist for internal use."
                                                               (get-sort range context))
                                      :context context)))
 
-(cffi:defcallback error-handler :void ((ctx z3-c-types:context) (error-code z3-c-types:error_code))
+(cffi:defcallback error-handler :void ((ctx z3-c-types:Z3_context) (error-code z3-c-types:Z3_error_code))
   (match error-code
     (:OK (error "Z3: error handler called with error code OK - should not occur."))
     (:SORT_ERROR (error "Z3: tried to build an AST that is not well-sorted"))

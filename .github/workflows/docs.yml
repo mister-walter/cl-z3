@@ -39,7 +39,7 @@ jobs:
       - name: Generate Documentation
         run: |
           sbcl --noinform \
-          --eval "(load \"~/.quicklisp/setup.lisp\")" \
+          --eval "(load \"~/quicklisp/setup.lisp\")" \
           --eval "(push \"$GITHUB_WORKSPACE\" ql:*local-project-directories*)" \
           --eval "(ql:register-local-projects)" \
           --eval "(ql:quickload :staple :silent T)" \

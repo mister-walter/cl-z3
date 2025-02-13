@@ -23,11 +23,35 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
+      - name: Install SBCL
+        run: |
+          sudo apt-get update
+          sudo apt install -y sbcl
+      - name: Install Quicklisp
+        run: |
+          curl -kLO https://beta.quicklisp.org/quicklisp.lisp
+          sbcl --non-interactive --load quicklisp.lisp --eval "(quicklisp-quickstart:install)" --eval "(ql-util:without-prompting (ql:add-to-init-file))"
       - name: Install Z3
         shell: bash
         run: |
           sudo apt-get install -yy z3 libz3-dev
-      - uses: actions/checkout@v1
-      - uses: shinmera/staple@v2.0.0
+      - uses: actions/checkout@v4
+      - name: Generate Documentation
+        run: |
+          sbcl --noinform \
+          --eval "(load \"~/.quicklisp/setup.lisp\")" \
+          --eval "(push \"$GITHUB_WORKSPACE\" ql:*local-project-directories*)" \
+          --eval "(ql:register-local-projects)" \
+          --eval "(ql:quickload :staple :silent T)" \
+          --eval "(ql:quickload :staple-markdown :silent T)" \
+          --eval "(staple:generate :cl-z3 :output-directory #p\"$OUTPUT\")" \
+          --quit --end-toplevel-options
+        env:
+          OUTPUT: ${{ format('{0}/staple-output/', runner.temp) }}
+      - name: Upload Github Pages Artifact
+        uses: actions/upload-pages-artifact@v3.0.1
         with:
-          gh-pages: true
+          path: ${{ inputs.output || format('{0}/staple-output/', runner.temp) }}
+      - name: Write to Github Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

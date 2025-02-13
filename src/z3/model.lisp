@@ -14,14 +14,19 @@
     (write-string (z3-ast-to-string context (z3-func-entry-get-value context entry)) s)
     (get-output-stream-string s)))
 
-(defun model-constants-to-assignment (model ctx)
+(defmethod model-const-decls ((model model))
+  "Get a list of constant declarations from the given model."
+  (let ((ctx (get-context model)))
+    (loop for i below (z3-model-get-num-consts ctx model)
+          collect (make-instance 'func-decl :handle (z3-model-get-const-decl ctx model i) :context ctx))))
+
+(defun model-constants (model)
   "Retrieve constant interpretations from the given model."
   ;; This is a two step process:
   ;; 1. Get constant declarations (note that these are function declarations with 0 parameters) from the model
   ;; 2. Get the interpretations of each of the constant declarations from the model and convert into Lisp forms.
-  (let ((const-decls
-         (loop for i below (z3-model-get-num-consts ctx model)
-               collect (z3-model-get-const-decl ctx model i))))
+  (let ((ctx (get-context model))
+        (const-decls (model-const-decls model)))
     (loop for decl in const-decls
           for name = (z3-get-symbol-string ctx (z3-get-decl-name ctx decl))
           for value = (z3-model-get-const-interp ctx model decl)
@@ -48,15 +53,20 @@
                 for entry = (z3-func-interp-get-entry ctx interp i)
                 collect (convert-func-entry entry ctx)))))
 
-(defun model-funcs (model ctx)
+(defmethod model-func-decls ((model model))
+  "Get a list of function declarations from the given model."
+  (let ((ctx (get-context model)))
+    (loop for i below (z3-model-get-num-funcs ctx model)
+          collect (make-instance 'func-decl :handle (z3-model-get-func-decl ctx model i) :context ctx))))
+
+(defun model-functions (model)
   "Retrieve function interpretations from the given model."
   ;; Basically there are three steps:
   ;; 1. Get the function declarations from the model
-  ;; 2. Use the function declarations to get the functions interpretations from the model
+  ;; 2. Use the function declarations to get the function interpretations from the model
   ;; 3. Convert the function interpretations into Lisp forms (we translate into alists)
-  (let* ((func-decls
-          (loop for i below (z3-model-get-num-funcs ctx model)
-                collect (z3-model-get-func-decl ctx model i))))
+  (let ((ctx (get-context model))
+        (func-decls (model-func-decls model)))
     (loop for decl in func-decls
           for interp = (z3-model-get-func-interp ctx model decl)
           for name = (z3-get-symbol-string ctx (z3-get-decl-name ctx decl))
@@ -66,7 +76,8 @@
                                            (list (func-decl-domain decl ctx) (func-decl-range decl ctx))
                                            (func-interp-to-alist interp ctx)))))))
 
-(defmethod model-get-assignment (name (model model))
+(defmethod model-get (name (model model))
+  "Get the interpretation associated with the given name from the given model."
   (with-slots (context) model
     (let ((const-decl (loop for i below (z3-model-get-num-consts context model)
                             for decl = (z3-model-get-const-decl context model i)

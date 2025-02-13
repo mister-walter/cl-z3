@@ -127,6 +127,8 @@
                    (convert-to-ast-fn ctx (car values) env))))
 
 (defun convert-to-ast (stmt &optional (env (make-instance 'environment-stack)) context)
+  "Convert a Common Lisp S-expression into a Z3 AST, with respect to
+the given environment."
   (let ((ctx (or context *default-context*)))
     (make-instance 'ast
                    :handle (convert-to-ast-fn ctx stmt env)
@@ -417,8 +419,8 @@
 (defvar *STRING-REP* :string
   "EXPERIMENTAL.
 Controls how strings are represented when converting from the Z3 model
-into lisp. Currently there are two modes: :string (the default) and
-:list (convert into list of uint8 values)")
+into lisp. Currently there are two modes: `:string` (the default) and
+`:list` (convert into list of uint8 values)")
 
 (defun get-lstring (context ast)
   (assert (z3-is-string context ast))
@@ -435,18 +437,28 @@ into lisp. Currently there are two modes: :string (the default) and
             (otherwise (error "Unknown string representation mode ~S" *STRING-REP*))))))
 
 (defparameter *ALGEBRAIC-NUMBER-CONVERT-MODE* :float
-  "Controls how algebraic numbers are converted to Lisp values. Default is :float.
-:float will produce a floating-point approximation of the algebraic number.
-:decimal will produce a string corresponding to a floating-point approximation of the algebraic number.
-:root will produce a string corresponding to the polynomial root representation of the algebraic number.
-:agnum will leave the algebraic number as an algebraic-number type.
-Note that :float and :precision will first have Z3 produce a string representation of the number
-with less than or equal to *ALGEBRAIC-NUMBER-CONVERT-DECIMAL-PRECISION* decimal places. That
-string representation will then be turned into a floating point value. For very small or very large values,
-the default value may be insufficient, so in such cases one is advised to change the precision value.")
+  "Controls how algebraic numbers are converted to Lisp values. Default
+is `:float`.
+
+ - `:float` will produce a floating-point approximation of the algebraic
+   number.
+ - `:decimal` will produce a string corresponding to a floating-point
+   approximation of the algebraic number.
+ - `:root` will produce a string corresponding to the polynomial root
+   representation of the algebraic number.
+ - `:agnum` will leave the algebraic number as an algebraic-number type.
+
+Note that `:float` and `:precision` will first have Z3 produce a
+string representation of the number with less than or equal to
+`*ALGEBRAIC-NUMBER-CONVERT-DECIMAL-PRECISION*` decimal places. That
+string representation will then be turned into a floating point
+value. For very small or very large values, the default value may be
+insufficient, so in such cases one is advised to change the precision
+value.")
 
 (defparameter *ALGEBRAIC-NUMBER-CONVERT-DECIMAL-PRECISION* 15
-  "The number of decimal places to include when converting algebraic numbers to floats.")
+  "The number of decimal places to include when converting algebraic
+numbers to floats.")
 
 ;; For now, we simply turn the algebraic number into a double. It would
 ;; be more convenient to use z3-get-numeral-double, but this seems to
@@ -539,6 +551,7 @@ the default value may be insufficient, so in such cases one is advised to change
 
 ;; Attempt to translate an AST into a Lisp value.
 (defun ast-to-value (ast ctx)
+  "Attempt to translate a Z3 AST into a Lisp value."
   (let* ((ast-kind (z3-get-ast-kind ctx ast))
          (sort (z3-get-sort ctx ast))
          (sort-kind (z3-get-sort-kind ctx sort)))
@@ -558,8 +571,8 @@ the default value may be insufficient, so in such cases one is advised to change
 ;; TODO these two functions are very similar - should factor common code into a macro or something.
 (defun parse-smt2-string (filename &key sorts decls context)
   "Parse the given string using the SMT-LIB2 parser.
-   It returns an ast-vector comprising of the conjunction of assertions in the scope
-   (up to push/pop) at the end of the string."
+It returns an ast-vector comprising of the conjunction of assertions in the scope
+(up to push/pop) at the end of the string."
   (let ((ctx (or context *default-context*)))
     (make-instance 'ast-vector
                    :handle
@@ -577,9 +590,9 @@ the default value may be insufficient, so in such cases one is advised to change
 ;; lisp's in all cases, and that may result in confusion...
 (defun parse-smt2-file (filename &key sorts decls context)
   "Parse the file with the given filename using the SMT-LIB2 parser.
-   It returns an ast-vector comprising of the conjunction of assertions in the scope
-   (up to push/pop) at the end of the file.
-   Calls the error handler if the file does not exist or cannot be accessed."
+It returns an ast-vector comprising of the conjunction of assertions in the scope
+(up to push/pop) at the end of the file.
+Calls the error handler if the file does not exist or cannot be accessed."
   (let ((ctx (or context *default-context*)))
     (make-instance 'ast-vector
                    :handle

@@ -109,12 +109,12 @@
     (tg:finalize obj (lambda () (z3-func-interp-dec-ref context handle)))))
 
 
-(defclass sort (z3-object-with-handle) ())
+(defclass z3-sort (z3-object-with-handle) ())
 
-(defmethod translate-to-foreign ((v sort) (type z3-c-types::sort-type))
+(defmethod translate-to-foreign ((v z3-sort) (type z3-c-types::sort-type))
   (slot-value v 'handle))
 
-(defmethod z3-object-to-string ((obj sort))
+(defmethod z3-object-to-string ((obj z3-sort))
   (with-slots (handle context) obj
     (z3-sort-to-string context handle)))
 

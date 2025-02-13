@@ -12,7 +12,7 @@
 declarations into a variable sort alist for internal use."
   (loop for (var ty) on decls by #'cddr
         unless (and (consp ty) (equal (car ty) :fn))
-        collect (cons var (make-instance 'sort
+        collect (cons var (make-instance 'z3-sort
                                          :handle (get-sort ty context)
                                          :context context))))
 
@@ -165,7 +165,7 @@ any Z3 declarations or assertions that occurred between the relevant
 (defun convert-type-spec (name ty context)
   (if (and (consp ty) (equal (car ty) :fn))
       (make-fn-decl name (second ty) (third ty) context)
-    (make-instance 'sort
+    (make-instance 'z3-sort
                    :handle (get-sort ty context)
                    :context context)))
 
@@ -314,9 +314,9 @@ error handler if no model is available. If check-sat determined
 may not satisfy the assertions on the stack. Will invoke the error
 handler if no model is available."
   (let* ((solver (or solver *default-solver*))
-         (ctx (get-context solver)))
-    (append (model-constants-to-assignment (get-model solver) ctx)
-            (model-funcs (get-model solver) ctx))))
+         (model (get-model solver)))
+    (append (model-constants model)
+            (model-functions model))))
 
 (defgeneric solver-check (solver)
   (:method ((solver solver)) (z3-solver-check (get-context solver) solver))

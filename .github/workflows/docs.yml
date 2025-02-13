@@ -36,10 +36,16 @@ jobs:
         run: |
           sudo apt-get install -yy z3 libz3-dev
       - uses: actions/checkout@v4
+      - name: Load once to install deps
+        run: |
+          sbcl --noinform \
+          --eval "(push \"$GITHUB_WORKSPACE\" ql:*local-project-directories*)" \
+          --eval "(ql:register-local-projects)" \
+          --eval "(ql:quickload :cl-z3)" \
+          --quit --end-toplevel-options
       - name: Generate Documentation
         run: |
           sbcl --noinform \
-          --eval "(load \"~/quicklisp/setup.lisp\")" \
           --eval "(push \"$GITHUB_WORKSPACE\" ql:*local-project-directories*)" \
           --eval "(ql:register-local-projects)" \
           --eval "(ql:quickload :staple :silent T)" \

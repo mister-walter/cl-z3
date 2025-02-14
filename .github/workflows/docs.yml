@@ -34,15 +34,21 @@ jobs:
       - name: Install Z3
         shell: bash
         run: |
-          sudo apt-get install -yy z3 libz3-dev
+          cd ${{ runner.temp }}
+          wget https://github.com/Z3Prover/z3/releases/download/z3-4.8.15/z3-4.8.15-x64-glibc-2.31.zip -O z3.zip
+          unzip z3.zip
       - uses: actions/checkout@v4
+      - name: Set env
+        run: |
+          echo "C_INCLUDE_PATH=${{ runner.temp }}/z3-4.8.15-x64-glibc-2.31/include" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=${{ runner.temp }}/z3-4.8.15-x64-glibc-2.31/bin" >> $GITHUB_ENV
       - name: Load once to install deps
         run: |
           sbcl --noinform \
           --eval "(push \"$GITHUB_WORKSPACE\" ql:*local-project-directories*)" \
           --eval "(ql:register-local-projects)" \
           --eval "(ql:quickload :cl-z3)" \
-          --quit --end-toplevel-options
+          --non-interactive --end-toplevel-options
       - name: Generate Documentation
         run: |
           sbcl --noinform \
@@ -51,7 +57,7 @@ jobs:
           --eval "(ql:quickload :staple :silent T)" \
           --eval "(ql:quickload :staple-markdown :silent T)" \
           --eval "(staple:generate :cl-z3 :output-directory #p\"$OUTPUT\")" \
-          --quit --end-toplevel-options
+          --non-interactive --end-toplevel-options
         env:
           OUTPUT: ${{ format('{0}/staple-output/', runner.temp) }}
       - name: Upload Github Pages Artifact

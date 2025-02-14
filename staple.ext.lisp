@@ -16,6 +16,21 @@
 (defmethod staple:page-type ((system (eql (asdf:find-system :cl-z3/z3))))
   'staple::my-page)
 
+(defmethod staple::resolve-source-link (source (page staple::my-page))
+  (if (pathname-utils:subpath-p (truename (getf source :file))
+                                (truename (asdf:system-source-directory (staple::system page))))
+      (let* ((system (asdf:find-system :cl-z3))
+             (homepage (asdf:system-homepage system)))
+        (if (search "github" homepage)
+            (format NIL "~a/blob/~a/~a~@[#L~a~]"
+                    (staple::github-project-root homepage)
+                    (staple::current-commit system)
+                    (staple::enough-namestring (getf source :file)
+                                               (asdf:system-source-directory system))
+                    (getf source :row))
+            (call-next-method)))
+      (call-next-method)))
+
 (defmethod staple:format-documentation ((docstring string) (page staple::my-page))
   (let ((*package* (first (staple:packages page))))
     (staple:markup-code-snippets ;;-ignoring-errors

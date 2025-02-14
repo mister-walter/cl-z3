@@ -35,6 +35,7 @@
   :description "Common Lisp bindings for the Z3 SMT solver."
   :author "Andrew T. Walter <me@atwalter.com>"
   :license "MIT"
+  :homepage "https://github.com/mister-walter/cl-z3/"
   :depends-on ("cl-z3/z3")
   :in-order-to ((test-op (test-op "cl-z3/tests"))))
 

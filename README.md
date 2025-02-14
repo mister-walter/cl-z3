@@ -63,3 +63,17 @@ The examples should provide a fairly good overview of various features
 of the library, but the `operators.md` file inside of this directory
 contains additional information about the operators we support
 converting to Z3 statements.
+
+## Documentation
+
+Generated documentation for this library is available at
+[www.atwalter.com/cl-z3](https://www.atwalter.com/cl-z3/). The
+user-facing API is contained in the [cl-z3/z3
+system](https://www.atwalter.com/cl-z3/cl-z3/z3/), so that part of the
+documentation is likely to be the most useful. The low-level bindings
+to the Z3 C API are also documented (in the [cl-z3/ffi
+system](https://www.atwalter.com/cl-z3/cl-z3/ffi/)) but the
+documentation there is automatically extracted from the Z3 C API on a
+best-effort basis. The Z3 project hosts a [much better
+version](https://z3prover.github.io/api/html/group__capi.html) of this
+documentation for the interested user.

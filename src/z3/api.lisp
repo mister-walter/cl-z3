@@ -226,7 +226,7 @@ returning values of the given sort."
         (prog1
             (solver-assert slv (convert-to-ast stmt (solver-env slv) ctx))
           (push `(assert ,var-specs ,stmt) (car (solver-assertion-stack slv))))
-      (error (c) (loop for name in added-vars do (env-remove name (solver-env slv))) (signal c)))))
+      (error (c) (loop for name in added-vars do (env-remove name (solver-env slv))) (error c)))))
 
 (defmacro z3-assert (var-specs &optional (stmt nil stmt-provided?) solver)
   "Assert that the given statement holds in Z3. Any free variable

@@ -20,7 +20,7 @@
 ;; The empty regex accepts no strings.
 (z3-assert
  (x :string)
- (seq.in.re x (re-empty (:regex :string))))
+ (seq.in.re x (re.empty (:regex :string))))
 (check-sat)
 (solver-pop)
 
@@ -28,7 +28,7 @@
 ;; The full regex accepts all strings.
 (z3-assert
  (x :string)
- (seq.in.re x (re-full (:regex :string))))
+ (seq.in.re x (re.full (:regex :string))))
 (check-sat)
 (get-model)
 (solver-pop)

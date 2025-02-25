@@ -25,8 +25,8 @@
 
 (defun convert-to-ast-fn (context stmt env)
   (match stmt
-         (t (z3-mk-true context))
-         (nil (z3-mk-false context))
+         ((or t (sym-name true)) (z3-mk-true context))
+         ((or nil (sym-name false)) (z3-mk-false context))
          ((satisfies integerp) (z3-mk-numeral context (write-to-string stmt) (z3-mk-int-sort context)))
          ((type symbol)
           (multiple-value-bind
@@ -60,13 +60,11 @@
           (with-foreign-array (array z3-c-types::Z3_ast args
                                      :elt-fn #'(lambda (arg) (z3-mk-seq-unit context (convert-to-ast-fn context arg env))))
                               (z3-mk-seq-concat context (length args) array)))
-         ((list (or (sym-name seq-empty) (sym-name seq.empty)) sort)
-          (z3-mk-seq-empty context (get-sort (list :seq sort) context)))
-         ((list (or (sym-name seq-unit) (sym-name seq.unit)) x)
+         ((list (sym-name seq.unit) x)
           (z3-mk-seq-unit context (convert-to-ast-fn context x env)))
-         ((list (sym-name re-empty) sort)
+         ((list (sym-name re.empty) sort)
           (z3-mk-re-empty context (get-sort sort context)))
-         ((list (sym-name re-full) sort)
+         ((list (sym-name re.full) sort)
           (z3-mk-re-full context (get-sort sort context)))
          ((list* (sym-name set) sort args)
           (mk-set (get-sort sort context) args context env))
@@ -142,10 +140,14 @@ the given environment."
 ;;   operator. If :ctor is not provided, the first name is used to
 ;;   generate the name of the CFFI'ed Z3 function to use to construct
 ;;   an application AST for this operator, by appending Z3-MK- to the
-;;   name.
+;;   name and replacing any periods with dashes.
 ;; - If :arity is provided, it should either be a positive integer
 ;;   describing the number of arguments this operator takes, or -
 ;;   indicating that this operator has arbitrary arity >=1.
+;; - If :arity is -, one can also provide :enforce-arity and a number.
+;;   This will call the underlying Z3 constructor as though it is
+;;   designed for arbitrary arity, but will check that the arity of any
+;;   given call is equal to the given :enforce-arity value.
 ;; - If :ctor is provided, it should be a symbol corresponding to the
 ;;   CFFI'ed Z3 function that constructs an application AST for this
 ;;   operator.
@@ -154,28 +156,36 @@ the given environment."
 ;; convert all arguments into Z3 ASTs recursively, and apply the
 ;; relevant constructor to those arguments.
 (defvar *builtin-ops*
-  '((not :arity 1)
+  '(;; core theory
+    ;; true special
+    ;; false special
+    (not :arity 1)
+    ((implies =>) :arity 2)
     (and :arity -)
     (or :arity -)
+    (xor :arity 2)
+    ((= == equal) :ctor z3-mk-eq :arity 2)
+    (distinct :arity -)
+    ((ite if) :arity 3)
+    ;; end of core theory
+    (iff :arity 2)
     (+ :ctor z3-mk-add :arity -)
     (- :ctor z3-mk-sub :arity -)
     ;; note that we special-case unary - by adding a case for it in convert-funccall-to-ast.
     (* :ctor z3-mk-mul :arity -)
     (/ :ctor z3-mk-div :arity 2)
+    ;; div special
     (mod :arity 2)
     (rem :arity 2)
     (power :arity 2)
-    ((int2real int-to-real) :arity 1)
-    ((real2int real-to-int) :arity 1)
+    (to_real :ctor z3-mk-int2real :arity 1)
+    (to_int :ctor z3-mk-real2int :arity 1)
     ;;(divides :arity 2)
-    (distinct :arity -)
-    ((implies =>) :arity 2)
-    (xor :arity 2)
-    (if :ctor z3-mk-ite :arity 3)
     (< :ctor z3-mk-lt :arity 2)
     (<= :ctor z3-mk-le :arity 2)
     (> :ctor z3-mk-gt :arity 2)
     (>= :ctor z3-mk-ge :arity 2)
+    (is_int :arity 1)
     ;; Bitvector functions
     (bvnot :arity 1)
     (bvredand :arity 1)
@@ -225,46 +235,50 @@ the given environment."
     ;;; Set functions
     ;; mk-empty-set special
     ;; mk-full-set special
-    (set-add :arity 2)
-    (set-del :arity 2)
-    (set-union :arity -)
-    (set-intersect :arity -)
-    (set-difference :arity 2)
-    (set-complement :arity 1)
-    (set-member :arity 2)
-    (set-subset :arity 2)
+    ;;(set-add :arity 2)
+    ;;(set-del :arity 2)
+    ;; (as set.empty <sort>) special
+    ;; (as set.universe <sort>) special
+    ;; set.singleton special
+    ;; set.insert special
+    (set.union :arity - :enforce-arity 2)
+    (set.inter :ctor z3-mk-set-intersect :arity - :enforce-arity 2)
+    (set.minus :ctor z3-mk-set-difference :arity 2)
+    (set.complement :arity 1)
+    (set.member :arity 2)
+    (set.subset :arity 2)
     (array-ext :arity 2)
     ;;; Sequence functions
     ;; seq_empty special
-    ((seq-unit seq.unit) :arity 1)
-    ((seq-concat seq.++ str.++) :arity -)
-    ((seq-prefix seq.prefixof str.prefixof) :arity 2)
-    ((seq-contains seq.contains str.contains) :arity 2)
-    (str-lt :arity 2)
-    (str-le :arity 2)
-    ((seq-extract seq.extract) :arity 3)
-    ((seq-replace seq.replace str.replace) :arity 3)
-    ((seq-at seq.at str.at) :arity 2)
-    ((seq-nth seq.nth) :arity 2)
-    ((seq-length seq.len str.len) :arity 1)
-    ((seq-index seq.indexof str.indexof) :arity 3)
+    (seq.unit :arity 1)
+    ((seq.++ str.++) :ctor z3-mk-seq-concat :arity -)
+    ((seq.prefixof str.prefixof) :ctor z3-mk-seq-prefix :arity 2)
+    ((seq.contains str.contains) :arity 2)
+    (str.< :ctor z3-mk-str-lt :arity 2)
+    (str.<= :ctor z3-mk-str-le :arity 2)
+    (seq.extract :arity 3)
+    ((seq.replace str.replace) :arity 3)
+    ((seq.at str.at) :arity 2)
+    (seq.nth :arity 2)
+    ((seq.len str.len) :ctor z3-mk-seq-length :arity 1)
+    ((seq.indexof str.indexof) :ctor z3-mk-seq-index :arity 3)
     (seq-last-index :arity 2)
-    ((str-to-int str.to.int) :arity 1)
-    ((int-to-str int.to.str) :arity 1)
+    (str.to.int :arity 1)
+    (int.to.str :arity 1)
     ;;; Regular expression functions
     ((seq-to-re seq.to.re) :arity 1)
     ((seq-in-re seq.in.re) :arity 2)
-    ((re-plus re.+) :arity 1)
-    ((re-star re.*) :arity 1)
-    ((re-option re.opt re.?) :arity 1)
-    ((re-union re.union) :arity -)
-    ((re-concat re.++) :arity -)
-    ((re-range re.range) :arity 2)
+    (re.+ :ctor z3-mk-re-plus :arity 1)
+    (re.* :ctor z3-mk-re-star :arity 1)
+    (re.opt :ctor z3-mk-re-option :arity 1)
+    (re.union :arity -)
+    (re.++ :ctor z3-mk-re-concat :arity -)
+    (re.range :arity 2)
     ;; re-loop special
-    ((re-intersect re.inter) :arity -)
-    (re-complement :arity 1)
-    ((re-empty re.empty) :arity 1)
-    ((re-full re.full) :arity 1)
+    (re.inter :ctor z3-mk-re-intersect :arity -)
+    (re.comp :ctor z3-mk-re-complement :arity 1)
+    ((re.empty re.none) :arity 1)
+    ((re.full re.all) :arity 1)
     ;;; Special relations
     ;; these are all special, and not supported
     ;; linear order
@@ -281,19 +295,24 @@ the given environment."
   (let* ((names (if (consp (car op)) (car op) (list (car op))))
          (name (car names))
          (z3-name (or (get-key :ctor (cdr op))
-                      (intern (concatenate 'string "Z3-MK-" (symbol-name name)) :z3)))
-         (arity (get-key :arity (cdr op))))
+                      (intern (concatenate 'string "Z3-MK-" (substitute #\- #\_ (substitute #\- #\. (symbol-name name)))) :z3)))
+         (arity (get-key :arity (cdr op)))
+         (enforce-arity (get-key :enforce-arity (cdr op))))
     (if (equal arity '-)
-        `(lambda (context env &rest args)
-           (if (endp args)
-               (error "The function ~S must be called with at least one argument." ',name)
-             (with-foreign-array (array
-                                  z3-c-types::Z3_ast
-                                  args
-                                  :elt-fn #'(lambda (arg) (convert-to-ast-fn context arg env)))
-                                 (,z3-name context (length args) array))))
+        `(lambda (context env op &rest args)
+           ,@(when enforce-arity
+               `((when (not (equal (length args) ,enforce-arity))
+                   (error "The function ~S must be called with exactly ~a arguments, but it is not in this case.~%Error in statement ~a" op ,enforce-arity (cons op args)))))
+           (when (endp args)
+             (error "The function ~S must be called with at least one argument." op))
+           (with-foreign-array (array
+                                z3-c-types::Z3_ast
+                                args
+                                :elt-fn #'(lambda (arg) (convert-to-ast-fn context arg env)))
+             (,z3-name context (length args) array)))
       (let ((arg-names (loop for i below arity collect (gensym))))
-        `(lambda (context env ,@arg-names)
+        `(lambda (context env op ,@arg-names)
+           (declare (ignore op))
            (,z3-name context . ,(mapcar (lambda (arg-name) `(convert-to-ast-fn context ,arg-name env)) arg-names)))))))
 
 (defvar *ops-hash* (make-hash-table :test 'equal))
@@ -303,35 +322,63 @@ the given environment."
                do (setf (gethash (symbol-name name) *ops-hash*)
                         (eval `(mk-op-fn ,op)))))
 
+;; Handle (as <stmt> <sort-spec>), given stmt and sort-spec
+(defun convert-as-to-ast (context stmt sort-spec env)
+  (match stmt
+    ((sym-name seq.empty)
+     (unless (and (consp sort-spec) (sort-names-match? (car sort-spec) :seq))
+       (error "You must provide a sequence sort when using (as seq.empty <sort>)"))
+     (z3-mk-seq-empty context (get-sort sort-spec context)))
+    ((sym-name set.empty)
+     (unless (and (consp sort-spec) (sort-names-match? (car sort-spec) :set))
+       (error "You must provide a set sort when using (as set.empty <sort>)"))
+     (z3-mk-empty-set context (get-sort (second sort-spec) context)))
+    ((sym-name set.universe)
+     (unless (and (consp sort-spec) (sort-names-match? (car sort-spec) :set))
+       (error "You must provide a set sort when using (as set.universe <sort>)"))
+     (z3-mk-full-set context (get-sort (second sort-spec) context)))
+    (otherwise (error "Unable to convert (as ~a ~a) to an AST!" stmt sort-spec))))
+
 (defun convert-funccall-to-ast (context stmt env)
   (match stmt
-         ((list (or (sym-name =) (sym-name equal) (sym-name ==)) x y)
-          (z3-mk-eq context
-                    (convert-to-ast-fn context x env)
-                    (convert-to-ast-fn context y env)))
          ((list (sym-name !=) x y)
           (convert-funccall-to-ast context `(not (equal ,x ,y)) env))
          ;; Unary subtraction, binary is taken care of thru *builtin-ops*
          ((list (sym-name -) arg)
           (z3-mk-unary-minus context (convert-to-ast-fn context arg env)))
-         ((list (sym-name extract) hi lo x)
+         ((list (sym-name div) x y)
+          (let* ((x-ast (convert-to-ast-fn context x env))
+                 (y-ast (convert-to-ast-fn context y env))
+                 (x-ast-sort-kind (z3-get-sort-kind context (z3-get-sort context x-ast)))
+                 (y-ast-sort-kind (z3-get-sort-kind context (z3-get-sort context y-ast))))
+            (unless (and (equal x-ast-sort-kind :INT_SORT)
+                         (equal y-ast-sort-kind :INT_SORT))
+              (error "Arguments to div should have the same sort!~%This is not the case for statement ~a, where the arguments have sort kinds ~a and ~a." stmt x-ast-sort-kind y-ast-sort-kind))
+            (z3-mk-div context x-ast y-ast)))
+         ((list (list (sym-name _) (sym-name extract) hi lo) x)
+          (unless (and (integerp hi) (integerp lo))
+            (error "(_ extract hi lo) requires that hi and lo are both integers!~%This is not the case in statement ~a" stmt))
           (z3-mk-extract context
                          hi
                          lo
                          (convert-to-ast-fn context x env)))
-         ((list (sym-name signext) len x)
+         ((list (list (sym-name _) (sym-name sign_extend) len) x)
           (z3-mk-sign-ext context
                           len
                           (convert-to-ast-fn context x env)))
-         ((list (sym-name zeroext) len x)
+         ((list (list (sym-name _) (sym-name zero_extend) len) x)
           (z3-mk-zero-ext context
                           len
                           (convert-to-ast-fn context x env)))
-         ((list (sym-name repeat) maxlen x)
+         ((list (list (sym-name _) (sym-name repeat) ntimes) x)
+          (unless (integerp ntimes)
+            (error "(_ repeat ntimes) requires that ntimes is an integer!~%This is not the case in statement ~a" stmt))
           (z3-mk-repeat context
-                        maxlen
+                        ntimes
                         (convert-to-ast-fn context x env)))
-         ((list (sym-name int2bv) nbits x)
+         ((list (list (sym-name _) (sym-name int2bv) nbits) x)
+          (unless (integerp nbits)
+            (error "(_ int2bv nbits) requires that nbits is an integer!~%This is not the case in statement ~a" stmt))
           (z3-mk-int2bv context
                         nbits
                         (convert-to-ast-fn context x env)))
@@ -339,10 +386,6 @@ the given environment."
           (z3-mk-bv2int context
                         (convert-to-ast-fn context x env)
                         signed?))
-         ((list (sym-name empty-set) sort)
-          (z3-mk-empty-set context (get-sort sort context)))
-         ((list (sym-name full-set) sort)
-          (z3-mk-full-set context (get-sort sort context)))
          ((list (or (sym-name re-loop)
                     (sym-name re.loop))
                 r lo hi)
@@ -352,24 +395,33 @@ the given environment."
                          (convert-to-ast-fn context r env)
                          lo hi))
          ;; pseudoboolean constraints
-         ((list* (sym-name atmost) args)
-          (unless (consp (cdr args)) (error "atmost requires at least 2 arguments"))
-          (let ((k (car (last args))))
-            (unless (and (integerp k) (>= k 0))
-              (error "atmost requires that the last argument is a positive integer"))
-            (with-foreign-array (array z3-c-types::Z3_ast (butlast args) :elt-fn #'(lambda (arg) (convert-to-ast-fn context arg env)))
-                                (z3-mk-atmost context (1- (length args)) array k))))
-         ((list* (sym-name atleast) args)
-          (unless (consp (cdr args)) (error "atmost requires at least 2 arguments"))
-          (let ((k (car (last args))))
-            (unless (and (integerp k) (>= k 0))
-              (error "atmost requires that the last argument is a positive integer"))
-            (with-foreign-array (array z3-c-types::Z3_ast (butlast args) :elt-fn #'(lambda (arg) (convert-to-ast-fn context arg env)))
-                                (z3-mk-atleast context (1- (length args)) array k))))
+         ((list* (list (sym-name _) (sym-name at-most) k) args)
+          (unless (integerp k)
+            (error "(_ at-most x) expects that x is an integer."))
+          (with-foreign-array (array z3-c-types::Z3_ast args :elt-fn #'(lambda (arg) (convert-to-ast-fn context arg env)))
+            (z3-mk-atmost context (length args) array k)))
+         ((list* (list (sym-name _) (sym-name at-least) k) args)
+          (unless (integerp k)
+            (error "(_ at-least x) expects that x is an integer."))
+          (with-foreign-array (array z3-c-types::Z3_ast args :elt-fn #'(lambda (arg) (convert-to-ast-fn context arg env)))
+            (z3-mk-atleast context (length args) array k)))
+         ((list (sym-name set.singleton) x)
+          (let ((x-ast (convert-to-ast-fn context x env)))
+            (z3-mk-set-add context (z3-mk-empty-set context (z3-get-sort context x-ast)) x-ast)))
+         ((list* (sym-name set.insert) args)
+          (unless (and (consp args) (consp (cdr args)))
+            (error "set.insert requires at least two arguments!"))
+          (let* ((arg-asts (mapcar #'(lambda (arg) (convert-to-ast-fn context arg env)) args))
+                 (set-ast (convert-to-ast-fn context (car (last args)) env)))
+            (loop for arg-ast in (butlast arg-asts)
+                  do (setf set-ast (z3-mk-set-add context set-ast arg-ast)))
+            set-ast))
+         ((list (sym-name as) as-stmt sort-spec)
+          (convert-as-to-ast context as-stmt sort-spec env))
          ((list* op args)
           (multiple-value-bind (op-fn exists?)
               (gethash (symbol-name op) *ops-hash*)
-              (cond (exists? (apply op-fn context env args))
+              (cond (exists? (apply op-fn context env op args))
                     ((env-has-fn? op env) (make-fn-call op args context env))
                     (t (error "The expression ~S looks like a function call, but we don't know how to handle the function with name ~a. You may be trying to use an operator that we do not yet support, or you are trying to call an uninterpreted function with a name that we don't know. Please check the spelling of the operator name." stmt op)))))
          (otherwise (error "We currently do not support translation of the following expression into Z3.~%~S" stmt))))

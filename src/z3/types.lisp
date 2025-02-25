@@ -388,3 +388,16 @@
   (make-instance 'algebraic-number
                  :context context
                  :handle handle))
+
+(defclass z3-symbol (z3-object-with-handle)
+  ()
+  (:documentation "A Z3 symbol"))
+
+(defmethod translate-to-foreign ((v z3-symbol) (type z3-c-types::Z3_symbol))
+  (slot-value v 'handle))
+
+(defmethod z3-object-to-string ((obj z3-symbol))
+  (with-slots (handle context) obj
+    (if (equal (z3-get-symbol-kind context handle) :INT_SYMBOL)
+        (write-to-string (z3-get-symbol-int context handle))
+        (z3-get-symbol-string context handle))))

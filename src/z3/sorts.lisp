@@ -60,6 +60,9 @@ represented as an uninterpreted function.
 (defun normalize-sort-name (name)
   (intern (symbol-name name) :z3-sort))
 
+(defun sort-names-match? (name1 name2)
+  (equal (normalize-sort-name name1) (normalize-sort-name name2)))
+
 (defun register-sort (name sort-producer)
   "Register a sort.
    The first argument is either a symbol or a list of symbols. If a single symbol, the name of the sort to register. If a list of symbols, this sort will be registered under each symbol.

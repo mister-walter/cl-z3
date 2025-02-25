@@ -16,7 +16,7 @@
 (z3-assert
  ;; A sequence variable must have the element sort specified
  (v (:seq :int))
- (= (seq-length v) 20))
+ (= (seq.len v) 20))
 ;; Sequences are converted to CL lists.
 (check-sat)
 (get-model)
@@ -27,7 +27,7 @@
 (solver-push)
 (z3-assert
  (x (:seq :int) y (:seq :int))
- (= (seq-concat x y) (seq 1 2 3 4 5)))
+ (= (seq.++ x y) (seq 1 2 3 4 5)))
 (check-sat)
 (get-model)
 (get-model-as-assignment)
@@ -37,7 +37,7 @@
 (solver-push)
 (z3-assert
  (x (:seq :int) y :int)
- (= x (seq-unit (+ 1 y))))
+ (= x (seq.unit (+ 1 y))))
 (check-sat)
 (get-model)
 (get-model-as-assignment)
@@ -47,30 +47,30 @@
 (solver-push)
 (z3-assert
  (x (:seq :int))
- (= (seq-concat (seq-empty :int) x) (seq-unit 1)))
+ (= (seq.++ (as seq.empty (:seq :int)) x) (seq.unit 1)))
 (check-sat)
 (get-model)
 (solver-pop)
 
-;; You can access the ith element of a sequence with seq-nth.
+;; You can access the ith element of a sequence with seq.nth.
 (solver-push)
 (z3-assert
  (x (:seq :int))
  (and
-  (>= (seq-length x) 3)
-  (= (seq-nth x 2) (+ (seq-nth x 0) (seq-nth x 1)))))
+  (>= (seq.len x) 3)
+  (= (seq.nth x 2) (+ (seq.nth x 0) (seq.nth x 1)))))
 (check-sat)
 (get-model)
 (get-model-as-assignment)
 (solver-pop)
 
-;; Note that seq-nth is underspecified if the index is out of bounds.
+;; Note that seq.nth is underspecified if the index is out of bounds.
 (solver-push)
 (z3-assert
  (x (:seq :int) y :int)
  (and
-  (<= (seq-length x) 3)
-  (= (seq-nth x 4) y)))
+  (<= (seq.len x) 3)
+  (= (seq.nth x 4) y)))
 (check-sat)
 (get-model)
 (get-model-as-assignment)
@@ -80,7 +80,7 @@
 (solver-push)
 (z3-assert
  (x (:seq (_ :bitvec 5)))
- (= (seq-length x) 3))
+ (= (seq.len x) 3))
 (check-sat)
 (get-model)
 (get-model-as-assignment)
@@ -91,7 +91,7 @@
 (solver-push)
 (z3-assert
  (x (:seq (:seq :int)))
- (= (seq-length x) 1))
+ (= (seq.len x) 1))
 (check-sat)
 (solver-pop)
 |#

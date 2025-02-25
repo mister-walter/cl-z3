@@ -30,7 +30,7 @@
 (z3-assert
  ;; A sequence variable must have the element sort specified
  (v :string)
- (= (seq-length v) 20))
+ (= (str.len v) 20))
 ;; Sequences are converted to CL lists.
 (check-sat)
 (get-model)
@@ -41,7 +41,7 @@
 ;; For example, you can write str.++ instead of seq-concat; they both will produce the same AST.
 (solver-push)
 (z3-assert
- (x :string y :string)
+ (x y :string)
  (= (str.++ x y) "Hello, World!"))
 (check-sat)
 (get-model)
@@ -60,7 +60,7 @@
 ;; Note that seq-at is underspecified if the index is out of bounds.
 (solver-push)
 (z3-assert
- (x :string y :string)
+ (x y :string)
  (and
   (<= (str.len x) 3)
   (= (str.at x 4) y)))
@@ -71,13 +71,13 @@
 ;; Z3 also provides lexicographic comparison operators
 (solver-push)
 (z3-assert
- (x :string y :string z :string)
+ (x y z :string)
  (and
   (str.prefixof "a" x)
   (str.prefixof "ab" y)
   (str.prefixof "a" z)
-  (str-lt x y)
-  (str-lt y z)))
+  (str.< x y)
+  (str.< y z)))
 (check-sat)
 (get-model)
 (solver-pop)
@@ -94,7 +94,7 @@
 
 ;; Here's an example taken almost verbatim from the Z3 sequences tutorial (https://rise4fun.com/Z3/tutorial/sequences).
 (solver-push)
-(z3-assert (a :string b :string c :string)
+(z3-assert (a b c :string)
            (and (= (str.++ a b) "abcd")
                 (= (str.++ b c) "cdef")
                 (not (= b ""))))

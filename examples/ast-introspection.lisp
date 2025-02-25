@@ -39,5 +39,5 @@
                  (fresh-env-from-spec (x :int))))
 
 (convert-ast-to-list
- (convert-to-ast '(= (seq-concat "a" x "ba" x) (seq-concat y y "aba"))
+ (convert-to-ast '(= (seq.++ "a" x "ba" x) (seq.++ y y "aba"))
                  (fresh-env-from-spec (x :string y :string))))

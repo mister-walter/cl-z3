@@ -81,8 +81,8 @@
 (define-test sequences
     (solver-init)
   (with-reset-z3
-      (z3-assert (x (:seq :int) y (:seq :int))
-                 (= (seq-concat x y) (seq 1 2 3 4 5)))
+      (z3-assert (x y (:seq :int))
+                 (= (seq.++ x y) (seq 1 2 3 4 5)))
     (is eq (check-sat) :sat)
     (is equal (append (eval-under-model x) (eval-under-model y))
         '(1 2 3 4 5))))

@@ -3,7 +3,7 @@
 (in-package :z3)
 
 ;; This pattern allows one to match against a symbol by name only, ignoring symbol packages.
-;; For example, the pattern (sym-name 'foo) would match against any symbol X such that (symbol-name 'foo) = (symbol-name 'X)
+;; For example, the pattern (sym-name foo) would match against any symbol X such that (symbol-name 'foo) = (symbol-name X)
 (trivia:defpattern sym-name (val)
                    (let ((val-to-match
                           (if (symbolp val) (symbol-name val) val))

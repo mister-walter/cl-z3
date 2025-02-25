@@ -3,3 +3,4 @@
 (ql:register-local-projects)
 (ql:quickload :cl-z3/tests :verbose t)
 (asdf:test-system :cl-z3)
+(exit)

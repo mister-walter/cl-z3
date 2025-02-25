@@ -10,6 +10,7 @@
 (defmethod translate-to-foreign ((v config) (type z3-c-types::Z3_config))
   (slot-value v 'handle))
 
+
 (defclass context ()
   ((handle :initarg :handle
            :initform (z3-mk-context (z3-mk-config))))
@@ -17,6 +18,7 @@
 
 (defmethod translate-to-foreign ((v context) (type z3-c-types::Z3_context))
   (slot-value v 'handle))
+
 
 (defclass z3-object-with-handle ()
   ((handle :initarg :handle)
@@ -369,6 +371,7 @@
     (z3-ast-vector-inc-ref context handle)
     (tg:finalize obj (lambda () (z3-ast-vector-dec-ref context handle)))))
 
+
 (defclass algebraic-number (ast)
   ()
   (:documentation "An AST node representing an algebraic number."))
@@ -388,6 +391,7 @@
   (make-instance 'algebraic-number
                  :context context
                  :handle handle))
+
 
 (defclass z3-symbol (z3-object-with-handle)
   ()

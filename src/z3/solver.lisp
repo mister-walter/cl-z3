@@ -113,8 +113,8 @@ each available parameter."
 
 #|
 ;; This is an example of using the z3 bound functions to find a satisfying assignment
-(let* ((config (Z3-mk-config))
-       (c (Z3-mk-context config))
+(let* ((config (z3-mk-config))
+       (c (z3-mk-context config))
        (solver (z3-mk-simple-solver c))
        (x (z3-mk-const c
                        (z3-mk-string-symbol c "X")

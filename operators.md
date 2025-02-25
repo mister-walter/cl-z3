@@ -292,9 +292,9 @@ strings are essentially just a special case of sequences).
   `container` contains the sequence `containee`
 - `(str.< <x> <y>)`,`(str.<= <x> <y>)`: lexicographic comparisons of
   strings
-- `(seq-extract <seq> <off> <len>)`: returns the subsequence of `seq`
+- `(seq.extract <seq> <off> <len>)`: returns the subsequence of `seq`
   of length `len` starting at offset `off`
-- `(seq-replace <seq> <src> <dst>)`: replace the first occurrence of
+- `(seq.replace <seq> <src> <dst>)`: replace the first occurrence of
   `src` with `dst` in `seq`
 - `(seq.at <seq> <idx>)`: get the unit sequence of `seq` at index `idx`,
   or the empty sequence if `idx` is out of bounds
